@@ -5,7 +5,8 @@
   "main": "index.js",
  
 "scripts": {
-  "test": "jest"
+  "reset:test-db": "ts-node src/database/resetTestDb.ts",
+  "test": "npm run reset:test-db && jest"
 },
 
   "keywords": [],

@@ -1,0 +1,73 @@
+INSERT INTO hotels (id, name, city)
+VALUES
+  (10, 'Tokyo Grand Hotel', 'Tokyo'),
+  (11, 'Osaka Bay Hotel', 'Osaka'),
+  (12, 'Kyoto Garden Inn', 'Kyoto');
+
+INSERT INTO rooms (id, hotel_id, type, price)
+VALUES
+  (1, 10, 'Single', 120),
+  (2, 10, 'Double', 180),
+  (3, 11, 'Single', 110),
+  (4, 11, 'Double', 170),
+  (5, 11, 'Quadruple', 320),
+  (6, 12, 'Double', 160),
+  (7, 12, 'Suite', 280);
+
+INSERT INTO bookings (
+  id,
+  hotel_id,
+  room_id,
+  guest_name,
+  check_in_date,
+  check_out_date,
+  nights,
+  total_price
+)
+VALUES
+(
+  4,
+  10,
+  1,
+  'Huy Nguyen',
+  '2026-06-10',
+  '2026-06-20',
+  10,
+  1200
+),
+(
+  6,
+  11,
+  4,
+  'John Smith',
+  '2026-07-01',
+  '2026-07-04',
+  3,
+  510
+),
+(
+  7,
+  10,
+  2,
+  'Validation Test',
+  '2026-09-01',
+  '2026-09-05',
+  4,
+  720
+);
+
+
+SELECT setval(
+  pg_get_serial_sequence('hotels', 'id'),
+  (SELECT MAX(id) FROM hotels)
+);
+
+SELECT setval(
+  pg_get_serial_sequence('rooms', 'id'),
+  (SELECT MAX(id) FROM rooms)
+);
+
+SELECT setval(
+  pg_get_serial_sequence('bookings', 'id'),
+  (SELECT MAX(id) FROM bookings)
+);

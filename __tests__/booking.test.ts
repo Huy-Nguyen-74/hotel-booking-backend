@@ -236,7 +236,7 @@ describe("PATCH /bookings/:id", () => {
         checkInDate: "2027-04-01",
         checkOutDate: "2027-04-05",
       });
-      
+
       const bookingIdA = createResponseA.body.booking.id;
       createdBookingIds.push(bookingIdA);
 
