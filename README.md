@@ -21,6 +21,15 @@ The project was built as part of a backend engineering transition journey using 
 * PostgreSQL
 * pg Pool
 
+### Testing
+
+* Jest
+* Supertest
+
+### CI/CD
+
+* GitHub Actions
+
 ### Tools
 
 * Thunder Client
@@ -184,21 +193,112 @@ This prevents clients from sending incorrect pricing information.
 
 ---
 
+## Testing
+
+This project includes automated integration tests using Jest and Supertest.
+
+Tests run against a dedicated PostgreSQL test database:
+
+```text
+hotel_booking_test
+```
+
+Before each test run:
+
+1. The test database is reset
+2. Database tables are recreated from `schema.sql`
+3. Seed data is loaded from `seed.sql`
+4. PostgreSQL sequences are synchronized with seeded IDs
+5. Jest integration tests are executed
+
+Current test coverage includes:
+
+* Booking creation
+* Booking updates
+* Booking deletion
+* Required field validation
+* Hotel existence validation
+* Room existence validation
+* Date validation
+* Booking overlap prevention
+
+Run tests:
+
+```bash
+npm test
+```
+
+---
+
+## Continuous Integration
+
+GitHub Actions automatically runs the full test suite on every push to the `main` branch.
+
+Workflow:
+
+1. Start PostgreSQL service container
+2. Install project dependencies
+3. Reset the test database
+4. Load schema and seed data
+5. Run Jest integration tests
+
+This ensures that code changes are verified in a clean environment outside the local development machine.
+
+---
+
+## Design Decisions
+
+This project intentionally uses raw SQL through PostgreSQL rather than an ORM.
+
+The goal is to gain a deeper understanding of:
+
+* Database relationships
+* SQL queries
+* Data validation
+* PostgreSQL sequences
+* Backend business logic
+
+A dedicated test database was introduced to isolate automated tests from development data.
+
+Seed data uses fixed IDs for predictable test scenarios. After seeding, PostgreSQL sequences are synchronized to ensure newly created records continue from the correct ID values.
+
+
 ## Project Structure
 
 ```text
-src/
+hotel-booking-backend/
 │
-├── server.ts
+├── src/
+│   ├── database/
+│   │   ├── db.ts
+│   │   ├── resetTestDb.ts
+│   │   └── testConnection.ts
+│   │
+│   ├── data/
+│   ├── errors/
+│   ├── helpers/
+│   ├── middleware/
+│   ├── routes/
+│   │   ├── hotelRoutes.ts
+│   │   └── bookingRoutes.ts
+│   │
+│   ├── app.ts
+│   └── server.ts
 │
-├── db/
-│   └── db.ts
+├── __tests__/
+│   └── booking.test.ts
 │
-├── routes/
-│   ├── hotelRoutes.ts
-│   └── bookingRoutes.ts
+├── .github/
+│   └── workflows/
+│       └── test.yml
 │
-└── helpers/
+├── docs/
+│   └── architecture.md
+│
+├── schema.sql
+├── seed.sql
+├── package.json
+└── README.md
 ```
 
 ---
@@ -229,14 +329,13 @@ http://localhost:3000
 
 Planned enhancements:
 
-* Centralized error handling middleware
 * Request validation library
 * Room availability endpoint
 * Authentication and authorization
-* Automated testing with Jest
-* CI/CD using GitHub Actions
-* Cloud deployment
+* AWS deployment
+* Docker containerization
 * Service and controller layers
+* API documentation with Swagger
 
 ---
 
