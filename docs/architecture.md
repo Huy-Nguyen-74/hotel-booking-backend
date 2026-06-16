@@ -204,3 +204,124 @@ errorHandler:
 
 * Formats error responses
 * Handles unexpected runtime errors
+
+
+
+
+---
+
+## Architecture V3
+
+Updated: 2026-06-16
+
+### Testing Architecture
+
+```text
+npm test
+  ↓
+resetTestDb.ts
+  ↓
+schema.sql
+  ↓
+seed.sql
+  ↓
+PostgreSQL Sequence Synchronization
+  ↓
+Jest + Supertest
+  ↓
+Test Results
+```
+
+A dedicated PostgreSQL test database is used to ensure tests run against a clean and predictable dataset.
+
+Before every test run:
+
+1. Tables are recreated from `schema.sql`
+2. Seed data is loaded from `seed.sql`
+3. PostgreSQL sequences are synchronized with seeded IDs
+4. Jest integration tests are executed
+
+This prevents tests from affecting development data and ensures consistent results.
+
+---
+
+### CI/CD Architecture
+
+```text
+Developer
+  ↓
+Git Push
+  ↓
+GitHub Actions
+  ↓
+PostgreSQL Service Container
+  ↓
+npm test
+  ↓
+Test Results
+```
+
+Every push to the `main` branch automatically triggers the GitHub Actions workflow.
+
+The workflow:
+
+1. Creates a PostgreSQL service container
+2. Installs project dependencies
+3. Resets the test database
+4. Loads schema and seed data
+5. Executes the Jest test suite
+
+This verifies that the application works in a clean environment outside the developer's local machine.
+
+---
+
+### Environment-Based Database Selection
+
+```text
+NODE_ENV = undefined
+        ↓
+hotel_booking
+
+NODE_ENV = test
+        ↓
+hotel_booking_test
+```
+
+The application automatically selects the database based on the current environment.
+
+Development uses:
+
+```text
+hotel_booking
+```
+
+Automated tests use:
+
+```text
+hotel_booking_test
+```
+
+This separation prevents test runs from modifying development data.
+
+---
+
+### Current Status
+
+Completed:
+
+* PostgreSQL integration
+* Centralized error handling
+* Booking validation
+* Jest integration testing
+* Supertest API testing
+* Dedicated PostgreSQL test database
+* Automated test database reset
+* GitHub Actions CI pipeline
+
+Next milestones:
+
+* Service layer
+* Controller layer
+* Authentication
+* Docker
+* AWS deployment

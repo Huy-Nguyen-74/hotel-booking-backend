@@ -5,6 +5,9 @@
   "main": "index.js",
  
 "scripts": {
+  "dev": "ts-node-dev src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js",
   "reset:test-db": "ts-node src/database/resetTestDb.ts",
   "test": "npm run reset:test-db && jest"
 },
