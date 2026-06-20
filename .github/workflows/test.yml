@@ -1,4 +1,4 @@
-name: Run Tests
+name: CI/CD
 
 on:
   push:
@@ -38,3 +38,21 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/hotel-booking-backend
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart hotel-booking-backend
