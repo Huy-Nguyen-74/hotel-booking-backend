@@ -8,6 +8,17 @@ The project was built as part of a backend engineering transition journey using 
 
 ---
 
+## Highlights
+
+- RESTful API built with Node.js, TypeScript, and Express
+- PostgreSQL database integration using raw SQL
+- Automated integration testing with Jest and Supertest
+- CI/CD pipeline with GitHub Actions
+- Deployed to AWS EC2 with PM2 and systemd
+- Automatic recovery verified after EC2 reboot
+
+---
+
 ## Tech Stack
 
 ### Backend
@@ -19,7 +30,7 @@ The project was built as part of a backend engineering transition journey using 
 ### Database
 
 * PostgreSQL
-* pg Pool
+* node-postgres (pg)
 
 ### Testing
 
@@ -28,7 +39,17 @@ The project was built as part of a backend engineering transition journey using 
 
 ### CI/CD
 
-* GitHub Actions
+GitHub Actions
+
+- Continuous Integration (CI)
+  - Runs automated Jest integration tests on every push
+
+- Continuous Deployment (CD)
+  - Deploys the application to AWS EC2 after successful test execution
+  - Pulls the latest code
+  - Installs dependencies
+  - Builds the application
+  - Restarts the PM2 process
 
 ### Tools
 
@@ -246,6 +267,22 @@ This ensures that code changes are verified in a clean environment outside the l
 
 ---
 
+## Continuous Deployment
+
+GitHub Actions automatically deploys the application to AWS EC2 after the test workflow completes successfully.
+
+Deployment workflow:
+
+1. Connect to EC2 using SSH
+2. Pull the latest code from GitHub
+3. Install dependencies
+4. Build the application
+5. Restart the PM2 process
+
+This ensures production stays synchronized with the latest tested version of the application.
+
+---
+
 ## Design Decisions
 
 This project intentionally uses raw SQL through PostgreSQL rather than an ORM.
@@ -262,6 +299,7 @@ A dedicated test database was introduced to isolate automated tests from develop
 
 Seed data uses fixed IDs for predictable test scenarios. After seeding, PostgreSQL sequences are synchronized to ensure newly created records continue from the correct ID values.
 
+---
 
 ## Project Structure
 
@@ -325,31 +363,43 @@ http://localhost:3000
 
 ---
 
+## AWS Deployment
+
+This project is deployed on AWS EC2.
+
+Architecture:
+
+Browser
+    ↓
+Express API
+(AWS EC2)
+    ↓
+PostgreSQL
+(AWS EC2)
+
+Deployment includes:
+- AWS EC2
+- PostgreSQL
+- PM2 process management
+- systemd startup configuration
+
+Deployment verification:
+
+- Public API accessible through EC2 public IP
+- PostgreSQL connectivity verified
+- PM2 process management configured
+- Automatic recovery after EC2 reboot tested
+- Jest integration tests passing on EC2
+
+---
+
 ## Future Improvements
 
 Planned enhancements:
 
-* Request validation library
-* Room availability endpoint
 * Authentication and authorization
-* AWS deployment
-* Docker containerization
+* Request validation library
 * Service and controller layers
+* Room availability endpoint
+* Docker containerization
 * API documentation with Swagger
-
----
-
-## Learning Goals
-
-This project focuses on understanding backend engineering concepts rather than memorizing framework syntax.
-
-Key areas practiced:
-
-* REST API design
-* Database relationships
-* Business-rule validation
-* CRUD operations
-* Route organization
-* PostgreSQL integration
-* Git workflow
-* Backend architecture fundamentals
