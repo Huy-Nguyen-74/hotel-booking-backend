@@ -325,3 +325,161 @@ Next milestones:
 * Authentication
 * Docker
 * AWS deployment
+
+
+
+---
+
+## Architecture V4
+
+Updated: 2026-06-22
+
+### Deployment Architecture
+
+```text
+Client
+  ↓
+AWS EC2 Public IP
+  ↓
+Express API
+  ↓
+PostgreSQL
+```
+
+The Express API and PostgreSQL database run on the same AWS EC2 instance.
+
+The EC2 Security Group allows public access to the API through port 3000.
+
+---
+
+### Production Process Management
+
+```text
+AWS EC2
+  ↓
+systemd
+  ↓
+PM2
+  ↓
+Node.js Application
+```
+
+PM2 manages the Node.js application process.
+
+systemd starts PM2 automatically when the EC2 instance boots.
+
+This allows the application to recover automatically after an EC2 reboot.
+
+---
+
+### CI/CD Architecture
+
+```text
+Developer
+  ↓
+Git Push
+  ↓
+GitHub Actions
+  ↓
+Run Jest Tests
+  ↓
+Deploy to AWS EC2
+  ↓
+git pull
+  ↓
+npm install
+  ↓
+npm run build
+  ↓
+pm2 restart
+```
+
+Every push to the `main` branch triggers GitHub Actions.
+
+The workflow first runs automated integration tests using a PostgreSQL service container.
+
+If the tests pass, GitHub Actions connects to EC2 through SSH and deploys the latest code.
+
+Deployment includes:
+
+1. Pull latest code from GitHub
+2. Install dependencies
+3. Build the TypeScript project
+4. Restart the PM2 process
+
+---
+
+### Environment Overview
+
+```text
+Development Environment
+
+VS Code
+  ↓
+Node.js
+  ↓
+hotel_booking
+```
+
+```text
+Testing Environment
+
+npm test
+  ↓
+hotel_booking_test
+```
+
+```text
+Production Environment
+
+Client
+  ↓
+AWS EC2
+  ↓
+hotel_booking
+```
+
+The application automatically selects the appropriate database based on the current environment.
+
+Development uses:
+
+```text
+hotel_booking
+```
+
+Automated tests use:
+
+```text
+hotel_booking_test
+```
+
+This prevents tests from modifying development or production data.
+
+---
+
+### Current Status
+
+Completed:
+
+* PostgreSQL integration
+* Centralized error handling
+* Booking validation
+* Jest integration testing
+* Supertest API testing
+* Dedicated PostgreSQL test database
+* Automated test database reset
+* GitHub Actions CI pipeline
+* GitHub Actions CD pipeline
+* AWS EC2 deployment
+* PM2 process management
+* systemd startup configuration
+* EC2 reboot recovery verification
+
+Next milestones:
+
+* Authentication
+* Authorization
+* Service layer
+* Controller layer
+* Docker
+* Database migrations
