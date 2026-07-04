@@ -227,10 +227,15 @@ hotel_booking_test
 Before each test run:
 
 1. The test database is reset
-2. Database tables are recreated from `schema.sql`
+2. Database tables are recreated from migrations
 3. Seed data is loaded from `seed.sql`
 4. PostgreSQL sequences are synchronized with seeded IDs
 5. Jest integration tests are executed
+
+Schema source of truth:
+
+* Migrations in `migrations/`
+* `schema.sql` is kept as a reference snapshot
 
 Current test coverage includes:
 

@@ -1,3 +1,7 @@
+-- Reference-only schema snapshot.
+-- Source of truth is the migrations folder.
+-- To build schema in environments, run migrations instead of this file.
+
 DROP TABLE IF EXISTS bookings CASCADE;
 DROP TABLE IF EXISTS rooms CASCADE;
 DROP TABLE IF EXISTS hotels CASCADE;
