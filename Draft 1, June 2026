@@ -1,0 +1,537 @@
+admin
+- Can manage all hotels: GET hotels, GET hotels/:id, POST hotels, PATCH hotels/:id, DELETE hotels/:id
+- Can manage rooms: GET hotels/rooms, GET hotels/rooms/:id, POST hotels/rooms, PATCH hotels/rooms/:id, DELETE hotels/rooms/;id
+- Can manage bookings: GET bookings, GET bookings/:id, POST bookings, PATCH bookings/:id, DELETE bookings/:id
+- Can create receptionist accounts: GET receptionists, GET receptionists/:id, POST receptionists, PATCH receptionists/:id, DELETE receptionists/:id
+
+receptionist
+- Can view hotels/rooms: GET hotels/rooms, GET hotels/rooms/:id
+- Can manage bookings: GET bookings, GET bookings/:id, POST bookings, PATCH bookings/:id, DELETE bookings/:id
+- Cannot create users: 
+- Cannot manage hotel/room data
+
+
+
+
+src
+├── controllers
+        authController
+        bookingController
+
+├── services
+        authService
+        bookingService
+
+├── repositories
+        authRepository
+        bookingRepository
+
+├── routes
+├── middleware
+├── database
+├── types
+├── errors
+
+
+
+
+Here’s the **Project 2 V1 Technical Spec**.
+
+Copy this into a new planning doc later.
+
+````markdown
+# Project 2: Hotel SaaS Admin Platform
+
+## Goal
+
+Build a production-style backend system for managing hotels, rooms, bookings, and staff users.
+
+The main learning goals are:
+
+- Authentication
+- Authorization
+- Role-based access control
+- Clean backend architecture
+- Controller / Service / Repository layers
+- Production-style database design
+
+---
+
+## Core Roles
+
+### Admin
+
+Can:
+
+- Manage hotels
+- Manage rooms
+- Manage bookings
+- Manage users
+
+### Receptionist
+
+Can:
+
+- View hotels
+- View rooms
+- Manage bookings
+
+Cannot:
+
+- Create/update/delete hotels
+- Create/update/delete rooms
+- Manage users
+
+---
+
+## Database Tables
+
+### users
+
+```text
+id
+first_name
+last_name
+email
+password_hash
+role
+is_active
+created_at
+updated_at
+````
+
+Rules:
+
+* Passwords are stored as hashes, never plaintext.
+* `role` is stored as text for V1.
+* Supported roles:
+
+  * `admin`
+  * `receptionist`
+* `is_active = false` means the user cannot log in or access protected routes.
+* User deletion is soft delete:
+
+  * `DELETE /users/:id`
+  * sets `is_active = false`
+
+---
+
+### hotels
+
+```text
+id
+name
+city
+address
+phone
+email
+created_at
+updated_at
+```
+
+---
+
+### rooms
+
+```text
+id
+hotel_id
+room_number
+type
+price
+capacity
+status
+created_at
+updated_at
+```
+
+Supported room statuses:
+
+```text
+active
+maintenance
+out_of_service
+```
+
+Room status means operational status, not date-based booking availability.
+
+Date-based room availability is calculated from bookings.
+
+Future V2 improvement:
+
+```text
+room_blocks
+```
+
+for scheduled maintenance or renovation periods.
+
+---
+
+### bookings
+
+```text
+id
+hotel_id
+room_id
+guest_name
+check_in_date
+check_out_date
+nights
+total_price
+status
+created_by_user_id
+created_at
+updated_at
+```
+
+Supported booking statuses:
+
+```text
+confirmed
+cancelled
+```
+
+Rules:
+
+* Cancelled bookings do not block room availability.
+* Only confirmed bookings are used in overlap checks.
+* `DELETE /bookings/:id` performs soft delete:
+
+  * sets `status = cancelled`
+* `created_by_user_id` is nullable.
+
+---
+
+## Authentication
+
+### Login
+
+```text
+POST /auth/login
+```
+
+Request:
+
+```json
+{
+  "email": "admin@hotel.com",
+  "password": "password123"
+}
+```
+
+Successful response:
+
+```json
+{
+  "success": true,
+  "message": "Logged in successfully",
+  "data": {
+    "accessToken": "...",
+    "user": {
+      "id": 1,
+      "firstName": "Huy",
+      "lastName": "Nguyen",
+      "email": "admin@hotel.com",
+      "role": "admin"
+    }
+  }
+}
+```
+
+Failed login response:
+
+```json
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+```
+
+The backend should not reveal whether the email or password was incorrect.
+
+---
+
+## Access Token
+
+V1 uses:
+
+```text
+JWT access token
+```
+
+Token expiration:
+
+```text
+1 hour
+```
+
+No refresh token in V1.
+
+Future V2 improvement:
+
+```text
+refresh tokens
+```
+
+---
+
+## Protected Route Flow
+
+Every protected request follows this flow:
+
+```text
+Request
+  ↓
+authenticate middleware
+  ↓
+verify access token
+  ↓
+fetch user from database
+  ↓
+check is_active = true
+  ↓
+authorize middleware
+  ↓
+check user role
+  ↓
+controller
+  ↓
+service
+  ↓
+repository
+  ↓
+PostgreSQL
+```
+
+If a user is deactivated, access should be rejected immediately, even if their token has not expired yet.
+
+---
+
+## API Endpoints
+
+### Auth
+
+```text
+POST /auth/login
+GET /auth/me
+```
+
+---
+
+### Users
+
+Admin only:
+
+```text
+GET /users
+GET /users/:id
+POST /users
+PATCH /users/:id
+DELETE /users/:id
+```
+
+Default behavior:
+
+```text
+GET /users
+```
+
+returns active users only.
+
+Optional future filter:
+
+```text
+GET /users?status=inactive
+GET /users?status=all
+```
+
+---
+
+### Hotels
+
+Admin:
+
+```text
+GET /hotels
+GET /hotels/:id
+POST /hotels
+PATCH /hotels/:id
+DELETE /hotels/:id
+```
+
+Receptionist:
+
+```text
+GET /hotels
+GET /hotels/:id
+```
+
+---
+
+### Rooms
+
+Admin:
+
+```text
+GET /rooms
+GET /rooms/:id
+POST /rooms
+PATCH /rooms/:id
+DELETE /rooms/:id
+```
+
+Receptionist:
+
+```text
+GET /rooms
+GET /rooms/:id
+```
+
+---
+
+### Bookings
+
+Admin and receptionist:
+
+```text
+GET /bookings
+GET /bookings/:id
+POST /bookings
+PATCH /bookings/:id
+DELETE /bookings/:id
+```
+
+---
+
+## Architecture
+
+Project 2 uses layered backend architecture:
+
+```text
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Repository
+  ↓
+PostgreSQL
+```
+
+Responsibilities:
+
+### Route
+
+Defines endpoint paths and attaches middleware/controllers.
+
+### Middleware
+
+Handles common request checks:
+
+```text
+authenticate
+authorize
+errorHandler
+```
+
+### Controller
+
+Handles request and response.
+
+### Service
+
+Handles business logic.
+
+Examples:
+
+* validate booking rules
+* calculate nights
+* calculate total price
+* check room availability
+* hash password
+* compare password
+* generate token
+
+### Repository
+
+Handles SQL queries and database access.
+
+---
+
+## Folder Structure
+
+```text
+src
+├── controllers
+│   ├── authController.ts
+│   ├── userController.ts
+│   ├── hotelController.ts
+│   ├── roomController.ts
+│   └── bookingController.ts
+│
+├── services
+│   ├── authService.ts
+│   ├── userService.ts
+│   ├── hotelService.ts
+│   ├── roomService.ts
+│   └── bookingService.ts
+│
+├── repositories
+│   ├── userRepository.ts
+│   ├── hotelRepository.ts
+│   ├── roomRepository.ts
+│   └── bookingRepository.ts
+│
+├── routes
+│   ├── authRoutes.ts
+│   ├── userRoutes.ts
+│   ├── hotelRoutes.ts
+│   ├── roomRoutes.ts
+│   └── bookingRoutes.ts
+│
+├── middleware
+│   ├── authenticate.ts
+│   ├── authorize.ts
+│   └── errorHandler.ts
+│
+├── database
+│   ├── db.ts
+│   └── migrations
+│
+├── types
+├── errors
+│   └── AppError.ts
+│
+├── app.ts
+└── server.ts
+```
+
+---
+
+## V2 Backlog
+
+Future improvements:
+
+* Room maintenance scheduling
+* `room_blocks` table
+* Refresh tokens
+* Password reset
+* Audit logs
+* Soft delete for hotels and rooms
+* Database migrations
+* Docker
+* Swagger API documentation
+
+```
+
+Next step after this: create the new repo/project skeleton.
+```
+
+
+
+
+
+

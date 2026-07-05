@@ -1,0 +1,221 @@
+July, 5th, 2026: CONTINUING AFTER MIGRATIONS / MERGING OF THE TWO PROJECTS
+
+hotel-saas-admin-platform
+
+
+Current intended structure (V1):
+
+src
+├── controllers
+│   ├── authController.ts
+│   └── userController.ts
+│
+├── services
+│   ├── authService.ts
+│   └── userService.ts
+│
+├── repositories
+│   └── userRepository.ts
+│
+├── middleware
+│   ├── authenticate.ts
+│   ├── authorize.ts
+│   └── errorHandler.ts
+│
+├── database
+│   ├── db.ts
+│   └── seedAdmin.ts
+│
+├── errors
+│   └── AppError.ts
+│
+├── routes
+│   ├── authRoutes.ts
+│   └── userRoutes.ts
+│
+├── app.ts
+└── server.ts
+
+
+database
+
+users
+├── id
+├── first_name
+├── last_name
+├── email
+├── password_hash
+├── role
+├── is_active
+├── created_at
+└── updated_at
+
+
+
+
+Feature flow we are currently building:
+
+seedAdmin.ts
+↓
+userService.createUser()
+↓
+userRepository.createUser()
+↓
+users table
+
+--------------------------------
+
+POST /auth/login
+↓
+authController
+↓
+authService.login()
+↓
+userRepository.findUserByEmail()
+↓
+bcrypt.compare()
+↓
+check is_active
+↓
+generate JWT
+↓
+return token
+
+
+
+
+
+
+
+
+
+
+Business objective: create a hotel admin SaaS system
+
+Actors:
+-admin
+-Receptionist
+
+
+Permissions:
+
+Admin
+- Manage users
+- Manage hotels
+- Manage rooms
+- Manage bookings
+
+Receptionist
+- View hotels
+- View rooms
+- Manage bookings
+
+
+
+table:
+-users: id, email, first_name, last_name, password_hash, role, is_active, created_at, updated_at
+-hotels: hotel_id, hotel_name, city
+-rooms: room_id, hotel_id, type, price
+-bookings: booking_id, room_id, hotel_id, guest_email, guest_name, check_in_date, check_out_date, nights, price
+
+First feature to build: create admin
+
+1. Receive admin info
+→ Controller
+
+2. Check if email already exists
+→ Service
+
+3. Hash password
+→ Service
+
+4. Save admin to database
+→ Repository
+
+5. Return created admin info
+→ Service → Controller
+
+
+Repo functions:
+-findUserByEmail
+-findUserById
+-createUser
+
+
+
+NEXT FEATURE: login admin
+
+
+Flow:
+Receives email and password -> check against DB -> generate token if true -> return results to users
+
+Question: how to create the next screen after successful logins?
+Maybe a homepage screen
+
+
+
+Refined flow:
+
+Receives email and password -> findUserByEmail ->
+ compare corresponding password_hash inside DB against newly hashed password
+ -> generate token if true -> return success message to users
+
+ Repo functions:
+ -findUserByEmail
+ -return password_hash
+ 
+ Done.
+
+
+ Next:
+
+
+ Create authenticateMiddleware & authorizeMiddleware
+
+ Done
+
+
+
+
+NEXT (June 30)
+
+/auth
+- POST /auth/login -> Done
+
+/users
+- create receptionist/user -> Done
+- get users -> Done
+- deactivate user -> Done
+- update user
+
+/hotels
+- create/update/get hotels
+
+/rooms
+- create/update/get rooms
+
+/bookings
+- create/update/get/cancel bookings
+
+
+
+JULY, 2nd, 2026:
+
+Next feature: user patch
+-Users can change their own: firstName, lastName, password -> Done
+-Admin can update all users: firstName, lastName, role, status (is_active)
+
+Done
+
+
+
+JULY, 3rd, 2026:
+
+Next route: hotels
+ create/update/get hotels
+-> Done
+
+
+Next route: rooms
+- create/update/get rooms
+
