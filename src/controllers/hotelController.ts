@@ -1,62 +1,61 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppError";
 import {
-  getAllRooms,
-  getAllHotels,
-  getHotelById,
-  getHotelsByCity,
-  getRoomsByHotelId,
+    getHotels as serviceGetHotels,
+    createHotel as serviceCreateHotel,
+    updateHotel as serviceUpdateHotel,
 } from "../services/hotelService";
 
-export async function listHotels(req: Request, res: Response, next: NextFunction) {
-  try {
-    const hotels = await getAllHotels();
-    res.json(hotels);
-  } catch (error) {
-    next(error);
-  }
-}
+/*
+For getHotels:
+    Default: return all hotels.
+    Invalid search value (in case of id): return 400 Bad Request.
+    Valid search with no matches: return an empty array.
+*/
 
-export async function listRooms(req: Request, res: Response, next: NextFunction) {
-  try {
-    const rooms = await getAllRooms();
-    res.json(rooms);
-  } catch (error) {
-    next(error);
-  }
-}
+export async function getHotels (req: Request, res: Response, next: NextFunction) {
+    const parsedId = req.query.id !== undefined ? Number(req.query.id) : undefined;
 
-export async function getHotel(req: Request, res: Response, next: NextFunction) {
-  try {
-    const hotelId = Number(req.params.id);
-    const hotel = await getHotelById(hotelId);
-
-    if (!hotel) {
-      throw new AppError("Hotel not found", 404);
+    if (parsedId !== undefined && Number.isNaN(parsedId)) {
+        return res.status(400).json({ message: "id must be a number" });
     }
 
-    res.json(hotel);
-  } catch (error) {
-    next(error);
-  }
+    const filters = {
+        city: req.query.city as string | undefined,
+        id: parsedId,
+    };
+
+    try {
+        const hotels = await serviceGetHotels(filters);
+        res.json(hotels);
+    } catch (error) {
+        next(error);
+    }   
 }
 
-export async function listHotelsByCity(req: Request, res: Response, next: NextFunction) {
-  try {
-    const city = String(req.params.city);
-    const hotels = await getHotelsByCity(city);
-    res.json(hotels);
-  } catch (error) {
-    next(error);
-  }
+export async function createHotel (req: Request, res: Response, next: NextFunction) {
+    const { name, city } = req.body;
+
+    try {
+        const hotel = await serviceCreateHotel(name, city);
+        res.status(201).json(hotel);
+    } catch (error) {
+        next(error);
+    }
 }
 
-export async function listRoomsByHotel(req: Request, res: Response, next: NextFunction) {
-  try {
-    const hotelId = Number(req.params.id);
-    const rooms = await getRoomsByHotelId(hotelId);
-    res.json(rooms);
-  } catch (error) {
-    next(error);
-  }
+export async function updateHotel (req: Request, res: Response, next: NextFunction) {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+        return res.status(400).json({ message: "id must be a number" });
+    }
+
+    const { name, city } = req.body;
+
+    try {
+        const hotel = await serviceUpdateHotel(id, name, city);
+        res.status(200).json(hotel);
+    } catch (error) {
+        next(error);
+    }
 }

@@ -1,10 +1,8 @@
 import express from "express";
 import {
-  getHotel,
-  listRooms,
-  listHotels,
-  listHotelsByCity,
-  listRoomsByHotel,
+  getHotels,
+  createHotel as controllerCreateHotel,
+  updateHotel as controllerUpdateHotel,
 } from "../controllers/hotelController";
 
 const router = express.Router();
@@ -13,11 +11,8 @@ router.get("/", (req, res) => {
   res.send("Hotel Booking Backend Running! CD Test!");
 });
 
-router.get("/hotels", listHotels);
-router.get("/rooms", listRooms);
-router.get("/hotels/:id/rooms", listRoomsByHotel);
-router.get("/hotels/city/:city", listHotelsByCity);
-router.get("/hotels/:id", getHotel);
+router.get("/hotels", getHotels);
+router.post("/hotels", controllerCreateHotel);
+router.patch("/hotels/:id", controllerUpdateHotel);
 
 export default router;
- 
