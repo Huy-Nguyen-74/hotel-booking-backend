@@ -6,6 +6,11 @@ Hotel Booking Backend is a REST API for managing hotels, rooms, and bookings.
 
 The project was built as part of a backend engineering transition journey using Node.js, TypeScript, Express, and PostgreSQL. The system allows users to view hotels and rooms, create bookings, update bookings, and prevent conflicting reservations through business-rule validation.
 
+Legacy reference:
+
+* Project-1 booking route implementation is archived under `src/legacy/project1/bookingRoutes.ts` for historical reference only.
+* Production runtime should use active route/controller/service/repository files under `src/routes`, `src/controllers`, `src/services`, and `src/repositories`.
+
 ---
 
 ## Highlights
