@@ -79,9 +79,9 @@ export async function updateHotel (req: Request, res: Response, next: NextFuncti
         return res.status(400).json({ message: "Request body must be a valid JSON object" });
     }
     
-    const id = Number(req.params.id);
+    const hotelId = Number(req.params.hotelId);
 
-    if (Number.isNaN(id)) {
+    if (Number.isNaN(hotelId)) {
         return res.status(400).json({ message: "id must be a number" });
     }
 
@@ -94,7 +94,7 @@ export async function updateHotel (req: Request, res: Response, next: NextFuncti
     }
 
     try {
-        const hotel = await serviceUpdateHotel(id, name?.trim(), city?.trim());
+        const hotel = await serviceUpdateHotel(hotelId, name?.trim(), city?.trim());
         if (!hotel) {
             return res.status(404).json({ message: "Hotel not found" });
         }

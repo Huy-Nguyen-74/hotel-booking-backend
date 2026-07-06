@@ -65,7 +65,7 @@ export async function createHotel(name: string, city: string) {
     return result.rows[0];
 }
 
-export async function updateHotel(id: number, name?: string, city?: string) {
+export async function updateHotel(hotelId: number, name?: string, city?: string) {
     const result = await pool.query(
         `
         UPDATE hotels
@@ -73,7 +73,7 @@ export async function updateHotel(id: number, name?: string, city?: string) {
         WHERE id = $1
         RETURNING *
         `,
-        [id, name, city]
+        [hotelId, name, city]
     );
     return result.rows[0];
 }

@@ -33,6 +33,6 @@ export async function createHotel(name: string, city: string) {
     return await repositoryCreateHotel(name, city);
 }
 
-export async function updateHotel(id: number, name?: string, city?: string) {
-    return await repositoryUpdateHotel(id, name, city);
+export async function updateHotel(hotelId: number, name?: string, city?: string) {
+    return await repositoryUpdateHotel(hotelId, name, city);
 }

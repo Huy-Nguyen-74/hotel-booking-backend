@@ -13,6 +13,6 @@ router.get("/", (req, res) => {
 
 router.get("/hotels", getHotels);
 router.post("/hotels", controllerCreateHotel);
-router.patch("/hotels/:id", controllerUpdateHotel);
+router.patch("/hotels/:hotelId", controllerUpdateHotel);
 
 export default router;
