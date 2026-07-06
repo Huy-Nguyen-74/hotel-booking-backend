@@ -37,6 +37,22 @@ export async function findHotels(filters: { city?: string; id?: number }) {
   return result.rows; // Rule 3: if filters are valid but no rows match, PostgreSQL returns an empty array.
 }
 
+
+
+/*
+For createHotel:
+    - name required
+    - city required
+    - both must be non-empty strings after trim
+
+For updateHotel:
+    - id must be valid number
+    - at least one of name/city required
+    - provided fields must be non-empty strings after trim
+    - if update returns null → 404
+*/
+
+
 export async function createHotel(name: string, city: string) {
     const result = await pool.query(
         `
