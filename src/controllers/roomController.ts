@@ -20,10 +20,20 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
     const parsedType = req.query.type !== undefined ? String(req.query.type) : undefined;
     const parsedPrice = req.query.price !== undefined ? Number(req.query.price) : undefined;
 
-    if ((parsedHotelId !== undefined && Number.isNaN(parsedHotelId)) ||
-        (parsedRoomId !== undefined && Number.isNaN(parsedRoomId)) ||
-        (parsedPrice !== undefined && Number.isNaN(parsedPrice))) {
-        return res.status(400).json({ message: "hotelId, roomId, and price must be numbers" });
+    if ((parsedHotelId !== undefined && Number.isNaN(parsedHotelId))){
+        return res.status(400).json({ message: "hotelId must be a number" });
+    }
+
+    if ((parsedRoomId !== undefined && Number.isNaN(parsedRoomId))){
+        return res.status(400).json({ message: "roomId must be a number" });
+    }
+
+    if ((parsedType !== undefined && typeof parsedType !== "string")){
+        return res.status(400).json({ message: "type must be a string" });
+    }
+
+    if ((parsedPrice !== undefined && Number.isNaN(parsedPrice))) {
+        return res.status(400).json({ message: "price must be a number" });
     }
 
     const filters = {

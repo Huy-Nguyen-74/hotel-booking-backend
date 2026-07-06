@@ -219,3 +219,35 @@ Next route: hotels
 Next route: rooms
 - create/update/get rooms
 
+-> Done
+
+
+
+
+
+/*
+July 6th, 2026: refactoring booking
+
+GET /bookings using query parameters:
+- Optional query parameters: hotelId, roomId, guestName, checkInDate, checkOutDate.
+- If no query parameters are provided, return all bookings.
+- Validate that the provided query parameters are of the correct type. If not, return 400 Bad Request.
+- If valid query parameters are provided but no bookings match, return an empty array.
+
+POST /bookings:
+- Validate the request body to ensure all required fields are present and of the correct type. If not, return 400 Bad Request.
+- Check if the specified hotel and room exist. If not, return 404 Not Found.
+- Check if the room is available for the specified date range. If not, return 409 Conflict.
+- If all validations pass, create the booking and return the created booking with a 201 Created status.
+
+PATCH /bookings/:bookingId:
+- Validate the bookingId parameter to ensure it's a valid number. If not, return 400 Bad Request.
+- Validate the request body to ensure at least one field is provided for update and that they are of the correct type. If not, return 400 Bad Request.
+- Check if the specified booking exists. If not, return 404 Not Found.
+- If all validations pass, update the booking and return the updated booking.
+
+DELETE /bookings/:bookingId:
+- Validate the bookingId parameter to ensure it's a valid number. If not, return 400 Bad Request.
+- Check if the specified booking exists. If not, return 404 Not Found.
+- If the booking exists, delete it and return a success message with a 200 OK status.
+*/

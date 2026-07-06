@@ -7,7 +7,7 @@ For getHotels:
     Valid search with no matches: return an empty array.
 */
 
-export async function findHotels(filters: { city?: string; id?: number }) {
+export async function findHotels(filters: { city?: string; hotelId?: number }) {
   const values: Array<string | number> = []; // Stores query parameter values in order for $1, $2, etc.
   const conditions: string[] = []; // Stores SQL condition strings that will later form the WHERE clause.
 
@@ -16,8 +16,8 @@ export async function findHotels(filters: { city?: string; id?: number }) {
     conditions.push(`LOWER(city) = LOWER($${values.length})`);
   }
 
-  if (filters.id !== undefined) {
-    values.push(filters.id);
+  if (filters.hotelId !== undefined) {
+    values.push(filters.hotelId);
     conditions.push(`id = $${values.length}`);
   }
 

@@ -1,7 +1,7 @@
 import express from "express";
-import pool from "../database/db";
-import { AppError } from "../errors/AppError";
-import { validateCreateBooking } from "../middleware/validation";
+import pool from "../../database/db";
+import { AppError } from "../../errors/AppError";
+import { validateCreateBooking } from "../../middleware/validation";
 
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 

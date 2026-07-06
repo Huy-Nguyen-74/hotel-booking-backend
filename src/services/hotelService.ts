@@ -11,7 +11,7 @@ For getHotels:
     Valid search with no matches: return an empty array.
 */
 
-export async function getHotels(filters: { city?: string; id?: number }) {
+export async function getHotels(filters: { city?: string; hotelId?: number }) {
     return await findHotels(filters);
 }
 
@@ -23,7 +23,7 @@ For createHotel:
     - both must be non-empty strings after trim
 
 For updateHotel:
-    - id must be valid number
+    - hotelId must be valid number
     - at least one of name/city required
     - provided fields must be non-empty strings after trim
     - if update returns null → 404
