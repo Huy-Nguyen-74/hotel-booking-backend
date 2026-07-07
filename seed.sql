@@ -56,6 +56,26 @@ VALUES
   720
 );
 
+INSERT INTO users (
+  id,
+  first_name,
+  last_name,
+  email,
+  password_hash,
+  role,
+  is_active
+)
+VALUES
+(
+  1,
+  'Admin',
+  'User',
+  'admin@hotel.local',
+  '$2b$10$ydGQs/7FV5jXs9FEipVB4OJ04r4SBWBvYUSiTOInNZ8Woa456KLbq',
+  'admin',
+  TRUE
+);
+
 
 SELECT setval(
   pg_get_serial_sequence('hotels', 'id'),
@@ -70,4 +90,9 @@ SELECT setval(
 SELECT setval(
   pg_get_serial_sequence('bookings', 'id'),
   (SELECT MAX(id) FROM bookings)
+);
+
+SELECT setval(
+  pg_get_serial_sequence('users', 'id'),
+  (SELECT MAX(id) FROM users)
 );

@@ -251,3 +251,18 @@ DELETE /bookings/:bookingId:
 - Check if the specified booking exists. If not, return 404 Not Found.
 - If the booking exists, delete it and return a success message with a 200 OK status.
 */
+
+
+
+
+
+
+JULY 7th, 2026: migrate auth and user
+
+Default seeded login:
+
+Email: admin@hotel.local
+Password: Admin123!
+Endpoint: POST /login
+
+

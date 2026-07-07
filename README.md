@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hotel Booking Backend is a REST API for managing hotels, rooms, and bookings.
+Hotel Booking Backend is a REST API for managing hotels, rooms, bookings, and login authentication.
 
 The project was built as part of a backend engineering transition journey using Node.js, TypeScript, Express, and PostgreSQL. The system allows users to view hotels and rooms, create bookings, update bookings, and prevent conflicting reservations through business-rule validation.
 
@@ -85,6 +85,11 @@ GitHub Actions
 * View all bookings
 * View booking details
 
+### Authentication
+
+* User login with email and password
+* JWT token generation for authenticated sessions
+
 ### Booking Validation
 
 The API validates that:
@@ -143,24 +148,36 @@ The system automatically calculates:
 
 ### Hotels
 
-| Method | Endpoint           |
-| ------ | ------------------ |
-| GET    | /                  |
-| GET    | /hotels            |
-| GET    | /hotels/:id        |
-| GET    | /hotels/city/:city |
-| GET    | /rooms             |
-| GET    | /hotels/:id/rooms  |
+| Method | Endpoint         |
+| ------ | ---------------- |
+| GET    | /                |
+| GET    | /hotels          |
+| POST   | /hotels          |
+| PATCH  | /hotels/:hotelId |
+
+### Rooms
+
+| Method | Endpoint       |
+| ------ | -------------- |
+| GET    | /rooms         |
+| POST   | /rooms         |
+| PATCH  | /rooms/:roomId |
 
 ### Bookings
 
-| Method | Endpoint      |
-| ------ | ------------- |
-| GET    | /bookings     |
-| GET    | /bookings/:id |
-| POST   | /bookings     |
-| PATCH  | /bookings/:id |
-| DELETE | /bookings/:id |
+| Method | Endpoint             |
+| ------ | -------------------- |
+| GET    | /bookings            |
+| GET    | /bookings/:bookingId |
+| POST   | /bookings            |
+| PATCH  | /bookings/:bookingId |
+| DELETE | /bookings/:bookingId |
+
+### Auth
+
+| Method | Endpoint |
+| ------ | -------- |
+| POST   | /login   |
 
 ---
 
@@ -240,7 +257,8 @@ Before each test run:
 Schema source of truth:
 
 * Migrations in `migrations/`
-* `schema.sql` is kept as a reference snapshot
+* Runtime schema is created from migrations only
+* Legacy snapshot is archived at `legacy/docs/schema.sql`
 
 Current test coverage includes:
 
@@ -326,8 +344,12 @@ hotel-booking-backend/
 │   ├── errors/
 │   ├── helpers/
 │   ├── middleware/
+│   ├── controllers/
+│   ├── services/
+│   ├── repositories/
 │   ├── routes/
 │   │   ├── hotelRoutes.ts
+│   │   ├── roomRoutes.ts
 │   │   └── bookingRoutes.ts
 │   │
 │   ├── app.ts
@@ -343,7 +365,14 @@ hotel-booking-backend/
 ├── docs/
 │   └── architecture.md
 │
-├── schema.sql
+├── migrations/
+│   ├── 001_baseline_schema.js
+│   ├── 002_data_quality_constraints.js
+│   └── 003_users_auth.js
+│
+├── legacy/
+│   └── docs/
+│       └── schema.sql
 ├── seed.sql
 ├── package.json
 └── README.md
@@ -407,9 +436,9 @@ Deployment verification:
 
 Planned enhancements:
 
-* Authentication and authorization
+* Route authorization (role-based access)
+* Authentication and authorization integration tests
 * Request validation library
-* Service and controller layers
 * Room availability endpoint
 * Docker containerization
 * API documentation with Swagger

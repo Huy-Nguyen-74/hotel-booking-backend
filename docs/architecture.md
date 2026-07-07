@@ -221,7 +221,7 @@ npm test
   ↓
 resetTestDb.ts
   ↓
-schema.sql
+migrations/
   ↓
 seed.sql
   ↓
@@ -236,7 +236,7 @@ A dedicated PostgreSQL test database is used to ensure tests run against a clean
 
 Before every test run:
 
-1. Tables are recreated from `schema.sql`
+1. Tables are recreated from migrations
 2. Seed data is loaded from `seed.sql`
 3. PostgreSQL sequences are synchronized with seeded IDs
 4. Jest integration tests are executed
@@ -268,7 +268,7 @@ The workflow:
 1. Creates a PostgreSQL service container
 2. Installs project dependencies
 3. Resets the test database
-4. Loads schema and seed data
+4. Runs migrations and loads seed data
 5. Executes the Jest test suite
 
 This verifies that the application works in a clean environment outside the developer's local machine.
@@ -320,9 +320,8 @@ Completed:
 
 Next milestones:
 
-* Service layer
-* Controller layer
-* Authentication
+* Authorization
+* Authentication and authorization integration tests
 * Docker
 * AWS deployment
 
@@ -477,9 +476,7 @@ Completed:
 
 Next milestones:
 
-* Authentication
 * Authorization
-* Service layer
-* Controller layer
+* Authentication and authorization integration tests
 * Docker
-* Database migrations
+* Expanded endpoint test coverage
