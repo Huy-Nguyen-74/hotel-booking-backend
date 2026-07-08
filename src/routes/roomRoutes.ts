@@ -6,10 +6,13 @@ import {
     updateRoom,
 } from "../controllers/roomController";
 
+import { authenticateToken } from "../middleware/authenticateMiddleware";
+import { authorizeRoles } from "../middleware/authorizeMiddleware";
+
 const router = Router();
 
-router.get("/rooms", getRooms);
-router.post("/rooms", createRoom);
-router.patch("/rooms/:roomId", updateRoom);
+router.get("/rooms", authenticateToken, authorizeRoles("admin", "staff"), getRooms);
+router.post("/rooms", authenticateToken, authorizeRoles("admin"), createRoom);
+router.patch("/rooms/:roomId", authenticateToken, authorizeRoles("admin"), updateRoom);
 
 export default router;
