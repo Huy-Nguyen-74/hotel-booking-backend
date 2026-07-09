@@ -3,10 +3,37 @@ import { app } from "../src/app";
 import pool from "../src/database/db";
 
 const createdBookingIds: number[] = [];
+let authToken = ""; // Stores the JWT once so every protected request in this file can reuse it.
+
+function authHeaders() { // Builds the Authorization header required by the protected booking routes.
+  if (!authToken) {
+    throw new Error("Authentication token not initialized for tests"); // Fails fast if a test tries to call a protected route before login happened.
+  }
+
+  return {
+    Authorization: `Bearer ${authToken}`, // This is the exact header format the auth middleware expects.
+  };
+}
+
+beforeAll(async () => { // Logs in once before the test suite starts.
+  const loginResponse = await request(app)
+    .post("/login") // Uses the real login route instead of bypassing auth.
+    .send({
+      email: "admin@hotel.local", // Seeded admin account from seed.sql.
+      password: "Admin123!", // Plain password that matches the seeded password hash.
+    });
+
+  expect(loginResponse.status).toBe(200); // Confirms login succeeded before any booking tests run.
+  expect(loginResponse.body.token).toEqual(expect.any(String)); // Confirms the API returned a usable JWT.
+
+  authToken = loginResponse.body.token; // Saves the token for all the requests below.
+});
 
 describe("GET /bookings/:id", () => {
   it("returns 404 when booking does not exist", async () => {
-    const response = await request(app).get("/bookings/999");
+    const response = await request(app)
+      .get("/bookings/999")
+      .set(authHeaders()); // Adds the bearer token so this test reaches booking logic instead of stopping at 401.
 
     expect(response.status).toBe(404);
 
@@ -21,6 +48,7 @@ describe("POST /bookings", () => {
   it("returns 400 when required fields are missing", async () => {
     const response = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Authenticates the request because POST /bookings is protected.
       .send({
         hotelId: 1,
         roomId: 1
@@ -37,6 +65,7 @@ describe("POST /bookings", () => {
   it("returns 404 when hotel does not exist", async () => {
     const response = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Without this header, the route would return 401 before checking the hotel id.
       .send({
         hotelId: 999,
         roomId: 1,
@@ -56,6 +85,7 @@ describe("POST /bookings", () => {
   it("returns 404 when room does not exist in the specified hotel", async () => {
     const response = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Lets the test exercise room validation instead of auth validation.
       .send({
         hotelId: 11,
         roomId: 999,
@@ -75,6 +105,7 @@ describe("POST /bookings", () => {
   it("returns 400 when checkOutDate is before checkInDate", async () => {
     const response = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Lets the API reach the date check for this scenario.
       .send({
         hotelId: 10,
         roomId: 1,
@@ -94,6 +125,7 @@ describe("POST /bookings", () => {
   it("returns 400 when booking dates overlap an existing booking", async () => {
   const response = await request(app)
     .post("/bookings")
+    .set(authHeaders()) // Lets the service evaluate booking overlap rules.
     .send({
       hotelId: 10,
       roomId: 1,
@@ -113,6 +145,7 @@ describe("POST /bookings", () => {
   it("creates a booking when request data is valid", async () => {
   const response = await request(app)
     .post("/bookings")
+    .set(authHeaders()) // Auth is required even for the happy-path create case.
     .send({
       hotelId: 11,
       roomId: 4,
@@ -145,6 +178,7 @@ describe("PATCH /bookings/:id", () => {
   it("returns 404 when booking does not exist", async () => {
     const response = await request(app)
       .patch("/bookings/999")
+      .set(authHeaders()) // Allows the PATCH request to reach the missing-booking check.
       .send({
         guestName: "Updated Name",
       });
@@ -160,6 +194,7 @@ describe("PATCH /bookings/:id", () => {
   it("updates a booking when request data is valid", async () => {
     const createResponse = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Creates the initial booking as an authenticated user.
       .send({
         hotelId: 11,
         roomId: 4,
@@ -175,6 +210,7 @@ describe("PATCH /bookings/:id", () => {
 
     const patchResponse = await request(app)
       .patch(`/bookings/${bookingId}`)
+      .set(authHeaders()) // Authenticates the update request too.
       .send({
         guestName: "Patch Test Updated",
         checkInDate: "2027-02-05",
@@ -200,6 +236,7 @@ describe("PATCH /bookings/:id", () => {
   it("returns 400 when updated dates are invalid", async () => {
     const createResponse = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Needed so the setup booking is created successfully.
       .send({
         hotelId: 11,
         roomId: 4,
@@ -213,6 +250,7 @@ describe("PATCH /bookings/:id", () => {
 
     const patchResponse = await request(app)
       .patch(`/bookings/${bookingId}`)
+      .set(authHeaders()) // Needed so the invalid-date validation is what gets tested.
       .send({
         checkInDate: "2027-03-10",
         checkOutDate: "2027-03-05",
@@ -229,6 +267,7 @@ describe("PATCH /bookings/:id", () => {
   it("returns 400 when updated dates overlap another booking", async () => {
     const createResponseA = await request(app).
       post("/bookings")
+      .set(authHeaders()) // Authenticates creation of the first booking in the overlap test.
       .send({
         hotelId: 11,
         roomId: 4,
@@ -242,6 +281,7 @@ describe("PATCH /bookings/:id", () => {
 
     const createResponseB = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Authenticates creation of the second booking in the overlap test.
       .send({
         hotelId: 11,
         roomId: 4,
@@ -255,6 +295,7 @@ describe("PATCH /bookings/:id", () => {
 
     const patchResponse = await request(app)
       .patch(`/bookings/${bookingIdB}`)
+      .set(authHeaders()) // Authenticates the PATCH so overlap validation actually runs.
       .send({
         checkInDate: "2027-04-03",
         checkOutDate: "2027-04-12",
@@ -272,7 +313,9 @@ describe("PATCH /bookings/:id", () => {
 
 describe("DELETE /bookings/:id", () => {
   it("returns 404 when booking does not exist", async () => {
-    const response = await request(app).delete("/bookings/999");
+    const response = await request(app)
+      .delete("/bookings/999")
+      .set(authHeaders()); // DELETE is admin-only, so the test must include the token.
 
     expect(response.status).toBe(404);
 
@@ -287,6 +330,7 @@ describe("DELETE /bookings/:id", () => {
   it("deletes a booking when it exists", async () => {
     const createResponse = await request(app)
       .post("/bookings")
+      .set(authHeaders()) // Authenticates creation of the booking that will be deleted.
       .send({
         hotelId: 11,
         roomId: 4,
@@ -297,9 +341,13 @@ describe("DELETE /bookings/:id", () => {
 
     const bookingId = createResponse.body.booking.id;
 
-    const deleteResponse = await request(app).delete(`/bookings/${bookingId}`);
+    const deleteResponse = await request(app)
+      .delete(`/bookings/${bookingId}`)
+      .set(authHeaders()); // Authenticates the delete request itself.
 
-    const checkResponse = await request(app).get(`/bookings/${bookingId}`);
+    const checkResponse = await request(app)
+      .get(`/bookings/${bookingId}`)
+      .set(authHeaders()); // Authenticates the follow-up read that confirms deletion.
     expect(checkResponse.status).toBe(404);
     expect(checkResponse.body).toEqual({
       success: false,
