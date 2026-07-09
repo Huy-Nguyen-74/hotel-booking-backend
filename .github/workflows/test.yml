@@ -37,6 +37,8 @@ jobs:
         run: npm install
 
       - name: Run tests
+        env:
+          JWT_SECRET: ci-test-jwt-secret
         run: npm test
 
   deploy:
