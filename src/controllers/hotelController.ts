@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "../errors/AppError";
 import {
     getHotels as serviceGetHotels,
     createHotel as serviceCreateHotel,
@@ -13,15 +14,16 @@ For getHotels:
 */
 
 export async function getHotels (req: Request, res: Response, next: NextFunction) {
-    const parsedId = req.query.id !== undefined ? Number(req.query.id) : undefined;
+    const parsedId = req.query.hotelId !== undefined ? Number(req.query.hotelId) : undefined;
 
     if (parsedId !== undefined && Number.isNaN(parsedId)) {
-        return res.status(400).json({ message: "id must be a number" });
+        return next(new AppError("hotelId must be a number", 400));
     }
 
     const filters = {
+        hotelId: parsedId,
+        name: req.query.name as string | undefined,
         city: req.query.city as string | undefined,
-        id: parsedId,
     };
 
     try {
@@ -55,14 +57,14 @@ For updateHotel:
 export async function createHotel (req: Request, res: Response, next: NextFunction) {
     
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ message: "Request body must be a valid JSON object" });
+        return next(new AppError("Request body must be a valid JSON object", 400));
     }
     
     const { name, city } = req.body;
 
 
     if (typeof name !== "string" || name.trim() === "" || typeof city !== "string" || city.trim() === "") {
-        return res.status(400).json({ message: "name and city are required and must be non-empty strings" });
+        return next(new AppError("name and city are required and must be non-empty strings", 400));
     }
 
     try {
@@ -74,15 +76,14 @@ export async function createHotel (req: Request, res: Response, next: NextFuncti
 }
 
 export async function updateHotel (req: Request, res: Response, next: NextFunction) {
-    
-    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ message: "Request body must be a valid JSON object" });
-    }
-    
     const hotelId = Number(req.params.hotelId);
 
     if (Number.isNaN(hotelId)) {
-        return res.status(400).json({ message: "id must be a number" });
+        return next(new AppError("hotelId must be a number", 400));
+    }
+
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+        return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
     const { name, city } = req.body; 
@@ -90,13 +91,13 @@ export async function updateHotel (req: Request, res: Response, next: NextFuncti
     if ((name === undefined && city === undefined) ||
         (name !== undefined && (typeof name !== "string" || name.trim() === "")) ||
         (city !== undefined && (typeof city !== "string" || city.trim() === ""))) {
-        return res.status(400).json({ message: "At least one of name or city must be provided and must be non-empty strings" });
+        return next(new AppError("At least one of name or city must be provided and must be non-empty strings", 400));
     }
 
     try {
         const hotel = await serviceUpdateHotel(hotelId, name?.trim(), city?.trim());
         if (!hotel) {
-            return res.status(404).json({ message: "Hotel not found" });
+            return next(new AppError("Hotel not found", 404));
         }
         res.status(200).json(hotel);
     } catch (error) {

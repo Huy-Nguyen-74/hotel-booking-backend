@@ -1,0 +1,9 @@
+Admin:
+"email": "admin@hotel.local",
+"password": "Admin123!"
+
+Staff:
+"email": "staff@hotel.local",
+"password": "Staff123!"
+
+

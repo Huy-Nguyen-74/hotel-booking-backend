@@ -74,6 +74,15 @@ VALUES
   '$2b$10$ydGQs/7FV5jXs9FEipVB4OJ04r4SBWBvYUSiTOInNZ8Woa456KLbq',
   'admin',
   TRUE
+),
+(
+  2,
+  'Staff',
+  'User',
+  'staff@hotel.local',
+  '$2b$10$3lzNE81agB4qymd8b/LpDOVEMPBLaSNMvBZCoLwhfqAnNVzmDlT.W',
+  'staff',
+  TRUE
 );
 
 
