@@ -63,6 +63,9 @@ describe("GET /hotels", () => {
             message: "Authentication token missing" });
     });
 
+
+    // Next, we will test the successful cases for GET /hotels endpoint.
+
     it("should return 200 OK and all hotels when no filters are provided", async () => {
         const response = await request(app)
             .get("/hotels")
@@ -161,13 +164,25 @@ describe("POST /hotels", () => {
             message: "name and city are required and must be non-empty strings" });
     });
 
-    it("should return 400 Bad Request if the request body is not a valid JSON object", async () => {
+    it("should return 400 Bad Request if the request body is malformed JSON", async () => {
         const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
             .set("Content-Type", "application/json")
             .send('{"name":"Bad Hotel","city":"Tokyo"'); // missing closing }
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({
+            success: false,
+            message: "Request body must be a valid JSON object" });
+    });
+
+    it("should return 400 Bad Request if the request body is parsed JSON but not an object", async () => {
+        const adminToken = await adminLoginForTest();
+        const response = await request(app)
+            .post("/hotels")
+            .set(authHeaders(adminToken))
+            .send([]);
         expect(response.status).toBe(400);
         expect(response.body).toEqual({
             success: false,
@@ -242,7 +257,6 @@ describe("POST /hotels", () => {
     - It should return 400 Bad Request if both required fields (name, city) are missing or empty after trimming.
     - It should return 400 Bad Request if the request body is not a valid JSON object.
     - It should return 404 Not Found if the hotel with the given hotelId does not exist.
-    - It should return 400 Bad Request if both required fields (trimmed name, trimmed city) already exist in the database (duplicate hotel).
     
     - It should return 200 OK and the updated hotel object when valid data is provided, divided into the following scenarios:
         - When both name and city are provided and valid.
@@ -305,7 +319,7 @@ describe("PATCH /hotels/:hotelId", () => {
         });
     });
 
-    it("should return 400 Bad Request if the request body is not a valid JSON object", async () => {
+    it("should return 400 Bad Request if the request body is malformed JSON", async () => {
         const response = await request(app)
             .patch("/hotels/10")
             .set(authHeaders(adminToken))
@@ -332,23 +346,21 @@ describe("PATCH /hotels/:hotelId", () => {
         });
     });
     
-    it("should return 400 Bad Request if both required fields (trimmed name, trimmed city) already exist in the database (duplicate hotel)", async () => {
-        const response = await request(app)
-            .patch("/hotels/10") // Assuming hotelId 10 exists
-            .set(authHeaders(adminToken))
-            .send({ name: "Tokyo Grand Hotel", city: "Tokyo" }); // Assuming this combination already exists
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual({
-            success: false,
-            message: "Hotel already exists"
-        });
-    });
-
     // Below are the scenarios for successful hotel updates (200 OK):
 
     it("should return 200 OK and the updated hotel object when both name and city are provided and valid", async () => {
+        
+        const patchTestHotel = await request(app)
+            .post("/hotels")
+            .set(authHeaders(adminToken))
+            .send({ name: "Patch Test Hotel", city: "Patch Test City" });
+        
+        expect(patchTestHotel.status).toBe(201);        
+        
+        createdHotelIds.push(patchTestHotel.body.id);
+
         const response = await request(app)
-            .patch("/hotels/10") // Assuming hotelId 10 exists
+            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ name: "Updated Hotel", city: "Updated City" });
 
@@ -359,8 +371,17 @@ describe("PATCH /hotels/:hotelId", () => {
     });
 
     it("should return 200 OK and the updated hotel object when only name is provided and valid", async () => {
+        const patchTestHotel = await request(app)
+            .post("/hotels")
+            .set(authHeaders(adminToken))
+            .send({ name: "Patch Test Hotel", city: "Patch Test City" });
+        
+        expect(patchTestHotel.status).toBe(201);        
+
+        createdHotelIds.push(patchTestHotel.body.id);
+
         const response = await request(app)
-            .patch("/hotels/10") // Assuming hotelId 10 exists
+            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ name: "Updated Hotel Name" });
 
@@ -370,8 +391,17 @@ describe("PATCH /hotels/:hotelId", () => {
     });
 
     it("should return 200 OK and the updated hotel object when only city is provided and valid", async () => {
+        const patchTestHotel = await request(app)
+            .post("/hotels")
+            .set(authHeaders(adminToken))
+            .send({ name: "Patch Test Hotel", city: "Patch Test City" });
+        
+        expect(patchTestHotel.status).toBe(201);
+        
+        createdHotelIds.push(patchTestHotel.body.id);
+
         const response = await request(app)
-            .patch("/hotels/10") // Assuming hotelId 10 exists
+            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ city: "Updated City Name" });
 

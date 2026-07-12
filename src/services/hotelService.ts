@@ -42,5 +42,11 @@ export async function createHotel(name: string, city: string) {
 }
 
 export async function updateHotel(hotelId: number, name?: string, city?: string) {
+    
+    const hotel = await findHotels({ hotelId });
+    if (hotel.length === 0) {
+        throw new AppError("Hotel not found", 404);
+    }
+
     return await repositoryUpdateHotel(hotelId, name, city);
 }
