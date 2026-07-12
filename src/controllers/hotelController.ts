@@ -96,9 +96,6 @@ export async function updateHotel (req: Request, res: Response, next: NextFuncti
 
     try {
         const hotel = await serviceUpdateHotel(hotelId, name?.trim(), city?.trim());
-        if (!hotel) {
-            return next(new AppError("Hotel not found", 404));
-        }
         res.status(200).json(hotel);
     } catch (error) {
         next(error);

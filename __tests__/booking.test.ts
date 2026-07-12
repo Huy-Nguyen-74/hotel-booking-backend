@@ -3,7 +3,7 @@ import request from "supertest";
 import { app } from "../src/app";
 import pool from "../src/database/db";
 import { authHeaders } from "../src/helpers/authHelper";
-import { adminLoginForTest, staffLoginForTest } from "../src/helpers/loginHelper";
+import { adminLoginForTest } from "../src/helpers/loginHelper";
 
 const createdBookingIds: number[] = [];
 
