@@ -121,6 +121,7 @@ describe("GET /hotels", () => {
     - It should return 400 Bad Request if required fields (name, city) are missing or empty after trimming.
     - It should return 400 Bad Request if the request body is not a valid JSON object.
     - It should return 400 Bad Request if both required fields (lowercased name, lowercased city) already exist in the database (duplicate hotel).
+
     - It should return 201 Created and the created hotel object when valid data is provided, divided into the following scenarios:
         - When both name and city don't exist in the database.
         - When name exists but city doesn't exist in the database.
@@ -313,7 +314,7 @@ describe("PATCH /hotels/:hotelId", () => {
         expect(response.status).toBe(400);
         expect(response.body).toEqual({
             success: false,
-            message: "hotelId must be a number"
+            message: "hotelId is required and must be a number"
         });
     });
 
