@@ -5,6 +5,23 @@ import {
     createRoom as serviceCreateRoom,
     updateRoom as serviceUpdateRoom,    
 }  from "../services/roomService"; // Service module path.
+import { AppError } from "../errors/AppError";
+
+type RoomRow = {
+    id: number;
+    hotel_id: number;
+    type: string;
+    price: number;
+};
+
+function toRoomDto(room: RoomRow) {
+    return {
+        roomId: room.id,
+        hotelId: room.hotel_id,
+        type: room.type,
+        price: room.price,
+    };
+}
 
 /*
 For getRooms: using optional filters (hotelId, roomId, type, price):
@@ -14,26 +31,42 @@ For getRooms: using optional filters (hotelId, roomId, type, price):
 */
 
 export async function getRooms(req: Request, res: Response, next: NextFunction) {
-    
-    const parsedHotelId = req.query.hotelId !== undefined ? Number(req.query.hotelId) : undefined;
-    const parsedRoomId = req.query.roomId !== undefined ? Number(req.query.roomId) : undefined;
-    const parsedType = req.query.type !== undefined ? String(req.query.type) : undefined;
-    const parsedPrice = req.query.price !== undefined ? Number(req.query.price) : undefined;
+    const rawHotelId = req.query.hotelId;
+    const rawRoomId = req.query.roomId;
+    const rawType = req.query.type;
+    const rawPrice = req.query.price;
+
+    if (rawHotelId !== undefined && typeof rawHotelId !== "string") {
+        return next(new AppError("hotelId must be a number", 400));
+    }
+
+    if (rawRoomId !== undefined && typeof rawRoomId !== "string") {
+        return next(new AppError("roomId must be a number", 400));
+    }
+
+    if (rawType !== undefined && typeof rawType !== "string") {
+        return next(new AppError("type must be a string", 400));
+    }
+
+    if (rawPrice !== undefined && typeof rawPrice !== "string") {
+        return next(new AppError("price must be a number", 400));
+    }
+
+    const parsedHotelId = rawHotelId !== undefined ? Number(rawHotelId) : undefined;
+    const parsedRoomId = rawRoomId !== undefined ? Number(rawRoomId) : undefined;
+    const parsedType = rawType;
+    const parsedPrice = rawPrice !== undefined ? Number(rawPrice) : undefined;
 
     if ((parsedHotelId !== undefined && Number.isNaN(parsedHotelId))){
-        return res.status(400).json({ message: "hotelId must be a number" });
+        return next(new AppError("hotelId must be a number", 400));
     }
 
     if ((parsedRoomId !== undefined && Number.isNaN(parsedRoomId))){
-        return res.status(400).json({ message: "roomId must be a number" });
-    }
-
-    if ((parsedType !== undefined && typeof parsedType !== "string")){
-        return res.status(400).json({ message: "type must be a string" });
+        return next(new AppError("roomId must be a number", 400));
     }
 
     if ((parsedPrice !== undefined && Number.isNaN(parsedPrice))) {
-        return res.status(400).json({ message: "price must be a number" });
+        return next(new AppError("price must be a number", 400));
     }
 
     const filters = {
@@ -45,7 +78,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
 
     try {
         const rooms = await serviceGetRooms(filters);
-        res.json(rooms);
+        res.json((rooms as RoomRow[]).map(toRoomDto));
     } catch (error) {
         next(error);
     }
@@ -65,23 +98,35 @@ For createRoom:
 export async function createRoom(req: Request, res: Response, next: NextFunction) {
     
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ message: "Request body must be a valid JSON object" });
+        return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
     }
     
     const { hotelId, type, price } = req.body;
 
+    if (hotelId === undefined) {
+        return res.status(400).json({ success: false, message: "hotelId is required and must be a number" });
+    }
+
+    if (type === undefined) {
+        return res.status(400).json({ success: false, message: "type is required and must be a non-empty string" });
+    }
+
+    if (price === undefined) {
+        return res.status(400).json({ success: false, message: "price is required and must be a positive number" });
+    }
+
     if (typeof hotelId !== "number" || Number.isNaN(hotelId))
-        return res.status(400).json({ message: "hotelId must be a number" });
+        return res.status(400).json({ success: false, message: "hotelId is required and must be a number" });
 
     if (typeof type !== "string" || type.trim() === "")
-        return res.status(400).json({ message: "type is required and must be a non-empty string" });
+        return res.status(400).json({ success: false, message: "type is required and must be a non-empty string" });
 
     if (typeof price !== "number" || Number.isNaN(price) || price <= 0)
-        return res.status(400).json({ message: "price is required and must be a positive number" });
+        return res.status(400).json({ success: false, message: "price is required and must be a positive number" });
 
     try {
         const room = await serviceCreateRoom(hotelId, type.trim(), price);
-        res.status(201).json(room);
+        res.status(201).json(toRoomDto(room as RoomRow));
     } catch (error) {
         next(error);
     }
@@ -99,28 +144,35 @@ For updateRoom:
 
 
 export async function updateRoom(req: Request, res: Response, next: NextFunction) {
-    
-    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ message: "Request body must be a valid JSON object" });
-    }
-    
     const roomId = req.params.roomId ? Number(req.params.roomId) : undefined;
-    const { type, price } = req.body;
 
     if (roomId === undefined || Number.isNaN(roomId)) {
-        return res.status(400).json({ message: "roomId must be a number" });
+        return next(new AppError("roomId is required and must be a number", 400));
     }
+
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+        return next(new AppError("Request body must be a valid JSON object", 400));
+    }
+
+    const { type, price } = req.body;
 
     if (type === undefined && price === undefined) {
-        return res.status(400).json({ message: "At least one of type or price must be provided" });
+        return next(new AppError("At least one of type or price must be provided and must be valid", 400));
     }
 
-    if (type !== undefined && (typeof type !== "string" || type.trim() === "")) {
-        return res.status(400).json({ message: "type must be a non-empty string" });
+    const invalidType = type !== undefined && (typeof type !== "string" || type.trim() === "");
+    const invalidPrice = price !== undefined && (typeof price !== "number" || Number.isNaN(price) || price <= 0);
+
+    if (invalidType && invalidPrice) {
+        return next(new AppError("At least one of type or price must be provided and must be valid", 400));
     }
 
-    if (price !== undefined && (typeof price !== "number" || Number.isNaN(price) || price <= 0)) {
-        return res.status(400).json({ message: "price must be a positive number" });
+    if (invalidType) {
+        return next(new AppError("type must be a non-empty string", 400));
+    }
+
+    if (invalidPrice) {
+        return next(new AppError("price must be a positive number", 400));
     }
 
     const trimmedType = typeof type === "string" ? type.trim() : undefined;
@@ -129,10 +181,10 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
         const room = await serviceUpdateRoom(roomId, trimmedType, price);
 
         if (!room) {
-            return res.status(404).json({ message: "Room not found" });
+            return next(new AppError("Room not found", 404));
         }
 
-        res.json(room);
+        res.json(toRoomDto(room as RoomRow));
 
     } catch (error) {
         next(error);

@@ -121,6 +121,7 @@ describe("GET /hotels", () => {
     - It should return 400 Bad Request if required fields (name, city) are missing or empty after trimming.
     - It should return 400 Bad Request if the request body is not a valid JSON object.
     - It should return 400 Bad Request if both required fields (lowercased name, lowercased city) already exist in the database (duplicate hotel).
+
     - It should return 201 Created and the created hotel object when valid data is provided, divided into the following scenarios:
         - When both name and city don't exist in the database.
         - When name exists but city doesn't exist in the database.
@@ -128,6 +129,9 @@ describe("GET /hotels", () => {
 */
 
 describe("POST /hotels", () => {
+
+    // In this block, we will test the scenarios where the request is unauthorized or forbidden.
+
     it("should return 401 Unauthorized when no token is provided", async () => {
         const response = await request(app)
             .post("/hotels")
@@ -149,11 +153,22 @@ describe("POST /hotels", () => {
             success: false,
             message: "Access denied" });
     });
+});
 
-    // From here on, we will use an admin token for testing the POST /hotels endpoint.
+
+describe("POST /hotels - Admin Access", () => {
+
+// In this block, we will use an admin token for testing the POST /hotels endpoint, including both failure and success scenarios.
+
+    let adminToken: string;
+
+    beforeAll(async () => {
+        adminToken = await adminLoginForTest();
+    });
+
+    // First, we will test the failure scenarios for POST /hotels endpoint.
 
     it("should return 400 Bad Request if required fields (name, city) are missing or empty after trimming", async () => {
-        const adminToken = await adminLoginForTest(); // Get a valid admin token
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken)) // Set the Authorization header with the admin token
@@ -165,7 +180,6 @@ describe("POST /hotels", () => {
     });
 
     it("should return 400 Bad Request if the request body is malformed JSON", async () => {
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -178,7 +192,6 @@ describe("POST /hotels", () => {
     });
 
     it("should return 400 Bad Request if the request body is parsed JSON but not an object", async () => {
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -190,7 +203,6 @@ describe("POST /hotels", () => {
     });
 
     it("should return 400 Bad Request if both required fields (lowercased name, lowercased city) already exist in the database (duplicate hotel)", async () => {
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -202,11 +214,9 @@ describe("POST /hotels", () => {
     });
 
 
-    //Below are the scenarios for successful hotel creation (201 Created):
+    //Next are the scenarios for successful hotel creation (201 Created):
 
     it("should return 201 Created and the created hotel object when valid data is provided, when both name and city don't exist in the database", async () => {
-
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -219,8 +229,6 @@ describe("POST /hotels", () => {
     });
 
     it("should return 201 Created and the created hotel object when valid data is provided, when name exists but city doesn't exist in the database", async () => {
-
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -233,8 +241,6 @@ describe("POST /hotels", () => {
     });
 
     it("should return 201 Created and the created hotel object when valid data is provided, when city exists but name doesn't exist in the database", async () => {
-
-        const adminToken = await adminLoginForTest();
         const response = await request(app)
             .post("/hotels")
             .set(authHeaders(adminToken))
@@ -265,6 +271,9 @@ describe("POST /hotels", () => {
 */
 
 describe("PATCH /hotels/:hotelId", () => {
+
+    // First, we will test the scenarios where the request is unauthorized or forbidden.
+
     it("should return 401 Unauthorized when no token is provided", async () => {
         const response = await request(app)
             .patch("/hotels/10");
@@ -287,13 +296,16 @@ describe("PATCH /hotels/:hotelId", () => {
         });
     });
 
-    // From here on, we will use an admin token for testing the PATCH /hotels/:hotelId endpoint.
+
+    // From here on, we will use an admin token for testing the PATCH /hotels/:hotelId endpoint, including both failure and success scenarios.
 
     let adminToken: string;
 
     beforeAll(async () => {
         adminToken = await adminLoginForTest();
     });
+
+    // First is the failure scenarios for PATCH /hotels/:hotelId endpoint.
 
     it("should return 400 Bad Request if hotelId is not a valid number", async () => {
         const response = await request(app)
@@ -302,7 +314,7 @@ describe("PATCH /hotels/:hotelId", () => {
         expect(response.status).toBe(400);
         expect(response.body).toEqual({
             success: false,
-            message: "hotelId must be a number"
+            message: "hotelId is required and must be a number"
         });
     });
 
@@ -346,7 +358,7 @@ describe("PATCH /hotels/:hotelId", () => {
         });
     });
     
-    // Below are the scenarios for successful hotel updates (200 OK):
+    // Next are the scenarios for successful hotel updates (200 / 201 OK):
 
     it("should return 200 OK and the updated hotel object when both name and city are provided and valid", async () => {
         

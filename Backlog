@@ -1,0 +1,75 @@
+Hotel Booking Backend - Backlog
+Last Updated: 2026-07-13
+
+Status Legend
+- TODO: Not started
+- IN_PROGRESS: Started and currently active
+- BLOCKED: Waiting on dependency/decision
+- DONE: Completed and verified
+
+Priority Legend
+- P0: Critical reliability or release blocker
+- P1: Important quality/maintainability
+- P2: Nice-to-have improvements
+
+Current Focus
+- Complete and stabilize integration tests module by module.
+- Standardize controller validation flow after test coverage is stable.
+
+Backlog Items
+
+1) [P0] [TODO] Finalize room integration tests
+Scope:
+- Keep room suite deterministic and green.
+- Ensure cleanup uses correct DB column names and no shared-state leakage.
+Done Criteria:
+- `npx jest __tests__/room.test.ts --runInBand` passes consistently.
+- No brittle assumptions on dynamic row counts where not required.
+
+2) [P0] [TODO] Complete remaining module integration tests
+Scope:
+- Ensure Auth, Users, Hotels, Rooms, Bookings suites are all complete.
+- Validate auth, validation failures, business-rule failures, and success paths.
+Done Criteria:
+- `npm test` passes reliably.
+- Each module has tests for both failure and success contract paths.
+
+3) [P1] [TODO] Standardize 6-step controller validation flow
+Scope:
+- Apply the same validation sequence across controllers:
+	1. Request shape validation
+	2. Data extraction
+	3. Required field checks
+	4. Type checks
+	5. Business value checks
+	6. Service call
+Current State:
+- Aligned: `hotelController.ts`, `roomController.ts`
+- Needs alignment: `bookingController.ts`, `userController.ts`
+Done Criteria:
+- All controllers follow the same ordering and error style.
+- Existing integration tests remain green after refactor.
+
+4) [P1] [TODO] Introduce shared validation helpers
+Scope:
+- Extract repeated checks (JSON body shape, numeric parsing, non-empty string checks).
+- Keep helpers small and composable.
+Done Criteria:
+- Reduced duplicated validation code in controllers.
+- Error messages and status behavior remain stable and tested.
+
+5) [P1] [TODO] Normalize API error contract
+Scope:
+- Standardize error responses through `AppError` + global `errorHandler`.
+- Remove mixed direct `res.status(...).json(...)` validation style where appropriate.
+Done Criteria:
+- Consistent error shape across modules (`success`, `message`, status).
+- Integration tests assert final API contract, not internal implementation details.
+
+6) [P2] [TODO] Developer docs and roadmap polish
+Scope:
+- Document validation standard and testing conventions.
+- Add short contributor notes for test data isolation and cleanup rules.
+Done Criteria:
+- README/docs include validation pattern and test conventions.
+- Backlog kept current after each completed milestone.

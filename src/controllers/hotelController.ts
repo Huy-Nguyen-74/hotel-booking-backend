@@ -76,10 +76,15 @@ export async function createHotel (req: Request, res: Response, next: NextFuncti
 }
 
 export async function updateHotel (req: Request, res: Response, next: NextFunction) {
+    
+    if (!req.params.hotelId) {
+        return next(new AppError("hotelId is required and must be a number", 400));
+    }
+    
     const hotelId = Number(req.params.hotelId);
 
     if (Number.isNaN(hotelId)) {
-        return next(new AppError("hotelId must be a number", 400));
+        return next(new AppError("hotelId is required and must be a number", 400));
     }
 
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
