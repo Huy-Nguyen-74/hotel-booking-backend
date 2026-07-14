@@ -31,6 +31,10 @@ export async function createUser(userData: CreateUserInput) {
     isActive: true,
   });
 
+  if (createdUser.role !== "staff") {
+    throw new AppError("Only staff users can be created", 400);
+  }
+
   return withoutPassword(createdUser as unknown as { password_hash: string; [key: string]: unknown });
 }
 

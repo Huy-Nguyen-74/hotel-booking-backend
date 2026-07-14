@@ -34,7 +34,16 @@ Done Criteria:
 - `npm test` passes reliably.
 - Each module has tests for both failure and success contract paths.
 
-3) [P1] [TODO] Standardize 6-step controller validation flow
+3) [P1] [TODO] Expand booking integration test coverage
+Scope:
+- Add missing route-contract coverage to the booking suite after user tests are complete.
+- Prioritize `GET /bookings`, protected-route `401` cases, and `DELETE /bookings/:bookingId` staff-forbidden `403` coverage.
+- Add targeted controller-level validation cases only where the current booking routes expose them.
+Done Criteria:
+- Booking suite covers success, auth failure, authorization failure, validation failure, and business-rule failure for the exposed route surface.
+- `npx jest __tests__/booking.test.ts --runInBand` passes consistently.
+
+4) [P1] [TODO] Standardize 6-step controller validation flow
 Scope:
 - Apply the same validation sequence across controllers:
 	1. Request shape validation
@@ -50,7 +59,7 @@ Done Criteria:
 - All controllers follow the same ordering and error style.
 - Existing integration tests remain green after refactor.
 
-4) [P1] [TODO] Introduce shared validation helpers
+5) [P1] [TODO] Introduce shared validation helpers
 Scope:
 - Extract repeated checks (JSON body shape, numeric parsing, non-empty string checks).
 - Keep helpers small and composable.
@@ -58,7 +67,7 @@ Done Criteria:
 - Reduced duplicated validation code in controllers.
 - Error messages and status behavior remain stable and tested.
 
-5) [P1] [TODO] Normalize API error contract
+6) [P1] [TODO] Normalize API error contract
 Scope:
 - Standardize error responses through `AppError` + global `errorHandler`.
 - Remove mixed direct `res.status(...).json(...)` validation style where appropriate.
@@ -66,7 +75,7 @@ Done Criteria:
 - Consistent error shape across modules (`success`, `message`, status).
 - Integration tests assert final API contract, not internal implementation details.
 
-6) [P2] [TODO] Developer docs and roadmap polish
+7) [P2] [TODO] Developer docs and roadmap polish
 Scope:
 - Document validation standard and testing conventions.
 - Add short contributor notes for test data isolation and cleanup rules.

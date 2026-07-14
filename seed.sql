@@ -1,3 +1,14 @@
+-- =====================================================
+-- Test Fixtures
+--
+-- The records below are intentionally stable, as integration tests depend on these IDs.
+-- As such, please refrain from modifying them.
+--
+-- If you must modify these records or IDs,
+-- also do update the corresponding tests.
+-- =====================================================
+
+
 INSERT INTO hotels (id, name, city)
 VALUES
   (10, 'Tokyo Grand Hotel', 'Tokyo'),

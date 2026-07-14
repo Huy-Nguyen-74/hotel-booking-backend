@@ -3,5 +3,5 @@ export interface CreateUserInput {
   lastName: string;
   email: string;
   password: string;
-  role: "admin" | "staff";
+  role: string;
 }

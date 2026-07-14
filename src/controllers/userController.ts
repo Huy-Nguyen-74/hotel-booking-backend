@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "../errors/AppError";
 import {
   createUser as serviceCreateUser,
   deactivateUserById as serviceDeactivateUserById,
@@ -10,7 +11,7 @@ import {
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-    return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+    return next(new AppError("Request body must be a valid JSON object", 400));
   }
 
   const firstName = typeof req.body.firstName === "string" ? req.body.firstName.trim() : "";
@@ -19,8 +20,8 @@ export async function createUser(req: Request, res: Response, next: NextFunction
   const password = typeof req.body.password === "string" ? req.body.password : "";
   const role = req.body.role;
 
-  if (!firstName || !lastName || !email || !password || (role !== "admin" && role !== "staff")) {
-    return res.status(400).json({ success: false, message: "Invalid user payload" });
+  if (!firstName || !lastName || !email || !password || !role) {
+    return next(new AppError("Invalid user payload", 400));
   }
 
   try {
@@ -38,7 +39,11 @@ export async function getUsers(req: Request, res: Response, next: NextFunction) 
   };
 
   if (filters.id !== undefined && Number.isNaN(filters.id)) {
-    return res.status(400).json({ success: false, message: "id must be a number" });
+    return next(new AppError("id must be a number", 400));
+  }
+
+  if (filters.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(filters.email)) {
+    return next(new AppError("email must be a valid email address", 400));
   }
 
   try {
@@ -51,7 +56,7 @@ export async function getUsers(req: Request, res: Response, next: NextFunction) 
 
 export async function getSelfInfo(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return next(new AppError("Unauthorized", 401));
   }
 
   try {
@@ -65,7 +70,7 @@ export async function getSelfInfo(req: Request, res: Response, next: NextFunctio
 export async function deactivateUserById(req: Request, res: Response, next: NextFunction) {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) {
-    return res.status(400).json({ success: false, message: "Invalid user id" });
+    return next(new AppError("Invalid user id", 400));
   }
 
   try {
@@ -78,11 +83,11 @@ export async function deactivateUserById(req: Request, res: Response, next: Next
 
 export async function updateSelfInfo(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return next(new AppError("Unauthorized", 401));
   }
 
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-    return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+    return next(new AppError("Request body must be a valid JSON object", 400));
   }
 
   const firstName = req.body.firstName !== undefined ? String(req.body.firstName).trim() : undefined;
@@ -100,11 +105,11 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
 export async function updateUserInfo(req: Request, res: Response, next: NextFunction) {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) {
-    return res.status(400).json({ success: false, message: "Invalid user id" });
+    return next(new AppError("Invalid user id", 400));
   }
 
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-    return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+    return next(new AppError("Request body must be a valid JSON object", 400));
   }
 
   const firstName = req.body.firstName !== undefined ? String(req.body.firstName).trim() : undefined;
@@ -113,11 +118,11 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
   const isActive = req.body.isActive;
 
   if (role !== undefined && role !== "admin" && role !== "staff") {
-    return res.status(400).json({ success: false, message: "role must be admin or staff" });
+    return next(new AppError("role must be admin or staff", 400));
   }
 
   if (isActive !== undefined && typeof isActive !== "boolean") {
-    return res.status(400).json({ success: false, message: "isActive must be a boolean" });
+    return next(new AppError("isActive must be a boolean", 400));
   }
 
   try {
