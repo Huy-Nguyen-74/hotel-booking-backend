@@ -29,3 +29,33 @@ export async function staffLoginForTest(): Promise<string> {
 
   return response.body.token;
 }
+
+
+export async function tempAdminLoginForTest(email: string, password: string): Promise<string> {
+  const response = await request(app)
+    .post("/login")
+    .send({
+      email: email,
+      password: password,
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.token).toEqual(expect.any(String));
+
+  return response.body.token;
+}
+
+export async function tempStaffLoginForTest(email: string, password: string): Promise<string> {
+  const response = await request(app)
+    .post("/login")
+    .send({
+      email: email,
+      password: password,
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.token).toEqual(expect.any(String));
+
+  return response.body.token;
+}
+

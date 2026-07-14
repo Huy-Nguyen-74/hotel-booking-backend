@@ -75,10 +75,6 @@ export async function updateSelfInfo(id: number, firstName?: string, lastName?: 
   const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
   const updatedUser = await repositoryUpdateSelfInfo(id, firstName, lastName, hashedPassword);
 
-  if (!updatedUser) {
-    throw new AppError("Failed to update user", 500);
-  }
-
   return withoutPassword(updatedUser as unknown as { password_hash: string; [key: string]: unknown });
 }
 

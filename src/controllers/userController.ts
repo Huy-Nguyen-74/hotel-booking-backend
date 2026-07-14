@@ -94,6 +94,22 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
   const lastName = req.body.lastName !== undefined ? String(req.body.lastName).trim() : undefined;
   const password = req.body.password !== undefined ? String(req.body.password) : undefined;
 
+  if (firstName !== undefined && firstName === "") {
+    return next(new AppError("firstName cannot be an empty string", 400));
+  }
+
+  if (lastName !== undefined && lastName === "") {
+    return next(new AppError("lastName cannot be an empty string", 400));
+  }
+
+  if (password !== undefined && password === "") {
+    return next(new AppError("password cannot be an empty string", 400));
+  }
+
+  if (firstName === undefined && lastName === undefined && password === undefined) {
+    return next(new AppError("At least one field (firstName, lastName, password) must be provided", 400));
+  }
+
   try {
     const updatedUser = await serviceUpdateSelfInfo(req.user.id, firstName, lastName, password);
     return res.status(200).json(updatedUser);
