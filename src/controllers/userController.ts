@@ -121,7 +121,7 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
 export async function updateUserInfo(req: Request, res: Response, next: NextFunction) {
   const id = Number(req.params.id);
   if (Number.isNaN(id)) {
-    return next(new AppError("Invalid user id", 400));
+    return next(new AppError("Invalid userId. userId must be a valid number", 400));
   }
 
   if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
@@ -130,11 +130,18 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
 
   const firstName = req.body.firstName !== undefined ? String(req.body.firstName).trim() : undefined;
   const lastName = req.body.lastName !== undefined ? String(req.body.lastName).trim() : undefined;
-  const role = req.body.role;
   const isActive = req.body.isActive;
 
-  if (role !== undefined && role !== "admin" && role !== "staff") {
-    return next(new AppError("role must be admin or staff", 400));
+  if (firstName === undefined && lastName === undefined && isActive === undefined) {
+    return next(new AppError("At least one field (firstName, lastName, and isActive status) must be provided", 400));
+  }
+
+  if (firstName !== undefined && firstName === "") {
+    return next(new AppError("firstName cannot be an empty string", 400));
+  }
+
+  if (lastName !== undefined && lastName === "") {
+    return next(new AppError("lastName cannot be an empty string", 400));
   }
 
   if (isActive !== undefined && typeof isActive !== "boolean") {
@@ -142,7 +149,7 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const updatedUser = await serviceUpdateUserInfo(id, firstName, lastName, role, isActive);
+    const updatedUser = await serviceUpdateUserInfo(id, firstName, lastName, isActive);
     return res.status(200).json(updatedUser);
   } catch (error) {
     next(error);

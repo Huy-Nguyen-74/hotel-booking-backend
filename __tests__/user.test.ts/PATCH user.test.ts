@@ -334,6 +334,7 @@ Business rules:
 - What valid input must still be rejected?
         If the user is not authenticated, they should receive a 401 Unauthorized response.
         If the user is authenticated but does not have the "admin" role, they should receive a 403 Forbidden response.
+        If the user ID is valid but the user has already been deactivated, the route should return a 404 Not Found response.
 
 Not found:
 - Which referenced resource may not exist? The user being deactivated may not exist. If the user ID does not exist, the route should return a 404 Not Found response.
@@ -395,6 +396,7 @@ describe("PATCH /users/:id/deactivate", () => {
             .set(authHeaders(adminToken));
         
         expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("success", true);
         expect(response.body).toHaveProperty("message", "User deactivated successfully");
         expect(response.body).toHaveProperty("body");
         expect(response.body.body).toHaveProperty("id", tempStaffUser.id);
@@ -402,7 +404,318 @@ describe("PATCH /users/:id/deactivate", () => {
         expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
-    
+    it("should return 404 if trying to deactivate a user that has already been deactivated", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForDeactivation2",
+            "TempStaffLastNameForDeactivation2",
+            `tempStaffForDeactivation2${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        // First, deactivate the user
+        const firstDeactivation = await request(app)
+            .patch(`/users/${tempStaffUser.id}/deactivate`)
+            .set(authHeaders(adminToken));
+        expect(firstDeactivation.status).toBe(200);
+
+        // Now, try to deactivate the same user again
+        const secondDeactivation = await request(app)
+            .patch(`/users/${tempStaffUser.id}/deactivate`)
+            .set(authHeaders(adminToken));
+        expect(secondDeactivation.status).toBe(404);
+        expect(secondDeactivation.body).toHaveProperty("message", "User not found");
+    });
+
+    it("should return 404 if trying to deactivate a user that does not exist", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const response = await request(app)
+            .patch(`/users/999999/deactivate`) // Assuming this ID does not exist
+            .set(authHeaders(adminToken));
+        expect(response.status).toBe(404);
+        expect(response.body).toHaveProperty("message", "User not found");
+    });
+});
+
+
+/*
+Lastly, we will test the PATCH /users/:id route, which allows authenticated admin users to update other users' information.
+Only "admin" role can access this route.
+
+Route contract:
+- Who may access it? Only "admin" role can access this route to update other users' information, including: firstName, lastName, role, and isActive status.
+- Which method/path? PATCH /users/:id
+
+Success:
+- What valid outcomes must work? The route should allow admin users to update other users' firstName, lastName, and password by their ID.
+        The response should return the updated user information without sensitive fields like password hashes.
+
+Validation:
+- Which inputs can be missing, malformed, or invalid?
+        The user ID in the URL must be a valid number. If it's not, the route should return a 400 Bad Request response.
+        If the user ID does not exist in the database, the route should return a 404 Not Found response.
+        The request body can include firstName, lastName and isActive status. If any of these fields are provided, they must be valid strings. Missing fields will not be updated.
+        At least one of the fields (firstName, lastName and isActive status) must be provided in the request body. If none are provided, the route should return a 400 Bad Request response.
+
+Business rules:
+- What valid input must still be rejected?
+        If the user is not authenticated, they should receive a 401 Unauthorized response.
+        If the user is authenticated but does not have the "admin" role, they should receive a 403 Forbidden response.
+
+Not found:
+- Which referenced resource may not exist? The user being updated may not exist. If the user ID does not exist, the route should return a 404 Not Found response.
+
+Response contract:
+- Status, body shape, sensitive fields? The response should have a 200 status code and return a JSON object representing the updated user without sensitive fields.
+
+Data effects:
+- What should be created, changed, or remain unchanged? The specified user's information should be updated in the database.
+        The updated user's information should be returned in the response without sensitive fields like password hashes.
+
+
+FINAL TEST METRICS:
+
+Access control
+    No token → 401
+    Staff token → 403
+    Admin token → request may continue
+
+Path validation
+    Non-numeric :id → 400
+
+Body validation
+    Empty body / no update fields → 400
+    Invalid firstName
+    Invalid lastName
+    Invalid isActive, depending on what this route actually supports
+
+Resource state
+    Valid numeric ID, but user does not exist → 404
+
+Success
+    Update one field only
+    Update multiple fields
+    Response excludes password_hash
+    Database actually contains the new values
+
+*/
+
+describe("PATCH /users/:id", () => {
+    it("should return 401 if no token is provided", async () => {
+        const response = await request(app).patch("/users/1");
+        expect(response.status).toBe(401);
+        expect(response.body).toHaveProperty("message", "Authentication token missing");
+    });
+
+    it("should return 403 if a non-admin user tries to update another user's information", async () => {
+        const staffToken = await createTempStaffUserAndLogin();
+        const response = await request(app)
+            .patch("/users/1")
+            .set(authHeaders(staffToken))
+            .send({
+                firstName: "UpdatedFirstName",
+                lastName: "UpdatedLastName",
+                password: "UpdatedPassword123!",
+            });
+        expect(response.status).toBe(403);
+        expect(response.body).toHaveProperty("message", "Access denied");
+    });
+
+    it("should return 400 if the user ID is not a valid number", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const response = await request(app)
+            .patch("/users/invalid-id")
+            .set(authHeaders(adminToken))
+            .send({
+                firstName: "UpdatedFirstName",
+                lastName: "UpdatedLastName",
+                password: "UpdatedPassword123!",
+            });
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("message", "Invalid user id. userId must be a valid number");
+    });
+
+    it("should return 404 if the user ID does not exist", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const response = await request(app)
+            .patch("/users/999999") // Assuming this ID does not exist
+            .set(authHeaders(adminToken))
+            .send({
+                firstName: "UpdatedFirstName",
+                lastName: "UpdatedLastName",
+                password: "UpdatedPassword123!",
+            });
+        expect(response.status).toBe(404);
+        expect(response.body).toHaveProperty("message", "User not found");
+    });
+
+    it("should return 400 if no fields are provided in the request body", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate",
+            "TempStaffLastNameForUpdate",
+            `tempStaffForUpdate${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({});
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("message", "At least one field (firstName, lastName, isActive status) must be provided");
+    });
+
+    it("should return 400 if provided fields such as firstName are invalid", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate2",
+            "TempStaffLastNameForUpdate2",
+            `tempStaffForUpdate2${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                firstName: "", // Invalid firstName
+            });
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("message", "firstName cannot be an empty string");
+    });
+
+    it("should return 400 if provided fields such as lastName are invalid", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate3",
+            "TempStaffLastNameForUpdate3",
+            `tempStaffForUpdate3${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                lastName: "", // Invalid lastName
+            });
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("message", "lastName cannot be an empty string");
+    });
+
+    it("should return 400 if provided fields such as isActive are invalid", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate4",
+            "TempStaffLastNameForUpdate4",
+            `tempStaffForUpdate4${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                isActive: "not-a-boolean", // Invalid isActive
+            });
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("message", "isActive must be a boolean value");
+    });
+
+    it("should successfully update a user's information when a valid field, such as firstName, is provided", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate5",
+            "TempStaffLastNameForUpdate5",
+            `tempStaffForUpdate5${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                firstName: "UpdatedFirstName",
+            });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).not.toHaveProperty("password_hash");
+    });
+
+    it("should successfully update a user's information when a valid field, such as lastName, is provided", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate5",
+            "TempStaffLastNameForUpdate5",
+            `tempStaffForUpdate5${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                lastName: "UpdatedLastName",
+            });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).not.toHaveProperty("password_hash");
+    });
+
+    it("should successfully update a user's information when a valid field, such as isActive, is provided", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate5",
+            "TempStaffLastNameForUpdate5",
+            `tempStaffForUpdate5${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+        
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                isActive: false,
+            });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("isActive", false);
+        expect(response.body).not.toHaveProperty("password_hash");
+    });
+
+    it("should successfully update a user's information when multiple valid fields are provided", async () => {
+        const adminToken = await createTempAdminUserAndLogin();
+        const tempStaffUser = await createStaffUserForTest(
+            "TempStaffFirstNameForUpdate6",
+            "TempStaffLastNameForUpdate6",
+            `tempStaffForUpdate6${Date.now()}@example.com`,
+            "TempStaffPassword123!"
+        );
+        createdUserIds.push(tempStaffUser.id);
+
+        const response = await request(app)
+            .patch(`/users/${tempStaffUser.id}`)
+            .set(authHeaders(adminToken))
+            .send({
+                firstName: "UpdatedFirstName",
+                lastName: "UpdatedLastName",
+                isActive: false,
+            });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("isActive", false);
+        expect(response.body).not.toHaveProperty("password_hash");
+    });
+});
 
 
 // Cleanup after each test

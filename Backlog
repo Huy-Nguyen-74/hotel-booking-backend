@@ -84,3 +84,22 @@ Done Criteria:
 - Backlog kept current after each completed milestone.
 
 
+
+July 15th, 2026: New updates for users API to be added later (currently not added)
+
+createUser
+	Admin can create staff only.
+
+updateUserInfo
+	Admin can update:
+		first name
+		last name
+		active/inactive
+	Admin cannot change roles.
+
+updateSelfInfo
+	User can update:
+		first name
+		last name
+		password
+	User cannot change role.

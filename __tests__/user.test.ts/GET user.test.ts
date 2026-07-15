@@ -73,7 +73,6 @@ import pool from "../../src/database/db";
 import { authHeaders } from "../../src/helpers/authHelper";
 import { adminLoginForTest, staffLoginForTest } from "../../src/helpers/loginHelper";
 
-const createdUserIds: number[] = []; // Store created user IDs for cleanup
 
 describe("GET /users", () => {
     let adminToken: string;

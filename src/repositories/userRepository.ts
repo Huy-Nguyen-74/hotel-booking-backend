@@ -105,7 +105,6 @@ export async function updateUserInfo(
   id: number,
   firstName?: string,
   lastName?: string,
-  role?: "admin" | "staff",
   isActive?: boolean
 ) {
   const result = await pool.query(
@@ -114,13 +113,12 @@ export async function updateUserInfo(
     SET
       first_name = COALESCE($1, first_name),
       last_name = COALESCE($2, last_name),
-      role = COALESCE($3, role),
-      is_active = COALESCE($4, is_active),
+      is_active = COALESCE($3, is_active),
       updated_at = CURRENT_TIMESTAMP
-    WHERE id = $5
+    WHERE id = $4
     RETURNING id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
     `,
-    [firstName, lastName, role, isActive, id]
+    [firstName, lastName, isActive, id]
   );
 
   return (result.rows[0] as UserRow | undefined) ?? null;
