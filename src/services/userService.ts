@@ -25,6 +25,10 @@ export async function createUser(userData: CreateUserInput) {
     throw new AppError("Email already exists", 409);
   }
 
+  if (userData.role !== "staff") {
+    throw new AppError("Only staff users can be created", 400);
+  }
+
   const hashedPassword = await bcrypt.hash(userData.password, 10);
   const createdUser = await repositoryCreateUser({
     firstName: userData.firstName,
@@ -34,10 +38,6 @@ export async function createUser(userData: CreateUserInput) {
     role: "staff",
     isActive: true,
   });
-
-  if (createdUser.role !== "staff") {
-    throw new AppError("Only staff users can be created", 400);
-  }
 
   return withoutPassword(createdUser as unknown as { password_hash: string; [key: string]: unknown });
 }
