@@ -58,7 +58,7 @@ export async function getSelfInfo(id: number) {
 
 export async function deactivateUserById(id: number) {
   const user = await repositoryFindUserById(id);
-  if (!user) {
+  if (!user || user?.is_active === false) {
     throw new AppError("User not found", 404);
   }
 

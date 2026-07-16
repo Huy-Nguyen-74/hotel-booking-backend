@@ -15,7 +15,7 @@ import pool from "../../src/database/db";
 import { authHeaders } from "../../src/helpers/authHelper";
 import { tempAdminLoginForTest, tempStaffLoginForTest } from "../../src/helpers/loginHelper";
 import { createAdminUserForTest, createStaffUserForTest } from "../../src/helpers/createUserHelper";
-import { create } from "domain";
+import { CreateUserInput } from "../../src/types/user";
 
 /*
 First, we will test the PATCH /users/me route, which allows authenticated users to update their own information. Both "admin" and "staff" roles can access this route.
@@ -59,24 +59,32 @@ Data effects:
 // We'll do all of this by combining into async functions.
 
 async function createTempAdminUserAndLogin(): Promise<string> {
-    const tempAdminUser = await createAdminUserForTest(
-        "TempAdminFirstName",   
-        "TempAdminLastName",
-        `tempAdmin${Date.now()}@example.com`,
-        "TempAdminPassword123!"
-    );
+    
+    const userData: CreateUserInput = {
+        firstName: "TempAdminFirstName",
+        lastName: "TempAdminLastName",
+        email: `tempAdmin${Date.now()}@example.com`,
+        password: "TempAdminPassword123!",
+        role: "admin",
+    };
+
+    const tempAdminUser = await createAdminUserForTest(userData);
     createdUserIds.push(tempAdminUser.id);
     const tempAdminUserToken = await tempAdminLoginForTest(tempAdminUser.email, "TempAdminPassword123!");
     return tempAdminUserToken;
 };
 
 async function createTempStaffUserAndLogin(): Promise<string> {
-    const tempStaffUser = await createStaffUserForTest(
-        "TempStaffFirstName",
-        "TempStaffLastName",
-        `tempStaff${Date.now()}@example.com`,
-        "TempStaffPassword123!"
-    );
+
+    const userData: CreateUserInput = {
+        firstName: "TempStaffFirstName",
+        lastName: "TempStaffLastName",
+        email: `tempStaff${Date.now()}@example.com`,
+        password: "TempStaffPassword123!",
+        role: "staff",
+    };
+
+    const tempStaffUser = await createStaffUserForTest(userData);
     createdUserIds.push(tempStaffUser.id);
     const tempStaffUserToken = await tempStaffLoginForTest(tempStaffUser.email, "TempStaffPassword123!");
     return tempStaffUserToken;
@@ -160,7 +168,7 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -173,7 +181,7 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -200,8 +208,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -268,7 +276,7 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -281,7 +289,7 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -308,8 +316,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 });
@@ -382,13 +390,17 @@ describe("PATCH /users/:id/deactivate", () => {
     });
 
     it("should successfully deactivate a user when requested by an admin", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForDeactivation",
+            lastName: "TempStaffLastNameForDeactivation",
+            email: `tempStaffForDeactivation${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForDeactivation",
-            "TempStaffLastNameForDeactivation",
-            `tempStaffForDeactivation${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -400,18 +412,22 @@ describe("PATCH /users/:id/deactivate", () => {
         expect(response.body).toHaveProperty("message", "User deactivated successfully");
         expect(response.body).toHaveProperty("body");
         expect(response.body.body).toHaveProperty("id", tempStaffUser.id);
-        expect(response.body.body).toHaveProperty("isActive", false);
+        expect(response.body.body).toHaveProperty("is_active", false);
         expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should return 404 if trying to deactivate a user that has already been deactivated", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForDeactivation2",
+            lastName: "TempStaffLastNameForDeactivation2",
+            email: `tempStaffForDeactivation2${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForDeactivation2",
-            "TempStaffLastNameForDeactivation2",
-            `tempStaffForDeactivation2${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         // First, deactivate the user
@@ -533,7 +549,7 @@ describe("PATCH /users/:id", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user id. userId must be a valid number");
+        expect(response.body).toHaveProperty("message", "Invalid userId. userId must be a valid number");
     });
 
     it("should return 404 if the user ID does not exist", async () => {
@@ -551,13 +567,17 @@ describe("PATCH /users/:id", () => {
     });
 
     it("should return 400 if no fields are provided in the request body", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate",
+            lastName: "TempStaffLastNameForUpdate",
+            email: `tempStaffForUpdate${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate",
-            "TempStaffLastNameForUpdate",
-            `tempStaffForUpdate${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -569,13 +589,17 @@ describe("PATCH /users/:id", () => {
     });
 
     it("should return 400 if provided fields such as firstName are invalid", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate2",
+            lastName: "TempStaffLastNameForUpdate2",
+            email: `tempStaffForUpdate2${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate2",
-            "TempStaffLastNameForUpdate2",
-            `tempStaffForUpdate2${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -589,13 +613,17 @@ describe("PATCH /users/:id", () => {
     });
 
     it("should return 400 if provided fields such as lastName are invalid", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate3",
+            lastName: "TempStaffLastNameForUpdate3",
+            email: `tempStaffForUpdate3${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate3",
-            "TempStaffLastNameForUpdate3",
-            `tempStaffForUpdate3${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -609,13 +637,17 @@ describe("PATCH /users/:id", () => {
     });
 
     it("should return 400 if provided fields such as isActive are invalid", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate4",
+            lastName: "TempStaffLastNameForUpdate4",
+            email: `tempStaffForUpdate4${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate4",
-            "TempStaffLastNameForUpdate4",
-            `tempStaffForUpdate4${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -629,13 +661,17 @@ describe("PATCH /users/:id", () => {
     });
 
     it("should successfully update a user's information when a valid field, such as firstName, is provided", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate5",
+            lastName: "TempStaffLastNameForUpdate5",
+            email: `tempStaffForUpdate5${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate5",
-            "TempStaffLastNameForUpdate5",
-            `tempStaffForUpdate5${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -645,18 +681,22 @@ describe("PATCH /users/:id", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update a user's information when a valid field, such as lastName, is provided", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate5",
+            lastName: "TempStaffLastNameForUpdate5",
+            email: `tempStaffForUpdate5${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate5",
-            "TempStaffLastNameForUpdate5",
-            `tempStaffForUpdate5${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -666,18 +706,22 @@ describe("PATCH /users/:id", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update a user's information when a valid field, such as isActive, is provided", async () => {
+        
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate5",
+            lastName: "TempStaffLastNameForUpdate5",
+            email: `tempStaffForUpdate5${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate5",
-            "TempStaffLastNameForUpdate5",
-            `tempStaffForUpdate5${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
         
         const response = await request(app)
@@ -687,18 +731,22 @@ describe("PATCH /users/:id", () => {
                 isActive: false,
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("isActive", false);
+        expect(response.body).toHaveProperty("is_active", false);
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update a user's information when multiple valid fields are provided", async () => {
+                
+        const userData: CreateUserInput = {
+            firstName: "TempStaffFirstNameForUpdate6",
+            lastName: "TempStaffLastNameForUpdate6",
+            email: `tempStaffForUpdate6${Date.now()}@example.com`,
+            password: "TempStaffPassword123!",
+            role: "staff",
+        };
+        
         const adminToken = await createTempAdminUserAndLogin();
-        const tempStaffUser = await createStaffUserForTest(
-            "TempStaffFirstNameForUpdate6",
-            "TempStaffLastNameForUpdate6",
-            `tempStaffForUpdate6${Date.now()}@example.com`,
-            "TempStaffPassword123!"
-        );
+        const tempStaffUser = await createStaffUserForTest(userData);
         createdUserIds.push(tempStaffUser.id);
 
         const response = await request(app)
@@ -710,9 +758,9 @@ describe("PATCH /users/:id", () => {
                 isActive: false,
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
-        expect(response.body).toHaveProperty("isActive", false);
+        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("is_active", false);
         expect(response.body).not.toHaveProperty("password_hash");
     });
 });

@@ -75,7 +75,7 @@ export async function deactivateUserById(req: Request, res: Response, next: Next
 
   try {
     const deactivatedUser = await serviceDeactivateUserById(id);
-    return res.status(200).json({ message: "User deactivated successfully", body: deactivatedUser });
+    return res.status(200).json({success: true, message: "User deactivated successfully", body: deactivatedUser });
   } catch (error) {
     next(error);
   }
@@ -133,7 +133,7 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
   const isActive = req.body.isActive;
 
   if (firstName === undefined && lastName === undefined && isActive === undefined) {
-    return next(new AppError("At least one field (firstName, lastName, and isActive status) must be provided", 400));
+    return next(new AppError("At least one field (firstName, lastName, isActive status) must be provided", 400));
   }
 
   if (firstName !== undefined && firstName === "") {
@@ -145,7 +145,7 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
   }
 
   if (isActive !== undefined && typeof isActive !== "boolean") {
-    return next(new AppError("isActive must be a boolean", 400));
+    return next(new AppError("isActive must be a boolean value", 400));
   }
 
   try {
