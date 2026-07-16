@@ -288,6 +288,8 @@ describe("POST /rooms", () => {
             .send({ hotelId: 10, type: "Suite", price: -100 });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "price is required and must be a positive number" });
+
+        createdRoomIds.push(response.body.roomId); // Store the created room ID for cleanup
     });
 
     // Lastly, we will test the success scenario for POST /rooms endpoint.

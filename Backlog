@@ -1,105 +1,272 @@
-Hotel Booking Backend - Backlog
-Last Updated: 2026-07-13
 
-Status Legend
-- TODO: Not started
-- IN_PROGRESS: Started and currently active
-- BLOCKED: Waiting on dependency/decision
-- DONE: Completed and verified
+* **Today:** July 16, 2026
+* Your current progress (134 passing tests, AWS deployed, CI working)
+* Your target of becoming interview-ready around **September 2026**
+* Our decision to avoid perfectionism and maximize portfolio value
 
-Priority Legend
-- P0: Critical reliability or release blocker
-- P1: Important quality/maintainability
-- P2: Nice-to-have improvements
+I'd use this roadmap.
 
-Current Focus
-- Complete and stabilize integration tests module by module.
-- Standardize controller validation flow after test coverage is stable.
+---
 
-Backlog Items
+# Osaka Backend Engineer Roadmap (v2)
 
-1) [P0] [TODO] Finalize room integration tests
-Scope:
-- Keep room suite deterministic and green.
-- Ensure cleanup uses correct DB column names and no shared-state leakage.
-Done Criteria:
-- `npx jest __tests__/room.test.ts --runInBand` passes consistently.
-- No brittle assumptions on dynamic row counts where not required.
+## ✅ Phase 1 — Backend Foundation (Completed)
 
-2) [P0] [TODO] Complete remaining module integration tests
-Scope:
-- Ensure Auth, Users, Hotels, Rooms, Bookings suites are all complete.
-- Validate auth, validation failures, business-rule failures, and success paths.
-Done Criteria:
-- `npm test` passes reliably.
-- Each module has tests for both failure and success contract paths.
+**Completed by:** **July 16**
 
-3) [P1] [TODO] Expand booking integration test coverage
-Scope:
-- Add missing route-contract coverage to the booking suite after user tests are complete.
-- Prioritize `GET /bookings`, protected-route `401` cases, and `DELETE /bookings/:bookingId` staff-forbidden `403` coverage.
-- Add targeted controller-level validation cases only where the current booking routes expose them.
-Done Criteria:
-- Booking suite covers success, auth failure, authorization failure, validation failure, and business-rule failure for the exposed route surface.
-- `npx jest __tests__/booking.test.ts --runInBand` passes consistently.
+* ✅ Unified Hotel SaaS architecture
+* ✅ Auth + Authorization
+* ✅ CRUD modules
+* ✅ PostgreSQL
+* ✅ AWS EC2 deployment
+* ✅ GitHub Actions
+* ✅ Centralized error handling
+* ✅ 134 integration tests passing
+* ✅ Stable CI
 
-4) [P1] [TODO] Standardize 6-step controller validation flow
-Scope:
-- Apply the same validation sequence across controllers:
-	1. Request shape validation
-	2. Data extraction
-	3. Required field checks
-	4. Type checks
-	5. Business value checks
-	6. Service call
-Current State:
-- Aligned: `hotelController.ts`, `roomController.ts`
-- Needs alignment: `bookingController.ts`, `userController.ts`
-Done Criteria:
-- All controllers follow the same ordering and error style.
-- Existing integration tests remain green after refactor.
+**Milestone: Production-quality backend foundation.**
 
-5) [P1] [TODO] Introduce shared validation helpers
-Scope:
-- Extract repeated checks (JSON body shape, numeric parsing, non-empty string checks).
-- Keep helpers small and composable.
-Done Criteria:
-- Reduced duplicated validation code in controllers.
-- Error messages and status behavior remain stable and tested.
+---
 
-6) [P1] [TODO] Normalize API error contract
-Scope:
-- Standardize error responses through `AppError` + global `errorHandler`.
-- Remove mixed direct `res.status(...).json(...)` validation style where appropriate.
-Done Criteria:
-- Consistent error shape across modules (`success`, `message`, status).
-- Integration tests assert final API contract, not internal implementation details.
+# Phase 2 — Finish Testing
 
-7) [P2] [TODO] Developer docs and roadmap polish
-Scope:
-- Document validation standard and testing conventions.
-- Add short contributor notes for test data isolation and cleanup rules.
-Done Criteria:
-- README/docs include validation pattern and test conventions.
-- Backlog kept current after each completed milestone.
+### July 17 – July 18 (2 days)
 
+Goal:
 
+Close testing work permanently.
 
-July 15th, 2026: New updates for users API to be added later (currently not added)
+Tasks
 
-createUser
-	Admin can create staff only.
+* [ ] Review Booking coverage
+* [ ] Review Auth coverage
+* [ ] Add only meaningful missing tests
+* [ ] Final green build
 
-updateUserInfo
-	Admin can update:
-		first name
-		last name
-		active/inactive
-	Admin cannot change roles.
+Deliverable
 
-updateSelfInfo
-	User can update:
-		first name
-		last name
-		password
-	User cannot change role.
+```text
+✓ Testing complete
+✓ Stable baseline
+```
+
+---
+
+# Phase 3 — Validation Cleanup
+
+### July 19 (1 day only)
+
+Maximum:
+
+**ONE DAY**
+
+Tasks
+
+* [ ] Standardize controller validation
+* [ ] Extract 2–3 obvious helpers
+* [ ] Standardize validation ordering
+* [ ] Keep tests green
+
+Deliverable
+
+```text
+Cleaner controllers
+No major inconsistencies
+```
+
+Then STOP.
+
+---
+
+# Phase 4 — Docker
+
+### July 20 – July 22 (3 days)
+
+Tasks
+
+* [ ] Dockerfile
+* [ ] docker-compose
+* [ ] PostgreSQL container
+* [ ] Local development
+
+Deliverable
+
+```text
+Anyone can run project with Docker
+```
+
+---
+
+# Phase 5 — Swagger
+
+### July 23 – July 25 (3 days)
+
+Tasks
+
+* [ ] Swagger
+* [ ] Request examples
+* [ ] Response examples
+* [ ] Authentication docs
+
+Deliverable
+
+Professional API documentation.
+
+---
+
+# Phase 6 — README + Portfolio
+
+### July 26 – July 28 (3 days)
+
+Tasks
+
+* [ ] Rewrite README
+* [ ] Screenshots
+* [ ] Architecture
+* [ ] CI/CD
+* [ ] AWS
+* [ ] Testing
+
+Deliverable
+
+GitHub becomes interview-ready.
+
+---
+
+# Phase 7 — Guest Portal
+
+### July 29 – August 12 (2 weeks)
+
+Guest Registration
+
+* [ ] Register
+* [ ] Login
+* [ ] Password reset
+
+Guest Profile
+
+* [ ] Update profile
+* [ ] Booking history
+
+Deliverable
+
+First real customer-facing feature.
+
+---
+
+# Phase 8 — Payments
+
+### August 13 – August 27 (2 weeks)
+
+Tasks
+
+* [ ] Payment workflow
+* [ ] Payment confirmation
+* [ ] Booking transaction
+* [ ] Refund (optional)
+
+Deliverable
+
+Hotel SaaS becomes much closer to a real product.
+
+---
+
+# Phase 9 — Final Polish
+
+### August 28 – September 5 (1 week)
+
+Tasks
+
+* [ ] Code cleanup
+* [ ] Architecture review
+* [ ] Mock interviews
+* [ ] SQL review
+* [ ] Auth review
+
+Deliverable
+
+Interview-ready repository.
+
+---
+
+# Phase 10 — Applications
+
+### September 6 onward
+
+Priority
+
+* Osaka product companies
+* International companies
+* Remote-friendly companies
+
+Continue:
+
+* LeetCode
+* Interview practice
+* System Design
+
+---
+
+# AFTER getting the first backend job
+
+These intentionally move **after** interviews.
+
+* Validation library (Zod)
+* Camel ↔ Snake mapper
+* Logging
+* Metrics
+* Rate limiting
+* Redis
+* Background jobs
+* Email service
+* Audit logs
+* Multi-tenancy
+* Super Admin
+
+---
+
+# Overall Timeline
+
+```
+July 16
+│
+├── Testing Finish (2d)
+├── Validation Cleanup (1d)
+├── Docker (3d)
+├── Swagger (3d)
+├── README (3d)
+│
+──────────── July Ends ────────────
+│
+├── Guest Portal (2 weeks)
+├── Payments (2 weeks)
+│
+──────────── August Ends ──────────
+│
+├── Final Polish
+├── Mock Interviews
+│
+────────── Early September ─────────
+│
+Applications Begin
+```
+
+---
+
+## One adjustment I'd make
+
+Originally, we planned to apply in **September**. Looking at your current pace, I think that's still realistic, but I would make it **flexible** rather than tied to a specific day.
+
+**Target window:** **September 6–20, 2026**.
+
+If by then you have:
+
+* ✅ Docker
+* ✅ Swagger
+* ✅ Strong README
+* ✅ Guest Portal
+* ✅ Payments
+* ✅ Green CI
+* ✅ AWS deployment
+
+then you'll have a portfolio that is substantially stronger than it was just a few weeks ago. At that point, continuing to polish instead of applying is likely to have diminishing returns.
