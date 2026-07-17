@@ -1,272 +1,332 @@
+# Osaka Backend Engineer Roadmap
 
-* **Today:** July 16, 2026
-* Your current progress (134 passing tests, AWS deployed, CI working)
-* Your target of becoming interview-ready around **September 2026**
-* Our decision to avoid perfectionism and maximize portfolio value
+## Current Status (July 17, 2026)
 
-I'd use this roadmap.
+### Completed
 
----
+- ✅ Unified Hotel SaaS architecture
+- ✅ Controller → Service → Repository architecture
+- ✅ JWT Authentication
+- ✅ Role-based Authorization
+- ✅ Users Module
+- ✅ Hotels Module
+- ✅ Rooms Module
+- ✅ Bookings Module
+- ✅ PostgreSQL
+- ✅ Raw SQL Repository Pattern
+- ✅ Database Migrations
+- ✅ Centralized Error Handling
+- ✅ AWS EC2 Deployment
+- ✅ PM2 Deployment
+- ✅ GitHub Actions CI
+- ✅ 147 Integration Tests Passing
+- ✅ Stable CI Pipeline
 
-# Osaka Backend Engineer Roadmap (v2)
+### Project Metrics
 
-## ✅ Phase 1 — Backend Foundation (Completed)
-
-**Completed by:** **July 16**
-
-* ✅ Unified Hotel SaaS architecture
-* ✅ Auth + Authorization
-* ✅ CRUD modules
-* ✅ PostgreSQL
-* ✅ AWS EC2 deployment
-* ✅ GitHub Actions
-* ✅ Centralized error handling
-* ✅ 134 integration tests passing
-* ✅ Stable CI
-
-**Milestone: Production-quality backend foundation.**
-
----
-
-# Phase 2 — Finish Testing
-
-### July 17 – July 18 (2 days)
-
-Goal:
-
-Close testing work permanently.
-
-Tasks
-
-* [ ] Review Booking coverage
-* [ ] Review Auth coverage
-* [ ] Add only meaningful missing tests
-* [ ] Final green build
-
-Deliverable
-
-```text
-✓ Testing complete
-✓ Stable baseline
-```
+- **Backend Modules:** 5
+- **Integration Tests:** 147 ✅
+- **AWS Deployment:** ✅
+- **CI/CD:** ✅
+- **Current Phase:** Validation Cleanup
+- **Interview Target:** September 6–20, 2026
 
 ---
 
-# Phase 3 — Validation Cleanup
+## Project Goal
 
-### July 19 (1 day only)
-
-Maximum:
-
-**ONE DAY**
-
-Tasks
-
-* [ ] Standardize controller validation
-* [ ] Extract 2–3 obvious helpers
-* [ ] Standardize validation ordering
-* [ ] Keep tests green
-
-Deliverable
-
-```text
-Cleaner controllers
-No major inconsistencies
-```
-
-Then STOP.
+Build a production-quality backend portfolio that is interview-ready by **September 2026**, while avoiding perfectionism and maximizing portfolio value.
 
 ---
 
-# Phase 4 — Docker
+# Completed Phases
 
-### July 20 – July 22 (3 days)
+## ✅ Phase 1 — Backend Foundation
 
-Tasks
+**Completed:** July 17, 2026
 
-* [ ] Dockerfile
-* [ ] docker-compose
-* [ ] PostgreSQL container
-* [ ] Local development
+Completed:
 
-Deliverable
+- ✅ Unified Hotel SaaS architecture
+- ✅ Auth + Authorization
+- ✅ CRUD modules
+- ✅ PostgreSQL
+- ✅ AWS EC2 deployment
+- ✅ GitHub Actions
+- ✅ PM2 deployment
+- ✅ Database migrations
+- ✅ Centralized error handling
+- ✅ 147 Integration Tests
+- ✅ Stable CI
 
-```text
-Anyone can run project with Docker
-```
+**Milestone**
 
----
-
-# Phase 5 — Swagger
-
-### July 23 – July 25 (3 days)
-
-Tasks
-
-* [ ] Swagger
-* [ ] Request examples
-* [ ] Response examples
-* [ ] Authentication docs
-
-Deliverable
-
-Professional API documentation.
+Production-quality backend foundation completed.
 
 ---
 
-# Phase 6 — README + Portfolio
+## ✅ Phase 2 — Integration Testing
 
-### July 26 – July 28 (3 days)
+**Completed:** July 17, 2026
 
-Tasks
+Completed:
 
-* [ ] Rewrite README
-* [ ] Screenshots
-* [ ] Architecture
-* [ ] CI/CD
-* [ ] AWS
-* [ ] Testing
+- ✅ Reviewed all API modules
+- ✅ Removed low-value duplicate tests
+- ✅ Standardized API error contracts
+- ✅ Stable integration test suite
+- ✅ Green CI
 
-Deliverable
+**Deliverable**
 
-GitHub becomes interview-ready.
-
----
-
-# Phase 7 — Guest Portal
-
-### July 29 – August 12 (2 weeks)
-
-Guest Registration
-
-* [ ] Register
-* [ ] Login
-* [ ] Password reset
-
-Guest Profile
-
-* [ ] Update profile
-* [ ] Booking history
-
-Deliverable
-
-First real customer-facing feature.
+- ✅ Testing complete
+- ✅ Stable baseline
+- ✅ Confident refactoring foundation
 
 ---
 
-# Phase 8 — Payments
+# In Progress
 
-### August 13 – August 27 (2 weeks)
+## Phase 3 — Validation Cleanup
 
-Tasks
+**Target:** July 18 (Maximum: 1 day)
 
-* [ ] Payment workflow
-* [ ] Payment confirmation
-* [ ] Booking transaction
-* [ ] Refund (optional)
+### Tasks
 
-Deliverable
+- [ ] Standardize controller validation
+- [ ] Replace remaining direct `res.status(...).json(...)` validation responses with `AppError`
+- [ ] Extract only obvious reusable validation helpers
+- [ ] Standardize validation ordering
+- [ ] Keep all 147 tests green
 
-Hotel SaaS becomes much closer to a real product.
+### Completion Criteria
 
----
+- [ ] Consistent validation flow across controllers
+- [ ] No duplicated validation logic
+- [ ] All tests remain green
 
-# Phase 9 — Final Polish
+**Important**
 
-### August 28 – September 5 (1 week)
-
-Tasks
-
-* [ ] Code cleanup
-* [ ] Architecture review
-* [ ] Mock interviews
-* [ ] SQL review
-* [ ] Auth review
-
-Deliverable
-
-Interview-ready repository.
+Stop after one day. Do not over-engineer validation.
 
 ---
 
-# Phase 10 — Applications
+# Upcoming Phases
 
-### September 6 onward
+## Phase 4 — Docker
 
-Priority
+**Target:** July 19 – July 21
 
-* Osaka product companies
-* International companies
-* Remote-friendly companies
+### Tasks
 
-Continue:
+- [ ] Dockerfile
+- [ ] docker-compose
+- [ ] PostgreSQL container
+- [ ] Environment configuration
+- [ ] Local development setup
 
-* LeetCode
-* Interview practice
-* System Design
+### Completion Criteria
+
+- [ ] Project starts with `docker compose up`
+- [ ] API is reachable
+- [ ] PostgreSQL connects successfully
+- [ ] New developers can run the project without manual setup
 
 ---
 
-# AFTER getting the first backend job
+## Phase 5 — Swagger / OpenAPI
 
-These intentionally move **after** interviews.
+**Target:** July 22 – July 24
 
-* Validation library (Zod)
-* Camel ↔ Snake mapper
-* Logging
-* Metrics
-* Rate limiting
-* Redis
-* Background jobs
-* Email service
-* Audit logs
-* Multi-tenancy
-* Super Admin
+### Tasks
+
+- [ ] Swagger setup
+- [ ] Request examples
+- [ ] Response examples
+- [ ] JWT Authentication documentation
+- [ ] Endpoint documentation
+
+### Completion Criteria
+
+- [ ] All public endpoints documented
+- [ ] Swagger UI available
+- [ ] API can be explored without reading source code
+
+---
+
+## Phase 6 — README & Portfolio
+
+**Target:** July 25 – July 27
+
+### Tasks
+
+- [ ] Rewrite README
+- [ ] Architecture overview
+- [ ] Project structure
+- [ ] AWS deployment section
+- [ ] CI/CD explanation
+- [ ] Testing overview
+- [ ] Technologies used
+- [ ] Business features
+
+### Completion Criteria
+
+- [ ] Repository is self-explanatory
+- [ ] Recruiters can understand the project in a few minutes
+
+---
+
+## Phase 7 — Guest Portal
+
+**Target:** July 28 – August 10
+
+### Guest Authentication
+
+- [ ] Guest Registration
+- [ ] Guest Login
+- [ ] Password Reset
+
+### Guest Features
+
+- [ ] Guest Profile
+- [ ] Update Profile
+- [ ] Booking History
+
+### Completion Criteria
+
+- [ ] First customer-facing workflow completed
+- [ ] Guests can manage their own bookings
+
+---
+
+## Phase 8 — Payments
+
+**Target:** August 11 – August 24
+
+### Tasks
+
+- [ ] Payment workflow
+- [ ] Payment confirmation
+- [ ] Booking transaction
+- [ ] Failed payment handling
+- [ ] Refund (optional)
+
+### Completion Criteria
+
+- [ ] Booking and payment flow behaves like a real SaaS product
+
+---
+
+## Phase 9 — Final Polish
+
+**Target:** August 25 – September 5
+
+### Tasks
+
+- [ ] Small code cleanup
+- [ ] Architecture review
+- [ ] SQL review
+- [ ] Authentication review
+- [ ] Mock interviews
+- [ ] Resume update
+- [ ] GitHub polish
+
+### Completion Criteria
+
+- [ ] Repository is interview-ready
+- [ ] Comfortable explaining every architectural decision
+
+---
+
+## Phase 10 — Applications
+
+**Target Window:** September 6 – September 20
+
+### Priority
+
+1. Osaka product companies
+2. International companies
+3. Remote-friendly companies
+
+### Continue During Applications
+
+- LeetCode
+- SQL practice
+- System Design
+- Backend interview preparation
+
+---
+
+# Future Improvements (After First Backend Job)
+
+These intentionally come **after** interviews.
+
+- Zod
+- Request validation middleware
+- Camel ↔ Snake mapper
+- Structured logging
+- Metrics
+- Redis
+- Background jobs
+- Email service
+- Audit logs
+- Multi-tenancy
+- Super Admin
 
 ---
 
 # Overall Timeline
 
-```
-July 16
+```text
+July 17
 │
-├── Testing Finish (2d)
-├── Validation Cleanup (1d)
-├── Docker (3d)
-├── Swagger (3d)
-├── README (3d)
+├── ✅ Backend Foundation Complete
+├── ✅ Integration Testing Complete
 │
-──────────── July Ends ────────────
+July 18
+├── Validation Cleanup (1 day)
 │
-├── Guest Portal (2 weeks)
-├── Payments (2 weeks)
+July 19–21
+├── Docker
 │
-──────────── August Ends ──────────
+July 22–24
+├── Swagger
 │
+July 25–27
+├── README
+│
+──────────── End of July ────────────
+│
+July 28 – Aug 10
+├── Guest Portal
+│
+Aug 11 – Aug 24
+├── Payments
+│
+──────────── End of August ──────────
+│
+Aug 25 – Sep 5
 ├── Final Polish
 ├── Mock Interviews
 │
-────────── Early September ─────────
+──────── Early September ─────────
 │
-Applications Begin
+Sep 6 – Sep 20
+├── Backend Applications
 ```
 
 ---
 
-## One adjustment I'd make
+## Guiding Principle
 
-Originally, we planned to apply in **September**. Looking at your current pace, I think that's still realistic, but I would make it **flexible** rather than tied to a specific day.
+**Avoid perfectionism.**
 
-**Target window:** **September 6–20, 2026**.
+Focus on building a portfolio that demonstrates:
 
-If by then you have:
+- Solid backend architecture
+- Real business workflows
+- Deployment experience
+- Testing discipline
+- Professional documentation
 
-* ✅ Docker
-* ✅ Swagger
-* ✅ Strong README
-* ✅ Guest Portal
-* ✅ Payments
-* ✅ Green CI
-* ✅ AWS deployment
-
-then you'll have a portfolio that is substantially stronger than it was just a few weeks ago. At that point, continuing to polish instead of applying is likely to have diminishing returns.
+Once these goals are achieved, begin applying for backend engineering positions rather than endlessly polishing the project.

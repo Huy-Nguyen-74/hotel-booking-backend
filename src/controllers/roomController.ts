@@ -96,8 +96,7 @@ For createRoom:
 
 
 export async function createRoom(req: Request, res: Response, next: NextFunction) {
-    
-    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+    if (!req.body || Array.isArray(req.body)) {
         return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
     }
     
@@ -132,7 +131,6 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
     }
 }
 
-
 /*
 For updateRoom:
     - roomId must be a valid number
@@ -150,7 +148,7 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
         return next(new AppError("roomId is required and must be a number", 400));
     }
 
-    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+    if (!req.body || Array.isArray(req.body)) {
         return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
@@ -162,10 +160,6 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
 
     const invalidType = type !== undefined && (typeof type !== "string" || type.trim() === "");
     const invalidPrice = price !== undefined && (typeof price !== "number" || Number.isNaN(price) || price <= 0);
-
-    if (invalidType && invalidPrice) {
-        return next(new AppError("At least one of type or price must be provided and must be valid", 400));
-    }
 
     if (invalidType) {
         return next(new AppError("type must be a non-empty string", 400));
