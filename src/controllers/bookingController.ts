@@ -56,23 +56,23 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
         };
 
         if ((filters.hotelId !== undefined && Number.isNaN(filters.hotelId))){
-            return res.status(400).json({ message: "hotelId must be a number" });
+            return next(new AppError("hotelId must be a number", 400));
         }
 
         if ((filters.roomId !== undefined && Number.isNaN(filters.roomId))){
-            return res.status(400).json({ message: "roomId must be a number" });
+            return next(new AppError("roomId must be a number", 400));
         }
 
         if ((filters.guestName !== undefined && typeof filters.guestName !== "string")){
-            return res.status(400).json({ message: "guestName must be a string" });
+            return next(new AppError("guestName must be a string", 400));
         }
 
         if ((filters.checkInDate !== undefined && typeof filters.checkInDate !== "string")){
-            return res.status(400).json({ message: "checkInDate must be a string" });
+            return next(new AppError("checkInDate must be a string", 400));
         }
 
         if ((filters.checkOutDate !== undefined && typeof filters.checkOutDate !== "string")){
-            return res.status(400).json({ message: "checkOutDate must be a string" });
+            return next(new AppError("checkOutDate must be a string", 400));
         }
 
         const bookings = await serviceGetBookings(filters);
@@ -84,13 +84,13 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
 
 export async function getBookingById(req: Request, res: Response, next: NextFunction) {
     if (!req.params || typeof req.params !== "object" || Array.isArray(req.params)) {
-        return res.status(400).json({ success: false, message: "Request params must be a valid JSON object" });
+        return next(new AppError("Request params must be a valid JSON object", 400));
     }
 
     const bookingId = Number(req.params.bookingId);
 
     if (Number.isNaN(bookingId)) {
-        return res.status(400).json({ success: false, message: "bookingId must be a number" });
+        return next(new AppError("bookingId must be a number", 400));
     }
 
     try {
@@ -107,7 +107,7 @@ export async function getBookingById(req: Request, res: Response, next: NextFunc
 
 export async function createBooking(req: Request, res: Response, next: NextFunction) {
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+        return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
     const { hotelId, roomId, guestName, checkInDate, checkOutDate} = req.body;
@@ -119,27 +119,27 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         checkInDate === undefined ||
         checkOutDate === undefined
     ) {
-        return res.status(400).json({ success: false, message: "Missing required fields" });
+        return next(new AppError("Missing required fields", 400));
     }
 
     if (typeof hotelId !== "number" || Number.isNaN(hotelId)) {
-        return res.status(400).json({ success: false, message: "hotelId must be a number" });
+        return next(new AppError("hotelId must be a number", 400));
     }
 
     if (typeof roomId !== "number" || Number.isNaN(roomId)) {
-        return res.status(400).json({ success: false, message: "roomId must be a number" });
+        return next(new AppError("roomId must be a number", 400));
     }
 
     if (typeof guestName !== "string" || guestName.trim() === "") {
-        return res.status(400).json({ success: false, message: "guestName is required and must be a non-empty string" });
+        return next(new AppError("guestName is required and must be a non-empty string", 400));
     }
 
     if (typeof checkInDate !== "string" || isNaN(Date.parse(checkInDate))) {
-        return res.status(400).json({ success: false, message: "checkInDate must be a valid date string" });
+        return next(new AppError("checkInDate must be a valid date string", 400));
     }
 
     if (typeof checkOutDate !== "string" || isNaN(Date.parse(checkOutDate))) {
-        return res.status(400).json({ success: false, message: "checkOutDate must be a valid date string" });
+        return next(new AppError("checkOutDate must be a valid date string", 400));
     }
 
     try {
@@ -152,19 +152,19 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
 
 export async function updateBooking(req: Request, res: Response, next: NextFunction) {
     if (!req.params || typeof req.params !== "object" || Array.isArray(req.params)) {
-        return res.status(400).json({ success: false, message: "Request params must be a valid JSON object" });
+        return next(new AppError("Request params must be a valid JSON object", 400));
     }
     
     const bookingId = Number(req.params.bookingId);
 
     if (Number.isNaN(bookingId)) {
-        return res.status(400).json({ success: false, message: "bookingId must be a number" });
+        return next(new AppError("bookingId must be a number", 400));
     }
 
 
 
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
-        return res.status(400).json({ success: false, message: "Request body must be a valid JSON object" });
+        return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
 
@@ -182,27 +182,27 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
         checkInDate === undefined && 
         checkOutDate === undefined) {
 
-        return res.status(400).json({ success: false, message: "At least one field must be provided for update" });
+        return next(new AppError("At least one field must be provided for update", 400));
     }
 
     if (hotelId !== undefined && (Number.isNaN(hotelId))) {
-        return res.status(400).json({ success: false, message: "hotelId must be a number" });
+        return next(new AppError("hotelId must be a number", 400));
     }
 
     if (roomId !== undefined && (Number.isNaN(roomId))) {
-        return res.status(400).json({ success: false, message: "roomId must be a number" });
+        return next(new AppError("roomId must be a number", 400));
     }
 
     if (guestName !== undefined && (typeof guestName !== "string" || guestName.trim() === "")) {
-        return res.status(400).json({ success: false, message: "guestName must be a non-empty string" });
+        return next(new AppError("guestName must be a non-empty string", 400));
     }
 
     if (checkInDate !== undefined && (typeof checkInDate !== "string" || isNaN(Date.parse(checkInDate)))) {
-        return res.status(400).json({ success: false, message: "checkInDate must be a valid date string" });
+        return next(new AppError("checkInDate must be a valid date string", 400));
     }
 
     if (checkOutDate !== undefined && (typeof checkOutDate !== "string" || isNaN(Date.parse(checkOutDate)))) {
-        return res.status(400).json({ success: false, message: "checkOutDate must be a valid date string" });
+        return next(new AppError("checkOutDate must be a valid date string", 400));
     }
 
     try {
@@ -215,13 +215,13 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
 
 export async function deleteBooking(req: Request, res: Response, next: NextFunction) {
     if (!req.params || typeof req.params !== "object" || Array.isArray(req.params)) {
-        return res.status(400).json({ success: false, message: "Request params must be a valid JSON object" });
+        return next(new AppError("Request params must be a valid JSON object", 400));
     }
 
     const bookingId = Number(req.params.bookingId);
 
     if (Number.isNaN(bookingId)) {
-        return res.status(400).json({ success: false, message: "bookingId must be a number" });
+        return next(new AppError("bookingId must be a number", 400));
     }
 
     try {

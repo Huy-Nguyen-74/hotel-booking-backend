@@ -256,7 +256,7 @@ describe("PATCH /bookings/:bookingId", () => {
     expect(response.status).toBe(401);
     expect(response.body).toEqual({
       success: false,
-      message: "Access denied",
+      message: "Authentication token missing",
     });
   });
 
@@ -370,6 +370,15 @@ describe("DELETE /bookings/:bookingId", () => {
     expect(response.status).toBe(401);
     expect(response.body).toEqual({
       success: false,
+      message: "Authentication token missing",
+    });
+  });
+
+  it("returns 403 when staff tries to delete a booking", async () => {
+    const response = await request(app).delete("/bookings/1").set(authHeaders(staffToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
       message: "Access denied",
     });
   });
@@ -396,21 +405,43 @@ describe("DELETE /bookings/:bookingId", () => {
     const bookingId = createResponse.body.booking.id;
 
     const deleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.body.message).toBe("Booking deleted successfully");
+    expect(deleteResponse.body.booking.id).toBe(bookingId);
 
     const checkResponse = await request(app).get(`/bookings/${bookingId}`).set(authHeaders(adminToken));
-
     expect(checkResponse.status).toBe(404);
     expect(checkResponse.body).toEqual({
       success: false,
       message: "Booking not found",
     });
+  });
 
+  it("returns 404 when trying to delete a booking that was already deleted", async () => {
+    const createResponse = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Delete Test 2",
+      checkInDate: "2027-06-01",
+      checkOutDate: "2027-06-04",
+    });
+    expect(createResponse.status).toBe(201);
+
+    const bookingId = createResponse.body.booking.id;
+
+    const deleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.body.message).toBe("Booking deleted successfully");
     expect(deleteResponse.body.booking.id).toBe(bookingId);
+
+    const secondDeleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
+    expect(secondDeleteResponse.status).toBe(404);
+    expect(secondDeleteResponse.body).toEqual({
+      success: false,
+      message: "Booking not found",
+    });
   });
 });
-
 
 afterEach(async () => {
   for (const bookingId of createdBookingIds) {
