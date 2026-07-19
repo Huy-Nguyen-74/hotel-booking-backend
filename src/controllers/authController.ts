@@ -7,13 +7,20 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     return next(new AppError("Request body must be a valid JSON object", 400));
   }
 
-  const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
-  const password = typeof req.body.password === "string" ? req.body.password : "";
+  const parsedEmail = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const parsedPassword = typeof req.body.password === "string" ? req.body.password : "";
 
-  if (!email || !password) {
+  if (!parsedEmail || !parsedPassword) {
     return next(new AppError("email and password are required", 400));
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsedEmail)) {
+    return next(new AppError("email must be a valid email address", 400));
+  }
+
+  const email = parsedEmail;
+  const password = parsedPassword;
+  
   try {
     const authResult = await authenticateUser(email, password);
 

@@ -442,3 +442,15 @@ Planned enhancements:
 * Room availability endpoint
 * Docker containerization
 * API documentation with Swagger
+
+
+
+IMPORTANT (added July 19th 2026):
+Controller validation convention
+
+-Validate raw request data for presence and type safety.
+-Normalize into canonical values.
+-Validate business rules using canonical values.
+-Pass only canonical values to the service layer.
+
+

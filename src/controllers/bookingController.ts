@@ -46,37 +46,77 @@ Further notes:
 */
 
 export async function getBookings(req: Request, res: Response, next: NextFunction) {
+    if (!req.query || Array.isArray(req.query)) {
+        return next(new AppError("Request query must be a valid JSON object", 400));
+    }
+
+    const rawHotelId = req.query.hotelId;
+    const rawRoomId = req.query.roomId;
+    const rawGuestName = req.query.guestName;
+    const rawCheckInDate = req.query.checkInDate;
+    const rawCheckOutDate = req.query.checkOutDate;
+
+    if (rawHotelId !== undefined && typeof rawHotelId !== "string") {
+        return next(new AppError("hotelId must be a string", 400));
+    }
+
+    if (rawRoomId !== undefined && typeof rawRoomId !== "string") {
+        return next(new AppError("roomId must be a string", 400));
+    }
+
+    if (rawGuestName !== undefined && typeof rawGuestName !== "string") {
+        return next(new AppError("guestName must be a string", 400));
+    }
+
+    if (rawCheckInDate !== undefined && typeof rawCheckInDate !== "string") {
+        return next(new AppError("checkInDate must be a string", 400));
+    }
+
+    if (rawCheckOutDate !== undefined && typeof rawCheckOutDate !== "string") {
+        return next(new AppError("checkOutDate must be a string", 400));
+    }
+
+    const parsedHotelId = typeof rawHotelId === "string" && rawHotelId.trim() !== "" ? Number(rawHotelId.trim()) : undefined;
+    const parsedRoomId = typeof rawRoomId === "string" && rawRoomId.trim() !== "" ? Number(rawRoomId.trim()) : undefined;
+    const parsedGuestName = typeof rawGuestName === "string" && rawGuestName.trim() !== "" ? rawGuestName.trim() : undefined;
+    const parsedCheckInDate = typeof rawCheckInDate === "string" && rawCheckInDate.trim() !== "" ? rawCheckInDate.trim() : undefined;
+    const parsedCheckOutDate = typeof rawCheckOutDate === "string" && rawCheckOutDate.trim() !== "" ? rawCheckOutDate.trim() : undefined;
+
+    if (parsedHotelId !== undefined && (Number.isNaN(parsedHotelId) || !Number.isInteger(parsedHotelId) || parsedHotelId <= 0)) {
+        return next(new AppError("hotelId must be an integer greater than 0", 400));
+    }
+
+    if (parsedRoomId !== undefined && (Number.isNaN(parsedRoomId) || !Number.isInteger(parsedRoomId) || parsedRoomId <= 0)) {
+        return next(new AppError("roomId must be an integer greater than 0", 400));
+    }
+
+    if (parsedCheckInDate !== undefined && Number.isNaN(Date.parse(parsedCheckInDate))) {
+        return next(new AppError("checkInDate must be a valid date string", 400));
+    }
+
+    if (parsedCheckOutDate !== undefined && Number.isNaN(Date.parse(parsedCheckOutDate))) {
+        return next(new AppError("checkOutDate must be a valid date string", 400));
+    }
+
+    if (
+        parsedCheckInDate !== undefined &&
+        parsedCheckOutDate !== undefined &&
+        new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)
+    ) {
+        return next(new AppError("checkOutDate must be after checkInDate", 400));
+    }
+
+    const filters = {
+        hotelId: parsedHotelId,
+        roomId: parsedRoomId,
+        guestName: parsedGuestName,
+        checkInDate: parsedCheckInDate,
+        checkOutDate: parsedCheckOutDate
+    };
+    
     try {
-        const filters = {
-            hotelId: req.query.hotelId ? Number(req.query.hotelId) : undefined,
-            roomId: req.query.roomId ? Number(req.query.roomId) : undefined,
-            guestName: req.query.guestName as string | undefined,
-            checkInDate: req.query.checkInDate as string | undefined,
-            checkOutDate: req.query.checkOutDate as string | undefined
-        };
-
-        if (filters.hotelId !== undefined && Number.isNaN(filters.hotelId)) {
-            return next(new AppError("hotelId must be a number", 400));
-        }
-
-        if (filters.roomId !== undefined && Number.isNaN(filters.roomId)) {
-            return next(new AppError("roomId must be a number", 400));
-        }
-
-        if (filters.guestName !== undefined && typeof filters.guestName !== "string") {
-            return next(new AppError("guestName must be a string", 400));
-        }
-
-        if (filters.checkInDate !== undefined && typeof filters.checkInDate !== "string") {
-            return next(new AppError("checkInDate must be a string", 400));
-        }
-
-        if (filters.checkOutDate !== undefined && typeof filters.checkOutDate !== "string") {
-            return next(new AppError("checkOutDate must be a string", 400));
-        }
-
         const bookings = await serviceGetBookings(filters);
-            return res.json(bookings);
+        return res.json(bookings);
     } catch (error) {
         next(error);
     }
@@ -87,14 +127,16 @@ export async function getBookingById(req: Request, res: Response, next: NextFunc
         return next(new AppError("Request params must be a valid JSON object", 400));
     }
 
-    const bookingId = Number(req.params.bookingId);
+    const rawBookingId = req.params.bookingId;
 
-    if (Number.isNaN(bookingId)) {
-        return next(new AppError("bookingId must be a number", 400));
+    const parsedBookingId = typeof rawBookingId === "string" && rawBookingId.trim() !== "" ? Number(rawBookingId.trim()) : undefined;
+
+    if (parsedBookingId === undefined || Number.isNaN(parsedBookingId) || !Number.isInteger(parsedBookingId) || parsedBookingId <= 0) {
+        return next(new AppError("bookingId must be an integer greater than 0", 400));
     }
 
     try {
-        const booking = await serviceGetBookingById(bookingId);
+        const booking = await serviceGetBookingById(parsedBookingId);
         if (!booking) {
             throw new AppError("Booking not found", 404);
         }
@@ -110,40 +152,56 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
-    const { hotelId, roomId, guestName, checkInDate, checkOutDate} = req.body;
+    const rawHotelId = req.body.hotelId;
+    const rawRoomId = req.body.roomId;    
+    const rawGuestName = req.body.guestName;
+    const rawCheckInDate = req.body.checkInDate;
+    const rawCheckOutDate = req.body.checkOutDate;
 
-    if (
-        hotelId === undefined ||
-        roomId === undefined ||
-        guestName === undefined ||
-        checkInDate === undefined ||
-        checkOutDate === undefined
-    ) {
-        return next(new AppError("Missing required fields", 400));
+    if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
+        return next(new AppError("All fields are required", 400));
     }
 
-    if (typeof hotelId !== "number" || Number.isNaN(hotelId)) {
+    if (typeof rawHotelId !== "number") {
         return next(new AppError("hotelId must be a number", 400));
     }
 
-    if (typeof roomId !== "number" || Number.isNaN(roomId)) {
+    if (typeof rawRoomId !== "number") {
         return next(new AppError("roomId must be a number", 400));
     }
 
-    if (typeof guestName !== "string" || guestName.trim() === "") {
-        return next(new AppError("guestName is required and must be a non-empty string", 400));
+    if (typeof rawGuestName !== "string" || rawGuestName.trim() === "") {
+        return next(new AppError("guestName must be a non-empty string", 400));
     }
 
-    if (typeof checkInDate !== "string" || isNaN(Date.parse(checkInDate))) {
+    if (typeof rawCheckInDate !== "string" || isNaN(Date.parse(rawCheckInDate))) {
         return next(new AppError("checkInDate must be a valid date string", 400));
     }
 
-    if (typeof checkOutDate !== "string" || isNaN(Date.parse(checkOutDate))) {
+    if (typeof rawCheckOutDate !== "string" || isNaN(Date.parse(rawCheckOutDate))) {
         return next(new AppError("checkOutDate must be a valid date string", 400));
     }
 
+    const parsedHotelId = rawHotelId;
+    const parsedRoomId = rawRoomId;
+    const parsedGuestName = rawGuestName.trim();
+    const parsedCheckInDate = rawCheckInDate.trim();
+    const parsedCheckOutDate = rawCheckOutDate.trim();
+
+    if (!Number.isInteger(parsedHotelId) || parsedHotelId <= 0) {
+        return next(new AppError("hotelId must be an integer greater than 0", 400));
+    }
+
+    if (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0) {
+        return next(new AppError("roomId must be an integer greater than 0", 400));
+    }
+
+    if (new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
+        return next(new AppError("checkOutDate must be after checkInDate", 400));
+    }
+
     try {
-        const createdBooking = await serviceCreateBooking({ hotelId, roomId, guestName, checkInDate, checkOutDate });
+        const createdBooking = await serviceCreateBooking({ hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(201).json({ message: "Booking created successfully", booking: createdBooking });
     } catch (error) {
         next(error);
@@ -159,51 +217,76 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
-    const bookingId = Number(req.params.bookingId);
+    const rawBookingId = req.params.bookingId;
+    const rawHotelId = req.body.hotelId;
+    const rawRoomId = req.body.roomId;
+    const rawGuestName = req.body.guestName;
+    const rawCheckInDate = req.body.checkInDate;
+    const rawCheckOutDate = req.body.checkOutDate;
 
-    if (Number.isNaN(bookingId)) {
-        return next(new AppError("bookingId must be a number", 400));
+    // Validate data presence
+
+    if (rawBookingId === undefined) {
+        return next(new AppError("bookingId is required", 400));
     }
 
-    // At least one of the fields must be provided for update
-
-    const hotelId = req.body.hotelId !== undefined ? Number(req.body.hotelId) : undefined;
-    const roomId = req.body.roomId !== undefined ? Number(req.body.roomId) : undefined;
-    const guestName = req.body.guestName !== undefined ? String(req.body.guestName).trim() : undefined;
-    const checkInDate = req.body.checkInDate !== undefined ? String(req.body.checkInDate) : undefined;
-    const checkOutDate = req.body.checkOutDate !== undefined ? String(req.body.checkOutDate) : undefined;
-
-    if (hotelId === undefined && 
-        roomId === undefined && 
-        guestName === undefined && 
-        checkInDate === undefined && 
-        checkOutDate === undefined) {
-
+    if (rawHotelId === undefined && rawRoomId === undefined && rawGuestName === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
         return next(new AppError("At least one field must be provided for update", 400));
     }
 
-    if (hotelId !== undefined && (Number.isNaN(hotelId))) {
+    // Validate data types
+
+    if (typeof rawBookingId !== "string" || rawBookingId.trim() === "") {
+        return next(new AppError("bookingId must be a valid number", 400));
+    }
+
+    if (rawHotelId !== undefined && typeof rawHotelId !== "number") {
         return next(new AppError("hotelId must be a number", 400));
     }
 
-    if (roomId !== undefined && (Number.isNaN(roomId))) {
+    if (rawRoomId !== undefined && typeof rawRoomId !== "number") {
         return next(new AppError("roomId must be a number", 400));
     }
 
-    if (guestName !== undefined && (typeof guestName !== "string" || guestName.trim() === "")) {
+    if (rawGuestName !== undefined && (typeof rawGuestName !== "string" || rawGuestName.trim() === "")) {
         return next(new AppError("guestName must be a non-empty string", 400));
     }
 
-    if (checkInDate !== undefined && (typeof checkInDate !== "string" || isNaN(Date.parse(checkInDate)))) {
+    if (rawCheckInDate !== undefined && (typeof rawCheckInDate !== "string" || isNaN(Date.parse(rawCheckInDate)))) {
         return next(new AppError("checkInDate must be a valid date string", 400));
     }
 
-    if (checkOutDate !== undefined && (typeof checkOutDate !== "string" || isNaN(Date.parse(checkOutDate)))) {
+    if (rawCheckOutDate !== undefined && (typeof rawCheckOutDate !== "string" || isNaN(Date.parse(rawCheckOutDate)))) {
         return next(new AppError("checkOutDate must be a valid date string", 400));
     }
 
+    const parsedBookingId = Number(rawBookingId.trim());
+    const parsedHotelId = rawHotelId;
+    const parsedRoomId = rawRoomId;
+    const parsedGuestName = typeof rawGuestName === "string" ? rawGuestName.trim() : undefined;
+    const parsedCheckInDate = typeof rawCheckInDate === "string" ? rawCheckInDate.trim() : undefined;
+    const parsedCheckOutDate = typeof rawCheckOutDate === "string" ? rawCheckOutDate.trim() : undefined;
+
+    // Validate data values
+
+    if (!Number.isInteger(parsedBookingId) || parsedBookingId <= 0) {
+        return next(new AppError("bookingId must be an integer greater than 0", 400));
+    }
+
+    if (parsedHotelId !== undefined && (!Number.isInteger(parsedHotelId) || parsedHotelId <= 0)) {
+        return next(new AppError("hotelId must be an integer greater than 0", 400));
+    }
+
+    if (parsedRoomId !== undefined && (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0)) {
+        return next(new AppError("roomId must be an integer greater than 0", 400));
+    }
+
+    if (parsedCheckInDate !== undefined && parsedCheckOutDate !== undefined && new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
+        return next(new AppError("checkOutDate must be after checkInDate", 400));
+    }
+
     try {
-        const updatedBooking = await serviceUpdateBooking(bookingId, { hotelId, roomId, guestName, checkInDate, checkOutDate });
+        const updatedBooking = await serviceUpdateBooking(parsedBookingId, { hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(200).json({ message: "Booking updated successfully", booking: updatedBooking });
     } catch (error) {
         next(error);
@@ -215,14 +298,20 @@ export async function deleteBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("Request params must be a valid JSON object", 400));
     }
 
-    const bookingId = Number(req.params.bookingId);
+    const rawBookingId = req.params.bookingId;
+        
+    if (typeof rawBookingId !== "string" || rawBookingId.trim() === "") {
+        return next(new AppError("bookingId is required and must be a valid number", 400));
+    }
 
-    if (Number.isNaN(bookingId)) {
-        return next(new AppError("bookingId must be a number", 400));
+    const parsedBookingId = Number(rawBookingId.trim());
+
+    if (!Number.isInteger(parsedBookingId) || parsedBookingId <= 0) {
+        return next(new AppError("bookingId must be an integer greater than 0", 400));
     }
 
     try {
-        const deletedBooking = await serviceDeleteBooking(bookingId);
+        const deletedBooking = await serviceDeleteBooking(parsedBookingId);
         return res.status(200).json({ message: "Booking deleted successfully", booking: deletedBooking });
     } catch (error) {
         next(error);
