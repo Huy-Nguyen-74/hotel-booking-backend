@@ -1,0 +1,16 @@
+# Backend Study Guide
+
+* Prioritize concepts over edge cases.
+* Understand the architecture and reasoning before coding.
+* Implement a clean, consistent solution before optimizing.
+* In Controllers:
+
+  * Validate raw input (presence and type).
+  * Normalize once into canonical values.
+  * Validate business rules on canonical values.
+  * Pass only canonical values to the Service.
+* Reject common invalid input; ignore rare edge cases unless requirements explicitly demand them.
+* Keep the same validation pattern across all controllers and modules.
+* Prefer readable, maintainable, and consistent code over perfect code.
+* A feature is complete when the design is sound, the implementation is consistent, and the core endpoint tests pass.
+
