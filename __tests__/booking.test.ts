@@ -87,7 +87,7 @@ describe("GET /bookings", () => {
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
       success: false,
-      message: "hotelId must be a number",
+      message: "hotelId must be an integer greater than 0",
     });
   });
 
@@ -96,7 +96,7 @@ describe("GET /bookings", () => {
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
       success: false,
-      message: "roomId must be a number",
+      message: "roomId must be an integer greater than 0",
     });
   });
   
@@ -151,7 +151,7 @@ describe("POST /bookings", () => {
 
     expect(response.body).toEqual({
       success: false,
-      message: "Missing required fields",
+      message: "All fields are required",
     });
   });
 

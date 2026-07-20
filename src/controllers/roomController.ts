@@ -159,10 +159,6 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
     if (!req.params || Array.isArray(req.params)) {
         return next(new AppError("Request parameters must be a valid JSON object", 400));
     }
-
-    if (!req.body || Array.isArray(req.body)) {
-        return next(new AppError("Request body must be a valid JSON object", 400));
-    }
     
     const roomId = req.params.roomId;
 
@@ -174,6 +170,10 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
 
     if (Number.isNaN(parsedRoomId) || !Number.isInteger(parsedRoomId) || parsedRoomId <= 0) {
         return next(new AppError("roomId must be a positive integer", 400));
+    }
+
+    if (!req.body || Array.isArray(req.body)) {
+        return next(new AppError("Request body must be a valid JSON object", 400));
     }
 
     const type = req.body.type;

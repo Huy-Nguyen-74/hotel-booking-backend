@@ -377,7 +377,7 @@ describe("PATCH /users/:id/deactivate", () => {
             .patch("/users/invalid-id/deactivate")
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user id");
+        expect(response.body).toHaveProperty("message", "user id path parameter must be a positive integer");
     });
 
     it("should return 404 if the user ID does not exist", async () => {
@@ -549,7 +549,7 @@ describe("PATCH /users/:id", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid userId. userId must be a valid number");
+        expect(response.body).toHaveProperty("message", "userId path parameter must be a positive integer");
     });
 
     it("should return 404 if the user ID does not exist", async () => {

@@ -131,7 +131,7 @@ describe("GET /users", () => {
             .get("/users?id=invalid")
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "id must be a number");
+        expect(response.body).toHaveProperty("message", "id must be a positive integer");
     });
 
     it("should return 400 if query parameters such as email are malformed or invalid", async () => {

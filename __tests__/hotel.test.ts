@@ -50,7 +50,7 @@ describe("GET /hotels", () => {
         expect(response.status).toBe(400);
         expect(response.body).toEqual({
             success: false,
-            message: "hotelId must be a number" });
+            message: "hotelId must be a positive integer" });
     });
 
        it("should return 401 Unauthorized when no token is provided", async () => {

@@ -92,7 +92,7 @@ describe("POST /users", () => {
                 role: "staff"
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields are required");
     });
 
     it("should return 400 if required fields, such as lastName, are malformed or invalid", async () => {
@@ -107,7 +107,7 @@ describe("POST /users", () => {
                 role: "staff"
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields must be non-empty strings");
     });
 
     it("should return 400 if required fields, such as email, are malformed or invalid", async () => {
@@ -121,7 +121,7 @@ describe("POST /users", () => {
                 role: "staff"
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields are required");
     });
 
     it("should return 400 if required fields, such as password, are malformed or invalid", async () => {
@@ -135,7 +135,7 @@ describe("POST /users", () => {
                 role: "staff"
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields are required");
     });
 
     it("should return 400 if required fields, such as role, are malformed or invalid", async () => {
@@ -149,7 +149,7 @@ describe("POST /users", () => {
                 password: "password123"
             });
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields are required");
     });
 
     it("should return 400 if all required fields are missing", async () => {
@@ -158,7 +158,7 @@ describe("POST /users", () => {
             .set(authHeaders(adminToken))
             .send({});
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("message", "Invalid user payload");
+        expect(response.body).toHaveProperty("message", "All fields are required");
     });
 
     it("should return 409 if the email is already in use", async () => {

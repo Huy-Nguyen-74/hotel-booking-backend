@@ -57,7 +57,7 @@ describe("GET /rooms", () => {
             .query({ roomId: "invalid" }) // Invalid roomId
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "roomId must be a number" });
+        expect(response.body).toEqual({ success: false, message: "roomId must be a positive integer" });
     });
 
     it("should return 400 Bad Request if invalid query parameters (hotelId) are provided", async () => {
@@ -66,7 +66,7 @@ describe("GET /rooms", () => {
             .query({ hotelId: "invalid" }) // Invalid hotelId
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "hotelId must be a number" });
+        expect(response.body).toEqual({ success: false, message: "hotelId must be a positive integer" });
     });
 
     it("should return 400 Bad Request if invalid query parameters (type) are provided", async () => {
@@ -75,7 +75,7 @@ describe("GET /rooms", () => {
             .query({ type: ["Single", "Double"] }) // Non-string scalar shape (array)
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "type must be a string" });
+        expect(response.body).toEqual({ success: false, message: "type must be a non-empty string" });
     });
 
     it("should return 400 Bad Request if invalid query parameters (price) are provided", async () => {
@@ -84,7 +84,7 @@ describe("GET /rooms", () => {
             .query({ price: "invalid" }) // Invalid price
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "price must be a number" });
+        expect(response.body).toEqual({ success: false, message: "price must be a positive number" });
     });
 
 
@@ -242,7 +242,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ type: "Suite", price: 300 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "hotelId is required and must be a number" });
+        expect(response.body).toEqual({ success: false, message: "hotelId is required" });
     });
 
     it("should return 400 Bad Request if a required field such as hotelId is invalid", async () => {
@@ -251,7 +251,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ hotelId: "invalid", type: "Suite", price: 300 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "hotelId is required and must be a number" });
+        expect(response.body).toEqual({ success: false, message: "hotelId must be a number" });
     });
 
     it("should return 400 Bad Request if a required field such as type is missing", async () => {
@@ -260,7 +260,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ hotelId: 10, price: 300 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "type is required and must be a non-empty string" });
+        expect(response.body).toEqual({ success: false, message: "type is required" });
     });
 
     it("should return 400 Bad Request if a required field such as type is invalid after trimming", async () => {
@@ -269,7 +269,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ hotelId: 10, type: "   ", price: 300 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "type is required and must be a non-empty string" });
+        expect(response.body).toEqual({ success: false, message: "type must be a non-empty string" });
     });
 
     it("should return 400 Bad Request if a required field such as price is missing", async () => {
@@ -278,7 +278,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ hotelId: 10, type: "Suite" });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "price is required and must be a positive number" });
+        expect(response.body).toEqual({ success: false, message: "price is required" });
     });
 
     it("should return 400 Bad Request if a required field such as price is invalid", async () => {
@@ -287,7 +287,7 @@ describe("POST /rooms", () => {
             .set(authHeaders(adminToken))
             .send({ hotelId: 10, type: "Suite", price: -100 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "price is required and must be a positive number" });
+        expect(response.body).toEqual({ success: false, message: "price must be a positive number" });
 
         createdRoomIds.push(response.body.roomId); // Store the created room ID for cleanup
     });
@@ -353,7 +353,7 @@ describe("PATCH /rooms/:roomId", () => {
             .patch("/rooms/invalid")
             .set(authHeaders(adminToken));
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "roomId is required and must be a number" });
+        expect(response.body).toEqual({ success: false, message: "roomId must be a positive integer" });
     });
 
     it("should return 400 Bad Request if both required fields (type, price) are missing", async () => {
@@ -362,7 +362,7 @@ describe("PATCH /rooms/:roomId", () => {
             .set(authHeaders(adminToken))
             .send({}); // Sending an empty body to simulate missing required fields
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "At least one of type or price must be provided and must be valid" });
+        expect(response.body).toEqual({ success: false, message: "At least one of type or price must be provided" });
     });
 
     it("should return 400 Bad Request if both required fields (type, price) are invalid", async () => {
@@ -371,7 +371,7 @@ describe("PATCH /rooms/:roomId", () => {
             .set(authHeaders(adminToken))
             .send({ type: "   ", price: -100 });
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "At least one of type or price must be provided and must be valid" });
+        expect(response.body).toEqual({ success: false, message: "type must be a non-empty string" });
     });
 
     it("should return 404 Not Found if the roomId does not exist in the database", async () => {
