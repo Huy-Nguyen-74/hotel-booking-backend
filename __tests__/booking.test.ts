@@ -234,15 +234,15 @@ describe("POST /bookings", () => {
 
     expect(response.status).toBe(201);
 
-    createdBookingIds.push(response.body.booking.id);
+    createdBookingIds.push(response.body.booking.bookingId);
 
     expect(response.body.message).toBe("Booking created successfully");
     expect(response.body.booking).toMatchObject({
-      hotel_id: 11,
-      room_id: 4,
-      guest_name: "Success Test",
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Success Test",
       nights: 3,
-      total_price: 510,
+      totalPrice: 510,
     });
   });
 });
@@ -281,7 +281,7 @@ describe("PATCH /bookings/:bookingId", () => {
     });
     expect(createResponse.status).toBe(201);
 
-    const bookingId = createResponse.body.booking.id;
+    const bookingId = createResponse.body.booking.bookingId;
     createdBookingIds.push(bookingId);
 
     const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
@@ -292,12 +292,12 @@ describe("PATCH /bookings/:bookingId", () => {
     expect(patchResponse.status).toBe(200);
     expect(patchResponse.body.message).toBe("Booking updated successfully");
     expect(patchResponse.body.booking).toMatchObject({
-      id: bookingId,
-      hotel_id: 11,
-      room_id: 4,
-      guest_name: "Patch Test Updated",
+      bookingId: bookingId,
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Patch Test Updated",
       nights: 3,
-      total_price: 510,
+      totalPrice: 510,
     });
   });
 
@@ -311,7 +311,7 @@ describe("PATCH /bookings/:bookingId", () => {
     });
     expect(createResponse.status).toBe(201);
 
-    const bookingId = createResponse.body.booking.id;
+    const bookingId = createResponse.body.booking.bookingId;
     createdBookingIds.push(bookingId);
 
     const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
@@ -335,7 +335,7 @@ describe("PATCH /bookings/:bookingId", () => {
     });
     expect(createResponseA.status).toBe(201);
 
-    const bookingIdA = createResponseA.body.booking.id;
+    const bookingIdA = createResponseA.body.booking.bookingId;
     createdBookingIds.push(bookingIdA);
 
     const createResponseB = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
@@ -347,7 +347,7 @@ describe("PATCH /bookings/:bookingId", () => {
     });
     expect(createResponseB.status).toBe(201);
 
-    const bookingIdB = createResponseB.body.booking.id;
+    const bookingIdB = createResponseB.body.booking.bookingId;
     createdBookingIds.push(bookingIdB);
 
     const patchResponse = await request(app).patch(`/bookings/${bookingIdB}`).set(authHeaders(adminToken)).send({
@@ -402,12 +402,12 @@ describe("DELETE /bookings/:bookingId", () => {
     });
     expect(createResponse.status).toBe(201);
 
-    const bookingId = createResponse.body.booking.id;
+    const bookingId = createResponse.body.booking.bookingId;
 
     const deleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.body.message).toBe("Booking deleted successfully");
-    expect(deleteResponse.body.booking.id).toBe(bookingId);
+    expect(deleteResponse.body.booking.bookingId).toBe(bookingId);
 
     const checkResponse = await request(app).get(`/bookings/${bookingId}`).set(authHeaders(adminToken));
     expect(checkResponse.status).toBe(404);
@@ -427,12 +427,12 @@ describe("DELETE /bookings/:bookingId", () => {
     });
     expect(createResponse.status).toBe(201);
 
-    const bookingId = createResponse.body.booking.id;
+    const bookingId = createResponse.body.booking.bookingId;
 
     const deleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.body.message).toBe("Booking deleted successfully");
-    expect(deleteResponse.body.booking.id).toBe(bookingId);
+    expect(deleteResponse.body.booking.bookingId).toBe(bookingId);
 
     const secondDeleteResponse = await request(app).delete(`/bookings/${bookingId}`).set(authHeaders(adminToken));
     expect(secondDeleteResponse.status).toBe(404);

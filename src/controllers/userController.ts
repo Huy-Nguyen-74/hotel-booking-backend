@@ -8,6 +8,7 @@ import {
   updateSelfInfo as serviceUpdateSelfInfo,
   updateUserInfo as serviceUpdateUserInfo,
 } from "../services/userService";
+import { toUserDto } from "../DTO/userDto";
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
   if (!req.body || Array.isArray(req.body)) {
@@ -46,9 +47,17 @@ export async function createUser(req: Request, res: Response, next: NextFunction
     return next(new AppError("email must be a valid email address", 400));
   }
 
+  const inputData = {
+    firstName: parsedFirstName,
+    lastName: parsedLastName,
+    email: parsedEmail,
+    password,
+    role: parsedRole,
+  };
+
   try {
-    const user = await serviceCreateUser({ firstName: parsedFirstName, lastName: parsedLastName, email: parsedEmail, password, role: parsedRole });
-    return res.status(201).json(user);
+    const user = await serviceCreateUser(inputData);
+    return res.status(201).json(toUserDto(user));
   } catch (error) {
     next(error);
   }
@@ -89,7 +98,7 @@ export async function getUsers(req: Request, res: Response, next: NextFunction) 
   
   try {
     const users = await serviceGetUsers(filters);
-    return res.status(200).json(users);
+    return res.status(200).json(users.map(toUserDto));
   } catch (error) {
     next(error);
   }
@@ -102,7 +111,7 @@ export async function getSelfInfo(req: Request, res: Response, next: NextFunctio
 
   try {
     const user = await serviceGetSelfInfo(req.user.id);
-    return res.status(200).json(user);
+    return res.status(200).json(toUserDto(user));
   } catch (error) {
     next(error);
   }
@@ -123,7 +132,7 @@ export async function deactivateUserById(req: Request, res: Response, next: Next
 
   try {
     const deactivatedUser = await serviceDeactivateUserById(parsedId);
-    return res.status(200).json({success: true, message: "User deactivated successfully", body: deactivatedUser });
+    return res.status(200).json({success: true, message: "User deactivated successfully", body: toUserDto(deactivatedUser)});
   } catch (error) {
     next(error);
   }
@@ -163,7 +172,7 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
  
   try {
     const updatedUser = await serviceUpdateSelfInfo(req.user.id, parsedFirstName, parsedLastName, password);
-    return res.status(200).json(updatedUser);
+    return res.status(200).json(toUserDto(updatedUser));
   } catch (error) {
     next(error);
   }
@@ -208,7 +217,7 @@ export async function updateUserInfo(req: Request, res: Response, next: NextFunc
 
   try {
     const updatedUser = await serviceUpdateUserInfo(parsedId, firstName, lastName, isActive);
-    return res.status(200).json(updatedUser);
+    return res.status(200).json(toUserDto(updatedUser));
   } catch (error) {
     next(error);
   }

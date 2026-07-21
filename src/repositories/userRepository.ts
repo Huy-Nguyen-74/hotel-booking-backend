@@ -1,25 +1,15 @@
 import pool from "../database/db";
+import { SafeUser, UserRow, DbStoreUserData } from "../types/user";
 
-export type UserRow = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  password_hash: string;
-  role: "admin" | "staff";
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-export type CreateUserRepositoryData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  passwordHash: string;
-  role: "admin" | "staff";
-  isActive: boolean;
-};
+export async function findUserWithPasswordByEmail(email: string) {
+  const result = await pool.query(
+    `SELECT id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+     FROM users
+     WHERE LOWER(email) = LOWER($1)`,
+    [email]
+  );
+  return (result.rows[0] as UserRow | undefined) ?? null;
+}
 
 export async function findUsers(filters: { id?: number; email?: string }) {
   const values: Array<string | number> = [];
@@ -39,7 +29,7 @@ export async function findUsers(filters: { id?: number; email?: string }) {
 
   const result = await pool.query(
     `
-    SELECT id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    SELECT id, first_name, last_name, email, role, is_active, created_at, updated_at
     FROM users
     ${whereClause}
     ORDER BY id ASC
@@ -47,35 +37,35 @@ export async function findUsers(filters: { id?: number; email?: string }) {
     values
   );
 
-  return result.rows as UserRow[];
+  return result.rows as SafeUser[];
 }
 
 export async function findUserById(id: number) {
   const result = await pool.query(
     `
-    SELECT id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    SELECT id, first_name, last_name, email, role, is_active, created_at, updated_at
     FROM users
     WHERE id = $1
     `,
     [id]
   );
 
-  return (result.rows[0] as UserRow | undefined) ?? null;
+  return (result.rows[0] as SafeUser | undefined) ?? null;
 }
 
-export async function createUser(userData: CreateUserRepositoryData) {
+export async function createUser(userData: DbStoreUserData) {
   const { firstName, lastName, email, passwordHash, role, isActive } = userData;
 
   const result = await pool.query(
     `
     INSERT INTO users (first_name, last_name, email, password_hash, role, is_active)
     VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    RETURNING id, first_name, last_name, email, role, is_active, created_at, updated_at
     `,
     [firstName, lastName, email, passwordHash, role, isActive]
   );
 
-  return result.rows[0] as UserRow;
+  return result.rows[0] as SafeUser;
 }
 
 export async function updateSelfInfo(
@@ -93,12 +83,12 @@ export async function updateSelfInfo(
       password_hash = COALESCE($3, password_hash),
       updated_at = CURRENT_TIMESTAMP
     WHERE id = $4
-    RETURNING id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    RETURNING id, first_name, last_name, email, role, is_active, created_at, updated_at
     `,
     [firstName, lastName, passwordHash, id]
   );
 
-  return (result.rows[0] as UserRow | undefined) ?? null;
+  return (result.rows[0] as SafeUser | undefined) ?? null;
 }
 
 export async function updateUserInfo(
@@ -116,12 +106,12 @@ export async function updateUserInfo(
       is_active = COALESCE($3, is_active),
       updated_at = CURRENT_TIMESTAMP
     WHERE id = $4
-    RETURNING id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    RETURNING id, first_name, last_name, email, role, is_active, created_at, updated_at
     `,
     [firstName, lastName, isActive, id]
   );
 
-  return (result.rows[0] as UserRow | undefined) ?? null;
+  return (result.rows[0] as SafeUser | undefined) ?? null;
 }
 
 export async function deactivateUserById(id: number) {
@@ -130,10 +120,10 @@ export async function deactivateUserById(id: number) {
     UPDATE users
     SET is_active = false, updated_at = CURRENT_TIMESTAMP
     WHERE id = $1
-    RETURNING id, first_name, last_name, email, password_hash, role, is_active, created_at, updated_at
+    RETURNING id, first_name, last_name, email, role, is_active, created_at, updated_at
     `,
     [id]
   );
 
-  return (result.rows[0] as UserRow | undefined) ?? null;
+  return (result.rows[0] as SafeUser | undefined) ?? null;
 }

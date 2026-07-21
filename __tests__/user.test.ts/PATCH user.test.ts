@@ -168,7 +168,7 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -181,7 +181,7 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -208,8 +208,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -276,7 +276,7 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -289,7 +289,7 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -316,8 +316,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 });
@@ -411,8 +411,8 @@ describe("PATCH /users/:id/deactivate", () => {
         expect(response.body).toHaveProperty("success", true);
         expect(response.body).toHaveProperty("message", "User deactivated successfully");
         expect(response.body).toHaveProperty("body");
-        expect(response.body.body).toHaveProperty("id", tempStaffUser.id);
-        expect(response.body.body).toHaveProperty("is_active", false);
+        expect(response.body.body).toHaveProperty("userId", tempStaffUser.id);
+        expect(response.body.body).toHaveProperty("isActive", false);
         expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
@@ -681,7 +681,7 @@ describe("PATCH /users/:id", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -706,7 +706,7 @@ describe("PATCH /users/:id", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -731,7 +731,7 @@ describe("PATCH /users/:id", () => {
                 isActive: false,
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("is_active", false);
+        expect(response.body).toHaveProperty("isActive", false);
         expect(response.body).not.toHaveProperty("password_hash");
     });
 
@@ -758,9 +758,9 @@ describe("PATCH /users/:id", () => {
                 isActive: false,
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("first_name", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("last_name", "UpdatedLastName");
-        expect(response.body).toHaveProperty("is_active", false);
+        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body).toHaveProperty("isActive", false);
         expect(response.body).not.toHaveProperty("password_hash");
     });
 });

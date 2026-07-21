@@ -1,9 +1,9 @@
 import pool from "../database/db";
 import { AppError } from "../errors/AppError";
 import bcrypt from "bcrypt";
-import type { DatabaseUserRow, CreateUserInput } from "../types/user";
+import type { SafeUser, CreateUserInput } from "../types/user";
 
-export async function createAdminUserForTest(userData: CreateUserInput): Promise<DatabaseUserRow> {
+export async function createAdminUserForTest(userData: CreateUserInput): Promise<SafeUser> {
   const existingUser = await pool.query(
     `
     SELECT * FROM users WHERE email = $1
@@ -24,10 +24,10 @@ export async function createAdminUserForTest(userData: CreateUserInput): Promise
     [userData.firstName, userData.lastName, userData.email.toLowerCase(), hashedPassword]
   )
   
-  return createdUser.rows[0] as DatabaseUserRow;
+  return createdUser.rows[0] as SafeUser;
 }
 
-export async function createStaffUserForTest(userData: CreateUserInput): Promise<DatabaseUserRow> {
+export async function createStaffUserForTest(userData: CreateUserInput): Promise<SafeUser> {
   const existingUser = await pool.query(
     `
     SELECT * FROM users WHERE email = $1
@@ -48,5 +48,5 @@ export async function createStaffUserForTest(userData: CreateUserInput): Promise
     [userData.firstName, userData.lastName, userData.email.toLowerCase(), hashedPassword]
   )
 
-  return createdUser.rows[0] as DatabaseUserRow;
+  return createdUser.rows[0] as SafeUser;
 }

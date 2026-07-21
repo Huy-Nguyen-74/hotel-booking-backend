@@ -8,7 +8,7 @@ import {
     deleteBooking as serviceDeleteBooking    
 }  from "../services/bookingService"; // Service module path.
 import { AppError } from "../errors/AppError";
-
+import { toBookingDto } from "../DTO/bookingDto";
 
 /*
 July 6th, 2026: refactoring booking
@@ -116,7 +116,7 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
     
     try {
         const bookings = await serviceGetBookings(filters);
-        return res.json(bookings);
+        return res.json(bookings.map(toBookingDto));
     } catch (error) {
         next(error);
     }
@@ -141,7 +141,7 @@ export async function getBookingById(req: Request, res: Response, next: NextFunc
             throw new AppError("Booking not found", 404);
         }
 
-        return res.status(200).json(booking);
+        return res.status(200).json(toBookingDto(booking));
     } catch (error) {
         next(error);
     }
@@ -202,7 +202,7 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
 
     try {
         const createdBooking = await serviceCreateBooking({ hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
-        return res.status(201).json({ message: "Booking created successfully", booking: createdBooking });
+        return res.status(201).json({ message: "Booking created successfully", booking: toBookingDto(createdBooking) });
     } catch (error) {
         next(error);
     }
@@ -287,7 +287,7 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
 
     try {
         const updatedBooking = await serviceUpdateBooking(parsedBookingId, { hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
-        return res.status(200).json({ message: "Booking updated successfully", booking: updatedBooking });
+        return res.status(200).json({ message: "Booking updated successfully", booking: toBookingDto(updatedBooking) });
     } catch (error) {
         next(error);
     }
@@ -312,11 +312,13 @@ export async function deleteBooking(req: Request, res: Response, next: NextFunct
 
     try {
         const deletedBooking = await serviceDeleteBooking(parsedBookingId);
-        return res.status(200).json({ message: "Booking deleted successfully", booking: deletedBooking });
+        return res.status(200).json({ message: "Booking deleted successfully", booking: toBookingDto(deletedBooking) });
     } catch (error) {
         next(error);
     }
 }
+
+
 
 
 

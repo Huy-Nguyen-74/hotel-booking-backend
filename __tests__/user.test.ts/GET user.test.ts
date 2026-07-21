@@ -104,7 +104,7 @@ describe("GET /users", () => {
             .set(authHeaders(adminToken));
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.every((user: any) => ["id","email", "first_name","last_name", "role", "is_active", "created_at", "updated_at"].every(prop => user.hasOwnProperty(prop)))).toBe(true);
+        expect(response.body.every((user: any) => ["userId","email", "firstName","lastName", "role", "isActive", "createdAt", "updatedAt"].every(prop => user.hasOwnProperty(prop)))).toBe(true);
         expect(response.body.every((user: any) => !("password_hash" in user))).toBe(true);
     });
 
@@ -123,7 +123,7 @@ describe("GET /users", () => {
             .set(authHeaders(adminToken));
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body[0]).toHaveProperty("first_name", "Staff");
+        expect(response.body[0]).toHaveProperty("firstName", "Staff");
     });
 
     it("should return 400 if query parameters such as id are malformed or invalid", async () => {
@@ -199,15 +199,15 @@ describe("GET /users/me", () => {
         expect(response.status).toBe(200);
         expect(response.body).not.toHaveProperty("password_hash"); // Ensure password_hash is not included in the response
 
-        // The result should include "id","email", "first_name","last_name", "role", "is_active", "created_at", "updated_at"
-        expect(response.body).toHaveProperty("id");
+        // The result should include "userId","email", "firstName","lastName", "role", "isActive", "createdAt", "updatedAt"
+        expect(response.body).toHaveProperty("userId");
         expect(response.body).toHaveProperty("email");
-        expect(response.body).toHaveProperty("first_name");
-        expect(response.body).toHaveProperty("last_name");
+        expect(response.body).toHaveProperty("firstName");
+        expect(response.body).toHaveProperty("lastName");
         expect(response.body).toHaveProperty("role", "admin");
-        expect(response.body).toHaveProperty("is_active");
-        expect(response.body).toHaveProperty("created_at");
-        expect(response.body).toHaveProperty("updated_at");
+        expect(response.body).toHaveProperty("isActive");
+        expect(response.body).toHaveProperty("createdAt");
+        expect(response.body).toHaveProperty("updatedAt");
     });
 
     it("should return 200 and the authenticated user's information for a staff user, excluding sensitive fields", async () => {
@@ -217,15 +217,15 @@ describe("GET /users/me", () => {
         expect(response.status).toBe(200);
         expect(response.body).not.toHaveProperty("password_hash"); // Ensure password_hash is not included in the response
 
-        // The result should include "id","email", "first_name","last_name", "role", "is_active", "created_at", "updated_at"
-        expect(response.body).toHaveProperty("id");
+        // The result should include "userId","email", "firstName","lastName", "role", "isActive", "createdAt", "updatedAt"
+        expect(response.body).toHaveProperty("userId");
         expect(response.body).toHaveProperty("email");
-        expect(response.body).toHaveProperty("first_name");
-        expect(response.body).toHaveProperty("last_name");
+        expect(response.body).toHaveProperty("firstName");
+        expect(response.body).toHaveProperty("lastName");
         expect(response.body).toHaveProperty("role", "staff");
-        expect(response.body).toHaveProperty("is_active");
-        expect(response.body).toHaveProperty("created_at");
-        expect(response.body).toHaveProperty("updated_at");
+        expect(response.body).toHaveProperty("isActive");
+        expect(response.body).toHaveProperty("createdAt");
+        expect(response.body).toHaveProperty("updatedAt");
     });
 
     it("should return 400 if malformed or invalid inputs are provided (e.g., invalid token)", async () => {

@@ -1,18 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError";
-import { findUsers } from "../repositories/userRepository";
-
-type SafeUser = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: "admin" | "staff";
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-};
+import { findUserWithPasswordByEmail } from "../repositories/userRepository";
+import { SafeUser } from "../types/auth";
 
 function generateToken(user: SafeUser) {
   const jwtSecret = process.env.JWT_SECRET;
@@ -34,8 +24,7 @@ function generateToken(user: SafeUser) {
 }
 
 export async function authenticateUser(email: string, password: string) {
-  const users = await findUsers({ email });
-  const user = users[0];
+  const user = await findUserWithPasswordByEmail(email);
 
   if (!user) {
     throw new AppError("Invalid email or password", 401);

@@ -1,27 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-
 import {
     getRooms as serviceGetRooms,
     createRoom as serviceCreateRoom,
     updateRoom as serviceUpdateRoom,    
 }  from "../services/roomService"; // Service module path.
 import { AppError } from "../errors/AppError";
-
-type RoomRow = {
-    id: number;
-    hotel_id: number;
-    type: string;
-    price: number;
-};
-
-function toRoomDto(room: RoomRow) {
-    return {
-        roomId: room.id,
-        hotelId: room.hotel_id,
-        type: room.type,
-        price: room.price,
-    };
-}
+import { toRoomDto } from "../DTO/roomDto";
 
 /*
 For getRooms: using optional filters (hotelId, roomId, type, price):
@@ -84,7 +68,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
 
     try {
         const rooms = await serviceGetRooms(filters);
-        res.json((rooms as RoomRow[]).map(toRoomDto));
+        res.json(rooms.map(toRoomDto));
     } catch (error) {
         next(error);
     }
@@ -139,7 +123,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
 
     try {
         const room = await serviceCreateRoom(passedHotelId, passedType, passedPrice);
-        res.status(201).json(toRoomDto(room as RoomRow));
+        res.status(201).json(toRoomDto(room));
     } catch (error) {
         next(error);
     }
@@ -198,7 +182,7 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
             return next(new AppError("Room not found", 404));
         }
 
-        res.json(toRoomDto(room as RoomRow));
+        res.json(toRoomDto(room));
 
     } catch (error) {
         next(error);

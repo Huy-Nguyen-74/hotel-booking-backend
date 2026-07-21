@@ -222,8 +222,8 @@ describe("POST /hotels - Admin Access", () => {
             .set(authHeaders(adminToken))
             .send({ name: "New Hotel", city: "New City" });
         expect(response.status).toBe(201);
-        createdHotelIds.push(response.body.id);
-        expect(response.body).toHaveProperty("id");
+        createdHotelIds.push(response.body.hotelId);
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.name).toBe("New Hotel");
         expect(response.body.city).toBe("New City");
     });
@@ -234,8 +234,8 @@ describe("POST /hotels - Admin Access", () => {
             .set(authHeaders(adminToken))
             .send({ name: "Tokyo Grand Hotel", city: "New City" });
         expect(response.status).toBe(201);
-        createdHotelIds.push(response.body.id);
-        expect(response.body).toHaveProperty("id");
+        createdHotelIds.push(response.body.hotelId);
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.name).toBe("Tokyo Grand Hotel");
         expect(response.body.city).toBe("New City");
     });
@@ -246,8 +246,8 @@ describe("POST /hotels - Admin Access", () => {
             .set(authHeaders(adminToken))
             .send({ name: "New Hotel", city: "Tokyo" });
         expect(response.status).toBe(201);
-        createdHotelIds.push(response.body.id);
-        expect(response.body).toHaveProperty("id");
+        createdHotelIds.push(response.body.hotelId);
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.name).toBe("New Hotel");
         expect(response.body.city).toBe("Tokyo");
     });
@@ -369,15 +369,15 @@ describe("PATCH /hotels/:hotelId", () => {
         
         expect(patchTestHotel.status).toBe(201);        
         
-        createdHotelIds.push(patchTestHotel.body.id);
+        createdHotelIds.push(patchTestHotel.body.hotelId);
 
         const response = await request(app)
-            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
+            .patch(`/hotels/${patchTestHotel.body.hotelId}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ name: "Updated Hotel", city: "Updated City" });
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("id");
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.name).toBe("Updated Hotel");
         expect(response.body.city).toBe("Updated City");
     });
@@ -390,15 +390,15 @@ describe("PATCH /hotels/:hotelId", () => {
         
         expect(patchTestHotel.status).toBe(201);        
 
-        createdHotelIds.push(patchTestHotel.body.id);
+        createdHotelIds.push(patchTestHotel.body.hotelId);
 
         const response = await request(app)
-            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
+            .patch(`/hotels/${patchTestHotel.body.hotelId}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ name: "Updated Hotel Name" });
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("id");
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.name).toBe("Updated Hotel Name");
     });
 
@@ -410,15 +410,15 @@ describe("PATCH /hotels/:hotelId", () => {
         
         expect(patchTestHotel.status).toBe(201);
         
-        createdHotelIds.push(patchTestHotel.body.id);
+        createdHotelIds.push(patchTestHotel.body.hotelId);
 
         const response = await request(app)
-            .patch(`/hotels/${patchTestHotel.body.id}`) // Use the ID of the newly created hotel
+            .patch(`/hotels/${patchTestHotel.body.hotelId}`) // Use the ID of the newly created hotel
             .set(authHeaders(adminToken))
             .send({ city: "Updated City Name" });
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("id");
+        expect(response.body).toHaveProperty("hotelId");
         expect(response.body.city).toBe("Updated City Name");
     });
 });

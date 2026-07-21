@@ -5,6 +5,7 @@ import {
     createHotel as serviceCreateHotel,
     updateHotel as serviceUpdateHotel,
 } from "../services/hotelService";
+import { toHotelDto } from "../DTO/hotelDto";
 
 /*
 For getHotels:
@@ -55,7 +56,7 @@ export async function getHotels (req: Request, res: Response, next: NextFunction
 
     try {
         const hotels = await serviceGetHotels(filters);
-        res.json(hotels);
+        res.json(hotels.map(toHotelDto));
     } catch (error) {
         next(error);
     }   
@@ -91,7 +92,7 @@ export async function createHotel (req: Request, res: Response, next: NextFuncti
 
     try {
         const hotel = await serviceCreateHotel(name.trim(), city.trim());
-        res.status(201).json(hotel);
+        res.status(201).json(toHotelDto(hotel));
     } catch (error) {
         next(error);
     }
@@ -118,7 +119,7 @@ export async function updateHotel (req: Request, res: Response, next: NextFuncti
 
     try {
         const hotel = await serviceUpdateHotel(hotelId, name?.trim(), city?.trim());
-        res.status(200).json(hotel);
+        res.status(200).json(toHotelDto(hotel));
     } catch (error) {
         next(error);
     }

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { authenticateUser } from "../services/authService";
 import { AppError } from "../errors/AppError";
-import { authDto } from "../../DTO/authDto";
+import { toAuthDto } from "../DTO/authDto";
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   if (!req.body || Array.isArray(req.body)) {
@@ -27,7 +27,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     return res.status(200).json({
       message: "Login successful",
-      user: authDto(authResult.user),
+      user: toAuthDto(authResult.user),
       token: authResult.token,
     });
   } catch (error) {

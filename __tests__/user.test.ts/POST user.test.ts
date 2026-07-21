@@ -189,17 +189,17 @@ describe("POST /users", () => {
             });
 
         // Store the created user's ID for cleanup
-        createdUserIds.push(newUser.body.id);
+        createdUserIds.push(newUser.body.userId);
 
         expect(newUser.status).toBe(201);
-        expect(newUser.body).toHaveProperty("id");
-        expect(newUser.body).toHaveProperty("first_name", "Test");
-        expect(newUser.body).toHaveProperty("last_name", "User");
+        expect(newUser.body).toHaveProperty("userId");
+        expect(newUser.body).toHaveProperty("firstName", "Test");
+        expect(newUser.body).toHaveProperty("lastName", "User");
         expect(newUser.body).toHaveProperty("email", "newstaff@hotel.local");
         expect(newUser.body).toHaveProperty("role", "staff");
-        expect(newUser.body).toHaveProperty("is_active", true);
-        expect(newUser.body).toHaveProperty("created_at");
-        expect(newUser.body).toHaveProperty("updated_at");
+        expect(newUser.body).toHaveProperty("isActive", true);
+        expect(newUser.body).toHaveProperty("createdAt");
+        expect(newUser.body).toHaveProperty("updatedAt");
 
         expect(newUser.body).not.toHaveProperty("password_hash"); // Ensure password_hash is not included in the response
     });
