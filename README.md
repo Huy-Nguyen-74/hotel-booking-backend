@@ -382,6 +382,11 @@ hotel-booking-backend/
 
 ## Running Locally
 
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker ps
+docker compose --env-file .env.docker exec backend npm test
+docker compose --env-file .env.docker down
+
 ### Install Dependencies
 
 ```bash
@@ -440,7 +445,6 @@ Planned enhancements:
 * Authentication and authorization integration tests
 * Request validation library
 * Room availability endpoint
-* Docker containerization
 * API documentation with Swagger
 
 
@@ -452,5 +456,9 @@ Controller validation convention
 -Normalize into canonical values.
 -Validate business rules using canonical values.
 -Pass only canonical values to the service layer.
+
+-> Controller also finished on July 20th
+
+
 
 

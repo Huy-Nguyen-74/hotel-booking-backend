@@ -1,6 +1,6 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status — July 21, 2026
+## Current Status — July 24, 2026
 
 ### Completed
 
@@ -18,8 +18,10 @@
 - ✅ TypeScript contract cleanup
 - ✅ `npx tsc --noEmit`
 - ✅ 147 integration tests
+- ✅ Dockerized backend and PostgreSQL environment
+- ✅ 147 integration tests passing inside Docker
 
-**Current Phase:** Docker  
+**Current Phase:** Swagger / OpenAPI  
 **Interview Target:** September 2026
 
 ---
@@ -74,24 +76,41 @@ npm test
 
 ---
 
-## Phase 4 — Docker
+## Phase 4 — Docker ✅
 
-**Target:** July 22–25
+**Completed:** July 24
 
-### Tasks
+### Completed Work
 
-* [ ] Dockerfile
-* [ ] Docker Compose
-* [ ] PostgreSQL container
-* [ ] Environment configuration
-* [ ] Run migrations and tests in containers
+* [x] Backend `Dockerfile`
+* [x] Docker Compose configuration
+* [x] PostgreSQL 16 container
+* [x] Separate `.env.docker` configuration
+* [x] Backend-to-PostgreSQL container networking
+* [x] Port mapping for backend and PostgreSQL
+* [x] Persistent PostgreSQL named volume
+* [x] PostgreSQL health check before backend startup
+* [x] Automatic migrations before API startup
+* [x] Dedicated Docker test database
+* [x] Environment-driven `TEST_DATABASE_URL`
+* [x] 147 integration tests passing inside Docker
+* [x] Stop-and-restart verification without data loss
+* [x] Docker startup and test commands added to README
 
 ### Completion Criteria
 
-* [ ] `docker compose up` starts the project
-* [ ] API connects to PostgreSQL
-* [ ] Tests pass inside Docker
-* [ ] A new developer can run the project easily
+* [x] Docker Compose starts the backend and PostgreSQL
+* [x] Docker backend connects to Docker PostgreSQL
+* [x] Migrations run automatically at backend startup
+* [x] Tests pass inside Docker
+* [x] Containers can be removed and recreated while PostgreSQL data remains in the named volume
+* [x] Setup commands are documented
+
+### Deferred Cleanup
+
+* [ ] Automate creation of `hotel_booking_test` on a brand-new Docker volume instead of creating it once manually
+
+This cleanup does not block Swagger or feature development.
 
 ---
 
