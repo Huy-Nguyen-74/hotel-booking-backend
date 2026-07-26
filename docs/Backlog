@@ -1,339 +1,269 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status (July 17, 2026)
+## Current Status — July 24, 2026
 
 ### Completed
 
-- ✅ Unified Hotel SaaS architecture
+- ✅ Unified Hotel SaaS
 - ✅ Controller → Service → Repository architecture
-- ✅ JWT Authentication
-- ✅ Role-based Authorization
-- ✅ Users Module
-- ✅ Hotels Module
-- ✅ Rooms Module
-- ✅ Bookings Module
-- ✅ PostgreSQL
-- ✅ Raw SQL Repository Pattern
-- ✅ Database Migrations
-- ✅ Centralized Error Handling
-- ✅ AWS EC2 Deployment
-- ✅ PM2 Deployment
-- ✅ GitHub Actions CI
-- ✅ 147 Integration Tests Passing
-- ✅ Stable CI Pipeline
-
-### Project Metrics
-
-- **Backend Modules:** 5
-- **Integration Tests:** 147 ✅
-- **AWS Deployment:** ✅
-- **CI/CD:** ✅
-- **Current Phase:** Validation Cleanup
-- **Interview Target:** September 6–20, 2026
-
----
-
-## Project Goal
-
-Build a production-quality backend portfolio that is interview-ready by **September 2026**, while avoiding perfectionism and maximizing portfolio value.
-
----
-
-# Completed Phases
-
-## ✅ Phase 1 — Backend Foundation
-
-**Completed:** July 17, 2026
-
-Completed:
-
-- ✅ Unified Hotel SaaS architecture
-- ✅ Auth + Authorization
-- ✅ CRUD modules
-- ✅ PostgreSQL
-- ✅ AWS EC2 deployment
-- ✅ GitHub Actions
-- ✅ PM2 deployment
+- ✅ Auth and role-based authorization
+- ✅ Users, Hotels, Rooms, and Bookings
+- ✅ PostgreSQL and raw SQL
 - ✅ Database migrations
 - ✅ Centralized error handling
-- ✅ 147 Integration Tests
-- ✅ Stable CI
+- ✅ AWS EC2 + PM2 deployment
+- ✅ GitHub Actions CI/CD
+- ✅ Validation cleanup
+- ✅ DTO conversion: snake_case → camelCase
+- ✅ TypeScript contract cleanup
+- ✅ `npx tsc --noEmit`
+- ✅ 147 integration tests
+- ✅ Dockerized backend and PostgreSQL environment
+- ✅ 147 integration tests passing inside Docker
 
-**Milestone**
-
-Production-quality backend foundation completed.
-
----
-
-## ✅ Phase 2 — Integration Testing
-
-**Completed:** July 17, 2026
-
-Completed:
-
-- ✅ Reviewed all API modules
-- ✅ Removed low-value duplicate tests
-- ✅ Standardized API error contracts
-- ✅ Stable integration test suite
-- ✅ Green CI
-
-**Deliverable**
-
-- ✅ Testing complete
-- ✅ Stable baseline
-- ✅ Confident refactoring foundation
+**Current Phase:** Swagger / OpenAPI  
+**Interview Target:** September 2026
 
 ---
 
-# In Progress
+## Verification Rule
 
-## Phase 3 — Validation Cleanup
+Complete every phase with:
 
-**Target:** July 18 (Maximum: 1 day)
+```bash
+npx tsc --noEmit
+npm test
+````
 
-### Tasks
+---
 
-- [ ] Standardize controller validation
-- [ ] Replace remaining direct `res.status(...).json(...)` validation responses with `AppError`
-- [ ] Extract only obvious reusable validation helpers
-- [ ] Standardize validation ordering
-- [ ] Keep all 147 tests green
+## Phase 1 — Backend Foundation ✅
+
+**Completed:** July 17
+
+* Architecture
+* Core modules
+* Authentication and authorization
+* PostgreSQL
+* Migrations
+* Testing
+* AWS deployment
+* CI/CD
+
+---
+
+## Phase 2 — Integration Testing ✅
+
+**Completed:** July 17
+
+* 147 tests passing
+* Stable API contracts
+* Clean test database
+* Reliable CI pipeline
+
+---
+
+## Phase 3 — Validation and DTO Cleanup ✅
+
+**Completed:** July 21
+
+* Consistent controller validation
+* Centralized `AppError`
+* No harmful validation duplication
+* DTO conversion before API responses
+* Sensitive fields excluded
+* Type checking added to verification workflow
+
+---
+
+## Phase 4 — Docker ✅
+
+**Completed:** July 24
+
+### Completed Work
+
+* [x] Backend `Dockerfile`
+* [x] Docker Compose configuration
+* [x] PostgreSQL 16 container
+* [x] Separate `.env.docker` configuration
+* [x] Backend-to-PostgreSQL container networking
+* [x] Port mapping for backend and PostgreSQL
+* [x] Persistent PostgreSQL named volume
+* [x] PostgreSQL health check before backend startup
+* [x] Automatic migrations before API startup
+* [x] Dedicated Docker test database
+* [x] Environment-driven `TEST_DATABASE_URL`
+* [x] 147 integration tests passing inside Docker
+* [x] Stop-and-restart verification without data loss
+* [x] Docker startup and test commands added to README
 
 ### Completion Criteria
 
-- [ ] Consistent validation flow across controllers
-- [ ] No duplicated validation logic
-- [ ] All tests remain green
+* [x] Docker Compose starts the backend and PostgreSQL
+* [x] Docker backend connects to Docker PostgreSQL
+* [x] Migrations run automatically at backend startup
+* [x] Tests pass inside Docker
+* [x] Containers can be removed and recreated while PostgreSQL data remains in the named volume
+* [x] Setup commands are documented
 
-**Important**
+### Deferred Cleanup
 
-Stop after one day. Do not over-engineer validation.
+* [ ] Automate creation of `hotel_booking_test` on a brand-new Docker volume instead of creating it once manually
 
----
-
-# Upcoming Phases
-
-## Phase 4 — Docker
-
-**Target:** July 19 – July 21
-
-### Tasks
-
-- [ ] Dockerfile
-- [ ] docker-compose
-- [ ] PostgreSQL container
-- [ ] Environment configuration
-- [ ] Local development setup
-
-### Completion Criteria
-
-- [ ] Project starts with `docker compose up`
-- [ ] API is reachable
-- [ ] PostgreSQL connects successfully
-- [ ] New developers can run the project without manual setup
+This cleanup does not block Swagger or feature development.
 
 ---
 
 ## Phase 5 — Swagger / OpenAPI
 
-**Target:** July 22 – July 24
+**Target:** July 26–29
 
 ### Tasks
 
-- [ ] Swagger setup
-- [ ] Request examples
-- [ ] Response examples
-- [ ] JWT Authentication documentation
-- [ ] Endpoint documentation
+* [ ] Swagger setup
+* [ ] Document endpoints
+* [ ] Request and response examples
+* [ ] JWT authentication documentation
+* [ ] Error response examples
 
 ### Completion Criteria
 
-- [ ] All public endpoints documented
-- [ ] Swagger UI available
-- [ ] API can be explored without reading source code
+* [ ] All important endpoints documented
+* [ ] API can be explored through Swagger UI
 
 ---
 
-## Phase 6 — README & Portfolio
+## Phase 6 — README and Portfolio
 
-**Target:** July 25 – July 27
+**Target:** July 30–August 2
 
 ### Tasks
 
-- [ ] Rewrite README
-- [ ] Architecture overview
-- [ ] Project structure
-- [ ] AWS deployment section
-- [ ] CI/CD explanation
-- [ ] Testing overview
-- [ ] Technologies used
-- [ ] Business features
+* [ ] Project overview
+* [ ] Architecture
+* [ ] Local and Docker setup
+* [ ] Database migrations
+* [ ] Testing
+* [ ] CI/CD
+* [ ] AWS deployment
+* [ ] Business workflows
 
 ### Completion Criteria
 
-- [ ] Repository is self-explanatory
-- [ ] Recruiters can understand the project in a few minutes
+* [ ] Repository is understandable within a few minutes
+* [ ] Setup instructions work from a clean environment
 
 ---
 
-## Phase 7 — Guest Portal
+## Phase 7 — Guest Journey
 
-**Target:** July 28 – August 10
+**Target:** August 3–16
 
-### Guest Authentication
+Extend the existing Users and Auth modules with a `guest` role.
 
-- [ ] Guest Registration
-- [ ] Guest Login
-- [ ] Password Reset
+### Tasks
 
-### Guest Features
-
-- [ ] Guest Profile
-- [ ] Update Profile
-- [ ] Booking History
+* [ ] Guest registration
+* [ ] Guest login
+* [ ] Guest profile
+* [ ] Update profile
+* [ ] Password reset
+* [ ] Booking history
+* [ ] Guests access only their own data
 
 ### Completion Criteria
 
-- [ ] First customer-facing workflow completed
-- [ ] Guests can manage their own bookings
+* [ ] Complete customer-facing authentication flow
+* [ ] Guests can manage their profile and bookings
+* [ ] No separate or duplicated authentication system
 
 ---
 
 ## Phase 8 — Payments
 
-**Target:** August 11 – August 24
+**Target:** August 17–30
 
 ### Tasks
 
-- [ ] Payment workflow
-- [ ] Payment confirmation
-- [ ] Booking transaction
-- [ ] Failed payment handling
-- [ ] Refund (optional)
+* [ ] Stripe test-mode integration
+* [ ] Payment intent workflow
+* [ ] Payment confirmation
+* [ ] Webhook verification
+* [ ] Idempotency handling
+* [ ] Booking and payment database transaction
+* [ ] Failed payment handling
+* [ ] Refund support if time permits
 
 ### Completion Criteria
 
-- [ ] Booking and payment flow behaves like a real SaaS product
+* [ ] Duplicate requests do not create duplicate payments
+* [ ] Booking and payment state remain consistent
+* [ ] Successful and failed payment flows are tested
 
 ---
 
-## Phase 9 — Final Polish
+## Phase 9 — Applications and Final Polish
 
-**Target:** August 25 – September 5
+**Start Applications:** August 25
+**Polish Target:** August 31–September 6
 
 ### Tasks
 
-- [ ] Small code cleanup
-- [ ] Architecture review
-- [ ] SQL review
-- [ ] Authentication review
-- [ ] Mock interviews
-- [ ] Resume update
-- [ ] GitHub polish
+* [ ] Resume update
+* [ ] GitHub profile cleanup
+* [ ] Architecture review
+* [ ] SQL review
+* [ ] Security review
+* [ ] Mock interviews
+* [ ] Prepare project explanations
+* [ ] Begin applications while polishing continues
 
-### Completion Criteria
-
-- [ ] Repository is interview-ready
-- [ ] Comfortable explaining every architectural decision
-
----
-
-## Phase 10 — Applications
-
-**Target Window:** September 6 – September 20
-
-### Priority
+### Application Priority
 
 1. Osaka product companies
 2. International companies
-3. Remote-friendly companies
+3. English-friendly companies
+4. Remote-friendly companies
 
 ### Continue During Applications
 
-- LeetCode
-- SQL practice
-- System Design
-- Backend interview preparation
+* SQL practice
+* Backend system design
+* Algorithms
+* Mock interviews
 
 ---
 
-# Future Improvements (After First Backend Job)
+## Later Improvements
 
-These intentionally come **after** interviews.
+Do not delay applications for these:
 
-- Zod
-- Request validation middleware
-- Camel ↔ Snake mapper
-- Structured logging
-- Metrics
-- Redis
-- Background jobs
-- Email service
-- Audit logs
-- Multi-tenancy
-- Super Admin
-
----
-
-# Overall Timeline
-
-```text
-July 17
-│
-├── ✅ Backend Foundation Complete
-├── ✅ Integration Testing Complete
-│
-July 18
-├── Validation Cleanup (1 day)
-│
-July 19–21
-├── Docker
-│
-July 22–24
-├── Swagger
-│
-July 25–27
-├── README
-│
-──────────── End of July ────────────
-│
-July 28 – Aug 10
-├── Guest Portal
-│
-Aug 11 – Aug 24
-├── Payments
-│
-──────────── End of August ──────────
-│
-Aug 25 – Sep 5
-├── Final Polish
-├── Mock Interviews
-│
-──────── Early September ─────────
-│
-Sep 6 – Sep 20
-├── Backend Applications
-```
+* Validation library
+* Structured logging
+* Metrics
+* Redis
+* Background jobs
+* Email service
+* Audit logs
+* Multi-tenancy
+* Super Admin
 
 ---
 
 ## Guiding Principle
 
-**Avoid perfectionism.**
+Avoid endless cleanup.
 
-Focus on building a portfolio that demonstrates:
+Prioritize:
 
-- Solid backend architecture
-- Real business workflows
-- Deployment experience
-- Testing discipline
-- Professional documentation
+* Solid architecture
+* Real business workflows
+* Security
+* Testing
+* Deployment
+* Clear documentation
 
-Once these goals are achieved, begin applying for backend engineering positions rather than endlessly polishing the project.
+Begin applying once the project demonstrates these capabilities.
 
-
-JULY 20th, 2026: need to add conversion of DB data snake case into camelCase before sending to frontend
-
--> DONE, on July 21st
-
-
+```
+```
