@@ -1,25 +1,27 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status — July 24, 2026
+## Current Status — July 26, 2026
 
 ### Completed
 
 - ✅ Unified Hotel SaaS
 - ✅ Controller → Service → Repository architecture
-- ✅ Auth and role-based authorization
+- ✅ Authentication and role-based authorization
 - ✅ Users, Hotels, Rooms, and Bookings
 - ✅ PostgreSQL and raw SQL
-- ✅ Database migrations
+- ✅ Database migrations as schema source of truth
 - ✅ Centralized error handling
-- ✅ AWS EC2 + PM2 deployment
-- ✅ GitHub Actions CI/CD
-- ✅ Validation cleanup
-- ✅ DTO conversion: snake_case → camelCase
+- ✅ DTO conversion: `snake_case` → `camelCase`
 - ✅ TypeScript contract cleanup
-- ✅ `npx tsc --noEmit`
 - ✅ 147 integration tests
-- ✅ Dockerized backend and PostgreSQL environment
-- ✅ 147 integration tests passing inside Docker
+- ✅ GitHub Actions CI/CD
+- ✅ AWS EC2 + PM2 + systemd deployment
+- ✅ Reproducible Docker development environment
+- ✅ Automatic development and test database creation
+- ✅ Clean-volume Docker verification
+- ✅ 147 tests passing inside a fresh Docker environment
+- ✅ Docker environment template
+- ✅ README and setup documentation
 
 **Current Phase:** Swagger / OpenAPI  
 **Interview Target:** September 2026
@@ -28,12 +30,18 @@
 
 ## Verification Rule
 
-Complete every phase with:
+Complete each engineering phase with:
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
 npm test
-````
+```
+
+For infrastructure or CI changes, also verify:
+
+- GitHub Actions is green.
+- Docker setup works from a clean volume when relevant.
+- Documentation matches the actual commands and environment behavior.
 
 ---
 
@@ -41,14 +49,15 @@ npm test
 
 **Completed:** July 17
 
-* Architecture
-* Core modules
-* Authentication and authorization
-* PostgreSQL
-* Migrations
-* Testing
-* AWS deployment
-* CI/CD
+- [x] Unified Hotel SaaS architecture
+- [x] Controller → Service → Repository structure
+- [x] Auth, Users, Hotels, Rooms, and Bookings
+- [x] PostgreSQL and raw SQL repositories
+- [x] Database migrations
+- [x] Centralized error handling
+- [x] AWS EC2 deployment
+- [x] PM2 and systemd process recovery
+- [x] GitHub Actions CI/CD
 
 ---
 
@@ -56,10 +65,12 @@ npm test
 
 **Completed:** July 17
 
-* 147 tests passing
-* Stable API contracts
-* Clean test database
-* Reliable CI pipeline
+- [x] 147 tests passing
+- [x] Dedicated test database
+- [x] Test database reset from migrations
+- [x] Predictable seed data
+- [x] Stable API contracts
+- [x] Reliable CI pipeline
 
 ---
 
@@ -67,115 +78,156 @@ npm test
 
 **Completed:** July 21
 
-* Consistent controller validation
-* Centralized `AppError`
-* No harmful validation duplication
-* DTO conversion before API responses
-* Sensitive fields excluded
-* Type checking added to verification workflow
+- [x] Consistent controller validation
+- [x] Raw validation before normalization
+- [x] Business validation on canonical values
+- [x] Centralized `AppError`
+- [x] No harmful validation duplication
+- [x] DTO conversion before API responses
+- [x] Sensitive fields excluded
+- [x] Type checking added to verification workflow
 
 ---
 
 ## Phase 4 — Docker ✅
 
-**Completed:** July 24
+**Completed:** July 26
 
 ### Completed Work
 
-* [x] Backend `Dockerfile`
-* [x] Docker Compose configuration
-* [x] PostgreSQL 16 container
-* [x] Separate `.env.docker` configuration
-* [x] Backend-to-PostgreSQL container networking
-* [x] Port mapping for backend and PostgreSQL
-* [x] Persistent PostgreSQL named volume
-* [x] PostgreSQL health check before backend startup
-* [x] Automatic migrations before API startup
-* [x] Dedicated Docker test database
-* [x] Environment-driven `TEST_DATABASE_URL`
-* [x] 147 integration tests passing inside Docker
-* [x] Stop-and-restart verification without data loss
-* [x] Docker startup and test commands added to README
+- [x] Backend `Dockerfile`
+- [x] Docker Compose configuration
+- [x] PostgreSQL 16 container
+- [x] Separate `.env.docker` configuration
+- [x] Committed `.env.docker.example` template
+- [x] Backend-to-PostgreSQL container networking
+- [x] Host and container port mapping
+- [x] Persistent PostgreSQL named volume
+- [x] PostgreSQL health check
+- [x] Backend waits for PostgreSQL readiness
+- [x] Automatic migrations before API startup
+- [x] Automatic `hotel_booking` creation
+- [x] Automatic `hotel_booking_test` creation through `docker/init-test-db.sql`
+- [x] Environment-driven `DATABASE_URL`
+- [x] Environment-driven `TEST_DATABASE_URL`
+- [x] Test reset script works on Windows, Docker, and CI
+- [x] Fresh project and clean-volume setup verified
+- [x] 147 integration tests passing inside the fresh Docker environment
+- [x] Container removal and volume persistence verified
+- [x] Temporary reproducibility-check project removed
+- [x] Original Docker environment restored
+- [x] GitHub CI updated with its own `TEST_DATABASE_URL`
+- [x] GitHub CI and deployment green after the refactor
 
 ### Completion Criteria
 
-* [x] Docker Compose starts the backend and PostgreSQL
-* [x] Docker backend connects to Docker PostgreSQL
-* [x] Migrations run automatically at backend startup
-* [x] Tests pass inside Docker
-* [x] Containers can be removed and recreated while PostgreSQL data remains in the named volume
-* [x] Setup commands are documented
-
-### Deferred Cleanup
-
-* [ ] Automate creation of `hotel_booking_test` on a brand-new Docker volume instead of creating it once manually
-
-This cleanup does not block Swagger or feature development.
+- [x] One documented command builds and starts the local system
+- [x] Backend and PostgreSQL start successfully
+- [x] Both local Docker databases are created automatically
+- [x] Migrations run automatically
+- [x] API starts after PostgreSQL becomes healthy
+- [x] Tests pass inside Docker
+- [x] A new developer has a complete environment-variable template
+- [x] Setup succeeds from a genuinely fresh volume
+- [x] Ordinary container deletion does not delete database data
 
 ---
 
 ## Phase 5 — Swagger / OpenAPI
 
-**Target:** July 26–29
+**Target:** July 26–30
 
 ### Tasks
 
-* [ ] Swagger setup
-* [ ] Document endpoints
-* [ ] Request and response examples
-* [ ] JWT authentication documentation
-* [ ] Error response examples
+- [ ] Install and configure Swagger tooling
+- [ ] Expose Swagger UI
+- [ ] Define the OpenAPI document
+- [ ] Document authentication and JWT usage
+- [ ] Document Users endpoints
+- [ ] Document Hotels endpoints
+- [ ] Document Rooms endpoints
+- [ ] Document Bookings endpoints
+- [ ] Add request examples
+- [ ] Add success response examples
+- [ ] Add validation, authentication, authorization, not-found, and conflict errors
 
 ### Completion Criteria
 
-* [ ] All important endpoints documented
-* [ ] API can be explored through Swagger UI
+- [ ] All important endpoints are documented
+- [ ] Protected endpoints support JWT authorization through Swagger UI
+- [ ] API requests can be explored without reading the source code
+- [ ] Documentation matches actual request and response contracts
+- [ ] Type checking, tests, and CI remain green
 
 ---
 
-## Phase 6 — README and Portfolio
+## Phase 6 — README and Documentation ✅
 
-**Target:** July 30–August 2
+**Completed early:** July 26
 
-### Tasks
+### Completed Work
 
-* [ ] Project overview
-* [ ] Architecture
-* [ ] Local and Docker setup
-* [ ] Database migrations
-* [ ] Testing
-* [ ] CI/CD
-* [ ] AWS deployment
-* [ ] Business workflows
+- [x] Project overview
+- [x] Current architecture
+- [x] Layer responsibilities
+- [x] Core business features
+- [x] Booking business rules
+- [x] Database overview
+- [x] Reproducible Docker quick start
+- [x] Environment-template instructions
+- [x] Automatic database and migration behavior
+- [x] Docker test command
+- [x] Volume persistence and reset behavior
+- [x] Non-Docker setup
+- [x] Testing workflow
+- [x] CI/CD workflow
+- [x] AWS deployment
+- [x] Project structure
+- [x] Key design decisions
+- [x] Current roadmap
 
 ### Completion Criteria
 
-* [ ] Repository is understandable within a few minutes
-* [ ] Setup instructions work from a clean environment
+- [x] Repository is understandable within a few minutes
+- [x] Clean-environment setup instructions are documented
+- [x] README reflects the completed Docker phase
+- [x] CI wording correctly states that pushes to `main` trigger the workflow
+
+Swagger details will be added to the README after Phase 5 is complete.
 
 ---
 
 ## Phase 7 — Guest Journey
 
-**Target:** August 3–16
+**Target:** August 1–16
 
-Extend the existing Users and Auth modules with a `guest` role.
+Extend the existing Users and Auth modules with a `guest` role rather than creating a separate authentication system.
 
 ### Tasks
 
-* [ ] Guest registration
-* [ ] Guest login
-* [ ] Guest profile
-* [ ] Update profile
-* [ ] Password reset
-* [ ] Booking history
-* [ ] Guests access only their own data
+- [ ] Guest registration
+- [ ] Guest login
+- [ ] Shared logout
+- [ ] Guest profile
+- [ ] Update guest profile
+- [ ] Password reset request
+- [ ] Password reset confirmation
+- [ ] Search room availability
+- [ ] Create booking
+- [ ] View booking history
+- [ ] View booking details
+- [ ] Update booking
+- [ ] Cancel booking
+- [ ] Guests access only their own profile and bookings
+- [ ] Authorization and ownership tests
 
 ### Completion Criteria
 
-* [ ] Complete customer-facing authentication flow
-* [ ] Guests can manage their profile and bookings
-* [ ] No separate or duplicated authentication system
+- [ ] Complete customer-facing authentication flow
+- [ ] Guests can manage their profile and bookings
+- [ ] Ownership rules prevent access to other guests' data
+- [ ] No duplicated authentication architecture
+- [ ] Tests and Swagger documentation cover the guest journey
 
 ---
 
@@ -185,38 +237,41 @@ Extend the existing Users and Auth modules with a `guest` role.
 
 ### Tasks
 
-* [ ] Stripe test-mode integration
-* [ ] Payment intent workflow
-* [ ] Payment confirmation
-* [ ] Webhook verification
-* [ ] Idempotency handling
-* [ ] Booking and payment database transaction
-* [ ] Failed payment handling
-* [ ] Refund support if time permits
+- [ ] Stripe test-mode integration
+- [ ] Payment intent workflow
+- [ ] Payment confirmation
+- [ ] Webhook signature verification
+- [ ] Idempotency handling
+- [ ] Payment persistence
+- [ ] Booking and payment database transaction
+- [ ] Failed payment handling
+- [ ] Payment integration tests
+- [ ] Refund support if time permits
 
 ### Completion Criteria
 
-* [ ] Duplicate requests do not create duplicate payments
-* [ ] Booking and payment state remain consistent
-* [ ] Successful and failed payment flows are tested
+- [ ] Duplicate requests do not create duplicate payments
+- [ ] Booking and payment state remain consistent
+- [ ] Webhooks are verified securely
+- [ ] Successful and failed payment flows are tested
 
 ---
 
 ## Phase 9 — Applications and Final Polish
 
-**Start Applications:** August 25
+**Start Applications:** August 25  
 **Polish Target:** August 31–September 6
 
 ### Tasks
 
-* [ ] Resume update
-* [ ] GitHub profile cleanup
-* [ ] Architecture review
-* [ ] SQL review
-* [ ] Security review
-* [ ] Mock interviews
-* [ ] Prepare project explanations
-* [ ] Begin applications while polishing continues
+- [ ] Resume update
+- [ ] GitHub profile cleanup
+- [ ] Architecture review
+- [ ] SQL review
+- [ ] Security review
+- [ ] Mock interviews
+- [ ] Prepare project explanations
+- [ ] Begin applications while polishing continues
 
 ### Application Priority
 
@@ -227,10 +282,10 @@ Extend the existing Users and Auth modules with a `guest` role.
 
 ### Continue During Applications
 
-* SQL practice
-* Backend system design
-* Algorithms
-* Mock interviews
+- SQL practice
+- Backend system design
+- Algorithms
+- Mock interviews
 
 ---
 
@@ -238,15 +293,15 @@ Extend the existing Users and Auth modules with a `guest` role.
 
 Do not delay applications for these:
 
-* Validation library
-* Structured logging
-* Metrics
-* Redis
-* Background jobs
-* Email service
-* Audit logs
-* Multi-tenancy
-* Super Admin
+- Validation library
+- Structured logging
+- Metrics
+- Redis
+- Background jobs
+- Email service
+- Audit logs
+- Multi-tenancy
+- Super Admin
 
 ---
 
@@ -256,14 +311,11 @@ Avoid endless cleanup.
 
 Prioritize:
 
-* Solid architecture
-* Real business workflows
-* Security
-* Testing
-* Deployment
-* Clear documentation
+- Solid architecture
+- Real business workflows
+- Security
+- Testing
+- Deployment
+- Clear documentation
 
-Begin applying once the project demonstrates these capabilities.
-
-```
-```
+Begin applying once the project demonstrates these capabilities rather than waiting for theoretical perfection.
