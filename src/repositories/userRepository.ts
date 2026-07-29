@@ -11,6 +11,47 @@ export async function findUserWithPasswordByEmail(email: string) {
   return (result.rows[0] as UserRow | undefined) ?? null;
 }
 
+export async function storePasswordResetToken(
+  userId: number,
+  tokenHash: string,
+  expiresAt: Date
+) {
+  await pool.query(
+    `
+    INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id)
+    DO UPDATE SET
+      token_hash = EXCLUDED.token_hash,
+      expires_at = EXCLUDED.expires_at,
+      created_at = NOW()
+    `,
+    [userId, tokenHash, expiresAt]
+  );
+}
+
+export async function findUserIdByPasswordResetToken(tokenHash: string) {
+  const result = await pool.query(
+    `
+    SELECT user_id, expires_at
+    FROM password_reset_tokens
+    WHERE token_hash = $1
+    `,
+    [tokenHash]
+  );
+  return result.rows[0] as { user_id: number; expires_at: Date } | undefined ?? null;
+}
+
+export async function deletePasswordResetToken(tokenHash: string) {
+  await pool.query(
+    `
+    DELETE FROM password_reset_tokens
+    WHERE token_hash = $1
+    `,
+    [tokenHash]
+  );
+}
+
 export async function findUsers(filters: { id?: number; email?: string }) {
   const values: Array<string | number> = [];
   const conditions: string[] = [];

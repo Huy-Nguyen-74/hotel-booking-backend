@@ -1,5 +1,14 @@
 import pool from "../database/db";
 
+interface RoomSearchFilters {
+  hotelId?: number;
+  type?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  checkInDate?: string;
+  checkOutDate?: string;
+}
+
 /*
 This is to create/update/get rooms
 */
@@ -43,6 +52,51 @@ export async function findRooms(filters: { hotelId?: number; roomId?: number; ty
     return result.rows;
 }
 
+export async function findAvailableRooms(filters: RoomSearchFilters) {
+    const values: Array<string | number> = [];
+    const conditions: string[] = [];
+
+    if (filters.hotelId !== undefined) {
+        conditions.push(`hotel_id = $${values.length + 1}`);
+        values.push(filters.hotelId);
+    }
+
+    if (filters.type !== undefined) {
+        conditions.push(`type = $${values.length + 1}`);
+        values.push(filters.type);
+    }
+
+    if (filters.minPrice !== undefined) {
+        conditions.push(`price >= $${values.length + 1}`);
+        values.push(filters.minPrice);
+    }
+
+    if (filters.maxPrice !== undefined) {
+        conditions.push(`price <= $${values.length + 1}`);
+        values.push(filters.maxPrice);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const query = `SELECT * FROM rooms ${whereClause}`;
+    const basicRoomSearch = await pool.query(query, values);
+
+    // If checkInDate and checkOutDate are provided, filter out rooms that are already booked
+    if (filters.checkInDate && filters.checkOutDate) {
+        const bookedRoomsQuery = `
+        SELECT DISTINCT room_id
+        FROM bookings
+        WHERE NOT (
+            $1 >= check_out_date
+            OR $2 <= check_in_date
+        )`;
+
+        const bookedRoomsResult = await pool.query(bookedRoomsQuery, [filters.checkInDate, filters.checkOutDate]);
+        const bookedRoomIds = new Set(bookedRoomsResult.rows.map((booking) => booking.room_id));
+        return basicRoomSearch.rows.filter((room) => !bookedRoomIds.has(room.id));
+    }
+
+    return basicRoomSearch.rows;
+}
 
 /*
 For createRoom:

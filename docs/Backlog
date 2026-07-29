@@ -319,3 +319,8 @@ Prioritize:
 - Clear documentation
 
 Begin applying once the project demonstrates these capabilities rather than waiting for theoretical perfection.
+
+
+
+IMPORTANT: refactor checkin, checkout date logic into service. Removing all from controllers.
+
