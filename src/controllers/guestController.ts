@@ -153,6 +153,18 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
   }
 }
 
+export async function guestCreateBooking(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+    return next(new AppError("User must be authenticated", 401));
+  }
+  
+  if (!req.body || Array.isArray(req.body)) {
+    return next(new AppError("Request body must be a valid JSON object", 400));
+  }
+
+  // Reuse the validation logic from createBooking in bookingController.ts
+
+  
 
 
   

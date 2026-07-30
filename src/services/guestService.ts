@@ -8,6 +8,8 @@ import {
   findUsers as repositoryFindUsers,
 } from "../repositories/userRepository";
 import { findAvailableRooms } from "../repositories/roomRepository";
+import { CreateBookingInput } from "../types/booking";
+import { createBooking as serviceCreateBooking } from "./bookingService";
 
 export async function createGuest(userData: CreateUserInput) {
   const existingUser = await repositoryFindUsers({ email: userData.email });
@@ -62,6 +64,16 @@ export async function searchAvailableRooms(filters: {
   const availableRooms = await findAvailableRooms(filters);
   return availableRooms;
 }
+
+export async function guestCreateBooking(bookingData: CreateBookingInput) {
+  // Implementation for creating a booking by a guest would go here
+
+  // Importing createBooking from services/bookingService.ts
+  const createdBooking = await serviceCreateBooking(bookingData);
+  return createdBooking;
+}
+
+
 
 
 

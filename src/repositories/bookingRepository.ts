@@ -35,6 +35,7 @@ Further notes:
 
 
 import pool from "../database/db";
+import { AppError } from "../errors/AppError";
 
 export async function findBookings(filters: { 
     bookingId?: number;
@@ -87,6 +88,8 @@ export async function createBooking(booking: {
     hotelId: number; 
     roomId: number; 
     guestName: string; 
+    guestUserId?: number;
+    createdByUserId: number;
     checkInDate: string; 
     checkOutDate: string; 
     nights: number; 
@@ -94,11 +97,11 @@ export async function createBooking(booking: {
 
     const result = await pool.query(
         `
-        INSERT INTO bookings (hotel_id, room_id, guest_name, check_in_date, check_out_date, nights, total_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO bookings (hotel_id, room_id, guest_name, guest_user_id, created_by_user_id, check_in_date, check_out_date, nights, total_price)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
         `,
-        [booking.hotelId, booking.roomId, booking.guestName, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
+        [booking.hotelId, booking.roomId, booking.guestName, booking.guestUserId, booking.createdByUserId, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
     );
     return result.rows[0];
 }

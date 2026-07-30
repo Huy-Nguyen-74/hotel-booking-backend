@@ -1,6 +1,6 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status — July 26, 2026
+## Current Status — July 30, 2026
 
 ### Completed
 
@@ -23,7 +23,7 @@
 - ✅ Docker environment template
 - ✅ README and setup documentation
 
-**Current Phase:** Swagger / OpenAPI  
+**Current Phase:** Guest Journey  
 **Interview Target:** September 2026
 
 ---
@@ -199,35 +199,94 @@ Swagger details will be added to the README after Phase 5 is complete.
 
 ## Phase 7 — Guest Journey
 
-**Target:** August 1–16
+**Started:** July 28, 2026  
+**Target:** August 1–16  
+**Status:** In progress
 
-Extend the existing Users and Auth modules with a `guest` role rather than creating a separate authentication system.
+Extend the existing Users and Auth modules with the `guest` role. Do not create a separate authentication system.
 
-### Tasks
+### Working Rule
+
+Finish work in this order:
+
+1. Complete the feature flow
+2. Resolve current-module cleanup and red lines
+3. Run `npm run typecheck`
+4. Run `npm test`
+5. Commit
+
+Non-blocking cleanup should not interrupt feature implementation.
+
+### Guest Account and Authentication
 
 - [ ] Guest registration
 - [ ] Guest login
-- [ ] Shared logout
 - [ ] Guest profile
 - [ ] Update guest profile
 - [ ] Password reset request
 - [ ] Password reset confirmation
-- [ ] Search room availability
-- [ ] Create booking
+
+### Room Search
+
+- [ ] Search rooms by hotel, type, and price
+- [ ] Search room availability by check-in and check-out dates
+- [ ] Require both dates when either date is provided
+- [ ] Reject invalid date ranges
+
+### Guest Booking Flow
+
+- [ ] Create a booking as an authenticated guest
+- [ ] Store `guest_user_id` as the booking owner
+- [ ] Store `created_by_user_id` as the authenticated actor
 - [ ] View booking history
 - [ ] View booking details
 - [ ] Update booking
 - [ ] Cancel booking
-- [ ] Guests access only their own profile and bookings
-- [ ] Authorization and ownership tests
+
+### Staff Booking Flow
+
+- [ ] Staff can create a booking for a registered guest
+- [ ] Staff can create a booking for an unregistered guest
+- [ ] Registered guest booking uses `guest_user_id`
+- [ ] Unregistered guest booking keeps `guest_user_id` null
+- [ ] Staff ID is stored as `created_by_user_id`
+
+### Ownership and Authorization
+
+- [ ] Guests access only their own profile
+- [ ] Guests access only their own bookings
+- [ ] Staff permissions remain separate from guest ownership
+- [ ] Authorization and ownership integration tests
+
+### Current-Module Cleanup
+
+Complete these after the Guest Booking flow works, before typecheck and tests:
+
+- [ ] Move direct SQL from `bookingService` into repositories
+- [ ] Review other Service modules for direct SQL after their current flows are complete
+- [ ] Move check-in/check-out ordering rules from Controllers into Services
+- [ ] Ensure room search and booking creation use the same overlap rule
+- [ ] Allow same-day turnover by using strict overlap comparisons:
+  - Existing `check_in_date < requested_check_out`
+  - Existing `check_out_date > requested_check_in`
+
+### Deferred from Guest Journey
+
+- [ ] Shared backend logout
+  - Implement only when refresh tokens or server-side sessions exist
+- [ ] Swagger documentation for new guest endpoints
+  - Add during the Swagger/OpenAPI phase
 
 ### Completion Criteria
 
 - [ ] Complete customer-facing authentication flow
-- [ ] Guests can manage their profile and bookings
-- [ ] Ownership rules prevent access to other guests' data
-- [ ] No duplicated authentication architecture
-- [ ] Tests and Swagger documentation cover the guest journey
+- [ ] Guests can search, create, view, update, and cancel their own bookings
+- [ ] Ownership rules prevent access to another guest’s data
+- [ ] Staff-created and guest-created bookings record the correct actor and owner
+- [ ] No duplicated authentication or booking business logic
+- [ ] Typecheck passes
+- [ ] Integration tests pass
+- [ ] CI remains green
 
 ---
 
@@ -235,18 +294,31 @@ Extend the existing Users and Auth modules with a `guest` role rather than creat
 
 **Target:** August 17–30
 
-### Tasks
+### Core Workflow
 
 - [ ] Stripe test-mode integration
 - [ ] Payment intent workflow
 - [ ] Payment confirmation
+- [ ] Payment persistence
+- [ ] Failed payment handling
+
+### Reliability and Security
+
 - [ ] Webhook signature verification
 - [ ] Idempotency handling
-- [ ] Payment persistence
 - [ ] Booking and payment database transaction
-- [ ] Failed payment handling
-- [ ] Payment integration tests
-- [ ] Refund support if time permits
+- [ ] Prevent duplicate payment creation
+
+### Testing
+
+- [ ] Successful payment integration tests
+- [ ] Failed payment integration tests
+- [ ] Duplicate request tests
+- [ ] Webhook verification tests
+
+### Optional
+
+- [ ] Refund support
 
 ### Completion Criteria
 
@@ -254,24 +326,33 @@ Extend the existing Users and Auth modules with a `guest` role rather than creat
 - [ ] Booking and payment state remain consistent
 - [ ] Webhooks are verified securely
 - [ ] Successful and failed payment flows are tested
+- [ ] Typecheck, tests, and CI remain green
 
 ---
 
 ## Phase 9 — Applications and Final Polish
 
-**Start Applications:** August 25  
-**Polish Target:** August 31–September 6
+**Start applications:** August 25  
+**Polish target:** August 31–September 6
 
-### Tasks
+### Application Preparation
 
-- [ ] Resume update
-- [ ] GitHub profile cleanup
+- [ ] Update resume
+- [ ] Clean up GitHub profile
+- [ ] Prepare project explanations
+- [ ] Prepare architecture explanation
+- [ ] Prepare testing and CI/CD explanation
+- [ ] Prepare Docker and deployment explanation
+- [ ] Begin applications while polishing continues
+
+### Final Technical Review
+
 - [ ] Architecture review
 - [ ] SQL review
 - [ ] Security review
+- [ ] API contract review
+- [ ] README accuracy review
 - [ ] Mock interviews
-- [ ] Prepare project explanations
-- [ ] Begin applications while polishing continues
 
 ### Application Priority
 
@@ -282,26 +363,58 @@ Extend the existing Users and Auth modules with a `guest` role rather than creat
 
 ### Continue During Applications
 
-- SQL practice
-- Backend system design
-- Algorithms
-- Mock interviews
+- [ ] SQL practice
+- [ ] Backend system design
+- [ ] Algorithms
+- [ ] Mock interviews
 
 ---
 
 ## Later Improvements
 
-Do not delay applications for these:
+Do not delay applications for these items.
 
-- Validation library
-- Structured logging
-- Metrics
-- Redis
-- Background jobs
-- Email service
-- Audit logs
-- Multi-tenancy
-- Super Admin
+### Architecture and Infrastructure
+
+- [ ] Redis
+- [ ] Background jobs
+- [ ] Metrics
+- [ ] Multi-tenancy
+
+### Observability and Operations
+
+- [ ] Structured logging
+- [ ] Audit logs
+
+### Product Features
+
+- [ ] Real email service
+- [ ] Super Admin
+
+### Developer Experience
+
+- [ ] Validation library
+
+---
+
+## New Backlog Item Format
+
+Add new items under the relevant phase using one of these labels:
+
+```markdown
+- [ ] **[NOW]** Required to complete the current feature
+- [ ] **[CLEANUP]** Complete after the feature flow, before tests
+- [ ] **[LATER]** Useful, but must not delay applications
+```
+
+For larger items:
+
+```markdown
+- [ ] **[NOW] Task name**
+  - Why:
+  - Files:
+  - Done when:
+```
 
 ---
 
@@ -311,114 +424,11 @@ Avoid endless cleanup.
 
 Prioritize:
 
-- Solid architecture
-- Real business workflows
-- Security
+- Complete business workflows
+- Correct ownership and security
+- Clear architecture
 - Testing
 - Deployment
-- Clear documentation
+- Documentation
 
-Begin applying once the project demonstrates these capabilities rather than waiting for theoretical perfection.
-
-
-
-
-
-
-
-
-
-
-
-
-
-July 28th, 2026: guest journey
-
-Extend the existing Users and Auth modules with a `guest` role rather than creating a separate authentication system.
-
-### Tasks
-
-- [ ] Guest registration -> done
-- [ ] Guest login -> done
-- [ ] Shared logout -> to be done in a separate session
-- [ ] Guest profile -> done
-- [ ] Update guest profile -> done
-- [ ] Password reset request -> nearly done. Real email delivery stays later
-- [ ] Password reset confirmation -> done
-- [ ] Search room availability -> done
-- [ ] Create booking
-- [ ] View booking history
-- [ ] View booking details
-- [ ] Update booking
-- [ ] Cancel booking
-- [ ] Guests access only their own profile and bookings
-- [ ] Authorization and ownership tests
-
-Guest will be a separate API module, with shared 'users' table, authentication logic.
-Role will be 'guest'.
-
-
-Scope: revised roadmap toward applications.
-
-July 28–August 5 — Guest Journey
-
-Registration and login
-Profile and profile update
-Password reset
-Booking history/details
-Guest booking ownership
-Authorization tests
-
-August 6–9 — Real Login Sessions
-
-Refresh-token table
-POST /auth/refresh
-Shared POST /auth/logout
-Refresh-token rotation and revocation
-Tests
-
-
-
-For createBooking:
-
-Add the following columns to bookings table:
-
-    guest_user_id   → who the booking belongs to
-    created_by_user_id → who created it
-
-Examples:
-
-Guest books for self:
-    guest_user_id = guest
-    created_by_user_id = guest
-
-Staff books for registered guest:
-    guest_user_id = guest
-    created_by_user_id = staff
-
-Staff books for walk-in:
-    guest_user_id = null
-    created_by_user_id = staff
-
-For the simplicity of this project, we won't allow anonymous bookings for now.
-
-created_by_user_id provides the minimal audit trail. Full audit logs can wait until later.
-
-
-
-
-
-IMPORTANT: refactor checkin, checkout date logic into service. Removing all from controllers.
-
-
-ALSO, Examples of non-overlapping bookings:
-    // Existing booking: 2024-01-10 to 2024-01-15
-    // New booking: 2024-01-09 to 2024-01-10 (Well, this is not overlapping because the new booking ends on the same day the existing booking starts, which is allowed. Because of that, change the condition to check_in_date < $2 and check_out_date > $3)
-    // roomRepo might need to be updated to reflect this change in logic. We should now include this in the backlog of the roomRepository.ts file. The logic for checking overlapping bookings should be updated to reflect this change in the bookingService.ts file as well.
-
-
-
-Needs to move existing SQLs from bookingService, etc. into Repo as well.
-Also, checking other Service modules to see if those need to be cleaned up too.
-
-
+Begin applying once the project demonstrates these capabilities. Do not wait for theoretical perfection.

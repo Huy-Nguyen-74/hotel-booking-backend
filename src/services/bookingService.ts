@@ -10,6 +10,7 @@ import { findRooms } from "../repositories/roomRepository";
 import { AppError } from "../errors/AppError";
 
 import pool from "../database/db";
+import { CreateBookingInput } from "../types/booking";
 
 export async function getBookings(filters: { 
     hotelId?: number;
@@ -40,13 +41,13 @@ Further notes:
 -Checkout date must be after check-in date. If not, return 400 Bad Request.
 */
 
-export async function createBooking(booking: {
-    hotelId: number;
-    roomId: number;
-    guestName: string;
-    checkInDate: string;
-    checkOutDate: string;
-}) {
+
+export async function createBooking(booking: CreateBookingInput) {
+
+    // Validate that guestUserId exists in the users table if provided
+    // Waiting for the guestUserId validation to be implemented in the userRepository.ts file. Once that is done, we can uncomment the following code to validate the guestUserId.
+
+    
 
     // Validate hotel and room existence against array of hotels and rooms in the database
 
@@ -91,11 +92,16 @@ export async function createBooking(booking: {
         SELECT *
         FROM bookings
         WHERE room_id = $1
-          AND check_in_date <= $2
-          AND check_out_date >= $3
+          AND check_in_date < $2
+          AND check_out_date > $3
         `,
         [booking.roomId, booking.checkOutDate, booking.checkInDate]
     );
+
+    // Examples of non-overlapping bookings:
+    // Existing booking: 2024-01-10 to 2024-01-15
+    // New booking: 2024-01-09 to 2024-01-10 (Well, this is not overlapping because the new booking ends on the same day the existing booking starts, which is allowed. Because of that, change the condition to check_in_date < $2 and check_out_date > $3)
+    // roomRepo might need to be updated to reflect this change in logic. We should now include this in the backlog of the roomRepository.ts file. The logic for checking overlapping bookings should be updated to reflect this change in the bookingService.ts file as well.
 
     if (overlappingBooking.rows.length > 0) {
         throw new AppError("Room is already booked for the selected dates", 400);
@@ -105,6 +111,8 @@ export async function createBooking(booking: {
         hotelId: booking.hotelId,
         roomId: booking.roomId,
         guestName: booking.guestName,
+        guestUserId: booking.guestUserId,
+        createdByUserId: booking.createdByUserId,
         checkInDate: booking.checkInDate,
         checkOutDate: booking.checkOutDate,
         nights: nights,

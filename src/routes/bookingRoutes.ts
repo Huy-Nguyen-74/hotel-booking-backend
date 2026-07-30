@@ -15,7 +15,7 @@ const router = Router();
 
 router.get("/bookings", authenticateToken, authorizeRoles("admin", "staff"), getBookings);
 router.get("/bookings/:bookingId", authenticateToken, authorizeRoles("admin", "staff"), getBookingById);
-router.post("/bookings", authenticateToken, authorizeRoles("admin", "staff"), createBooking);
+router.post("/bookings", authenticateToken, authorizeRoles("admin", "staff", "guest"), createBooking);
 router.patch("/bookings/:bookingId", authenticateToken, authorizeRoles("admin", "staff"), updateBooking);
 router.delete("/bookings/:bookingId", authenticateToken, authorizeRoles("admin"), deleteBooking);
 

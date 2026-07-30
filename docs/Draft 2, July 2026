@@ -295,7 +295,7 @@ Extend the existing Users and Auth modules with a `guest` role rather than creat
 - [ ] Update guest profile -> done
 - [ ] Password reset request -> nearly done. Real email delivery stays later
 - [ ] Password reset confirmation -> done
-- [ ] Search room availability
+- [ ] Search room availability -> done
 - [ ] Create booking
 - [ ] View booking history
 - [ ] View booking details
@@ -328,70 +328,31 @@ Refresh-token rotation and revocation
 Tests
 
 
-**Scope: the three availability questions.**
 
-### 1. Why avoid the loop?
+For createBooking:
 
-Your code first fetches all rooms, then runs another query for every room:
+Add the following columns to bookings table:
 
-```text
-1 room-list query
-+ 20 rooms × 1 booking query
-= 21 database queries
-```
+    guest_user_id   → who the booking belongs to
+    created_by_user_id → who created it
 
-This is the **N+1 query problem**. One SQL query can ask PostgreSQL to return only rooms without conflicting bookings.
+Examples:
 
-### 2. Why use `<` and `>`?
+Guest books for self:
+    guest_user_id = guest
+    created_by_user_id = guest
 
-Suppose an existing booking is:
+Staff books for registered guest:
+    guest_user_id = guest
+    created_by_user_id = staff
 
-```text
-June 10 → June 15
-```
+Staff books for walk-in:
+    guest_user_id = null
+    created_by_user_id = staff
 
-A new guest requests:
+For the simplicity of this project, we won't allow anonymous bookings for now.
 
-```text
-June 15 → June 20
-```
+created_by_user_id provides the minimal audit trail. Full audit logs can wait until later.
 
-This should be allowed because the first guest checks out when the second checks in.
 
-Your current condition uses:
 
-```sql
-check_out_date >= requested_check_in
-```
-
-`June 15 >= June 15` is true, so it incorrectly treats them as overlapping.
-
-Correct overlap logic:
-
-```sql
-existing_check_in < requested_check_out
-AND existing_check_out > requested_check_in
-```
-
-### 3. No dates entered
-
-You’re right: the user may browse rooms without dates.
-
-But then the system is showing the **room catalogue**, not confirming availability for a particular stay. Live availability inherently depends on check-in and check-out dates; official Booking.com and Expedia availability APIs require those dates. ([Booking.com][1])
-
-For our practical design:
-
-```text
-No dates
-→ return matching rooms without checking bookings
-
-Both dates
-→ return only rooms available for that period
-
-Only one date
-→ reject with 400
-```
-
-Therefore, a broader name such as `searchRooms` is more accurate than `findAvailableRooms`.
-
-[1]: https://developers.booking.com/demand/docs/open-api/3.2/demand-api/accommodations/accommodations/chains?utm_source=chatgpt.com "Chains"
