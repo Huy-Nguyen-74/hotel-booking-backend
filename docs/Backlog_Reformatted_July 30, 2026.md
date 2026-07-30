@@ -247,6 +247,8 @@ Non-blocking cleanup should not interrupt feature implementation.
 
 - [ ] Staff can create a booking for a registered guest
 - [ ] Staff can create a booking for an unregistered guest
+- [ ] Staff can update a booking for a registered guest
+- [ ] Staff can update a booking for an unregistered guest
 - [ ] Registered guest booking uses `guest_user_id`
 - [ ] Unregistered guest booking keeps `guest_user_id` null
 - [ ] Staff ID is stored as `created_by_user_id`

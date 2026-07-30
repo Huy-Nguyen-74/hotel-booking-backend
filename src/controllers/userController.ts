@@ -180,6 +180,9 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
  
   try {
     const updatedUser = await serviceUpdateSelfInfo(req.user.id, parsedFirstName, parsedLastName, password);
+    if (!updatedUser) {
+      return next(new AppError("User not found", 404));
+    }
     return res.status(200).json(toUserDto(updatedUser));
   } catch (error) {
     next(error);

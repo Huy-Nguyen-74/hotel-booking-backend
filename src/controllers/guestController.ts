@@ -19,40 +19,38 @@ export async function createGuest(req: Request, res: Response, next: NextFunctio
   const lastName = req.body.lastName;
   const email = req.body.email;
   const password = req.body.password;
-  const role = req.body.role;
 
   // Validate required fields
 
-  if (firstName === undefined || lastName === undefined || email === undefined || password === undefined || role === undefined) {
+  if (firstName === undefined || lastName === undefined || email === undefined || password === undefined) {
     return next(new AppError("All fields are required", 400));
   }
 
   // Validate that fields are not empty strings
-
-  if (typeof firstName !== "string" || typeof lastName !== "string" || typeof email !== "string" || typeof password !== "string" || typeof role !== "string") {
+  
+  if (typeof firstName !== "string" || typeof lastName !== "string" || typeof email !== "string" || typeof password !== "string") {
     return next(new AppError("All fields must be strings", 400));
   }
 
-  if (firstName.trim() === "" || lastName.trim() === "" || email.trim() === "" || password.trim() === "" || role.trim() === "") {
+  if (firstName.trim() === "" || lastName.trim() === "" || email.trim() === "" || password.trim() === "") {
     return next(new AppError("All fields must be non-empty strings", 400));
   }
 
   if (!password || typeof password !== "string" || !password.trim()) {
-    return next(new AppError("password is required and must be a non-empty string", 400));
+    return next(new AppError("Password is required and must be a non-empty string", 400));
   }
 
   if (password.length < 15) {
-    return next(new AppError("password must be at least 15 characters long", 400));
+    return next(new AppError("Password must be at least 15 characters long", 400));
   }
 
   const parsedFirstName = firstName.trim();
   const parsedLastName = lastName.trim();
   const parsedEmail = email.trim().toLowerCase();
-  const parsedRole = role.trim().toLowerCase();
 
   // Validate email format
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsedEmail)) {
-    return next(new AppError("email must be a valid email address", 400));
+    return next(new AppError("Email must be a valid email address", 400));
   }
 
   const inputData = {
@@ -60,7 +58,7 @@ export async function createGuest(req: Request, res: Response, next: NextFunctio
     lastName: parsedLastName,
     email: parsedEmail,
     password,
-    role: parsedRole,
+    role: "guest",
   };
 
   try {
