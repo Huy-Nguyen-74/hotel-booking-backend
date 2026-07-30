@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, raw } from "express";
+import { Request, Response, NextFunction, } from "express";
 
 import {
     getBookings as serviceGetBookings,

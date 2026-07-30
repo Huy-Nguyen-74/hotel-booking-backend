@@ -1,8 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
-import { createGuest as serviceCreateGuest } from "../services/guestService";
 import { toUserDto } from "../DTO/userDto";
-import { searchAvailableRooms as serviceSearchAvailableRooms } from "../services/guestService";
+import { toBookingDto } from "../DTO/bookingDto";
+import { toRoomDto } from "../DTO/roomDto";
+import { 
+  createGuest as serviceCreateGuest,
+  searchAvailableRooms as serviceSearchAvailableRooms,
+  guestCreateBooking as serviceGuestCreateBooking,
+ } from "../services/guestService";
+import type { CreateBookingInput } from "../types/booking";
 
 export async function createGuest(req: Request, res: Response, next: NextFunction) {
   if (!req.body || Array.isArray(req.body)) {
@@ -147,7 +153,7 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
 
   try {
     const availableRooms = await serviceSearchAvailableRooms(filters);
-    return res.json(availableRooms);
+    return res.json(availableRooms.map(toRoomDto));
   } catch (error) {
     next(error);
   }
@@ -164,7 +170,60 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
 
   // Reuse the validation logic from createBooking in bookingController.ts
 
+  const rawHotelId = req.body.hotelId;
+  const rawRoomId = req.body.roomId;
+  const rawGuestName = req.body.guestName;
+  const rawGuestUserId = req.user.id;
+  const rawCreatedByUserId = req.user.id;
+  const rawCheckInDate = req.body.checkInDate;
+  const rawCheckOutDate = req.body.checkOutDate;
+
+  // Validate required fields
+
+  if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
+    return next(new AppError("hotelId, roomId, guestName, checkInDate, and checkOutDate are required", 400));
+  }
+
+  // Validate that fields are of the correct type, one by one
+
+  if (typeof rawHotelId !== "number" || isNaN(rawHotelId) || !Number.isInteger(rawHotelId) || rawHotelId <= 0) {
+    return next(new AppError("hotelId must be a positive integer", 400));
+  }
+
+  if (typeof rawRoomId !== "number" || isNaN(rawRoomId) || !Number.isInteger(rawRoomId) || rawRoomId <= 0) {
+    return next(new AppError("roomId must be a positive integer", 400));
+  }
   
+  if (typeof rawGuestName !== "string" || rawGuestName.trim() === "") {
+    return next(new AppError("guestName must be a non-empty string", 400));
+  }
+
+  if (typeof rawCheckInDate !== "string" || rawCheckInDate.trim() === "" || isNaN(Date.parse(rawCheckInDate))) {
+    return next(new AppError("checkInDate must be a valid date string", 400));
+  }
+
+  if (typeof rawCheckOutDate !== "string" || rawCheckOutDate.trim() === "" || isNaN(Date.parse(rawCheckOutDate))) {
+    return next(new AppError("checkOutDate must be a valid date string", 400));
+  }
+
+  // Parse and trim the input values
+
+  const bookingData: CreateBookingInput = {
+    hotelId: rawHotelId,
+    roomId: rawRoomId,
+    guestName: rawGuestName.trim(),
+    guestUserId: rawGuestUserId,
+    createdByUserId: rawCreatedByUserId,
+    checkInDate: rawCheckInDate.trim(),
+    checkOutDate: rawCheckOutDate.trim(),
+  };
+
+  try {
+    const createdBooking = await serviceGuestCreateBooking(bookingData);
+    return res.status(201).json(toBookingDto(createdBooking));
+  } catch (error) {
+    next(error);
+  }
+}
 
 
-  
