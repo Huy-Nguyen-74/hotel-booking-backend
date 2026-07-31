@@ -164,18 +164,18 @@ describe("POST /login", () => {
       .send({
         firstName: "John",
         lastName: "Doe",
-        email: "john@example.com",
+        email: "john.auth@example.com",
         password: "password123456789",
       });
     expect(createResponse.status).toBe(201); // Ensure the user was created successfully
 
-    const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john@example.com"])).rows[0].id;
+    const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.auth@example.com"])).rows[0].id;
     createdUserIDs.push(userId); // Add the created user ID to the cleanup list
 
     const loginResponse = await request(app)
       .post("/login")
       .send({
-        email: "john@example.com",
+        email: "john.auth@example.com",
         password: "password123456789",
       });
     
@@ -190,7 +190,7 @@ describe("POST /login", () => {
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.body).toHaveProperty("token");
     expect(loginResponse.body.user).toHaveProperty("userId", userId);
-    expect(loginResponse.body.user).toHaveProperty("email", "john@example.com");
+    expect(loginResponse.body.user).toHaveProperty("email", "john.auth@example.com");
     expect(loginResponse.body.user).toHaveProperty("firstName", "John");
     expect(loginResponse.body.user).toHaveProperty("lastName", "Doe");
     expect(loginResponse.body.user).toHaveProperty("role", "guest");

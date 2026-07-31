@@ -69,9 +69,7 @@ export async function createGuest(req: Request, res: Response, next: NextFunctio
   }
 }
 
-// Guest viewing their own information is handled by the getSelfInfo function in userController.ts, which retrieves the user's information based on their ID.
-
-// Guest updating their own information is handled by the updateSelfInfo function in userController.ts, which allows the guest to update their own information based on their ID.
+// For guest viewing their own profile, we can reuse the getSelfInfo function from userController.ts.
 
 export async function searchAvailableRooms(req: Request, res: Response, next: NextFunction) {
 
@@ -223,5 +221,3 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
     next(error);
   }
 }
-
-

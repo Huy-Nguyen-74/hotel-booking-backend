@@ -168,8 +168,9 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update staff-user information when only lastName is provided", async () => {
@@ -181,8 +182,9 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update staff-user information when only password is provided", async () => {
@@ -194,7 +196,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update staff-user information when all 3 valid fields are provided", async () => {
@@ -208,9 +211,10 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     // Validation and success cases for admin user:
@@ -276,8 +280,9 @@ describe("PATCH /users/me", () => {
                 firstName: "UpdatedFirstName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update admin-user information when only lastName is provided", async () => {
@@ -289,8 +294,9 @@ describe("PATCH /users/me", () => {
                 lastName: "UpdatedLastName",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update admin-user information when only password is provided", async () => {
@@ -302,7 +308,8 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 
     it("should successfully update admin-user information when all 3 valid fields are provided", async () => {
@@ -316,9 +323,10 @@ describe("PATCH /users/me", () => {
                 password: "UpdatedPassword123!",
             });
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty("firstName", "UpdatedFirstName");
-        expect(response.body).toHaveProperty("lastName", "UpdatedLastName");
-        expect(response.body).not.toHaveProperty("password_hash");
+        expect(response.body).toHaveProperty("message", "User information updated successfully");
+        expect(response.body.body).toHaveProperty("firstName", "UpdatedFirstName");
+        expect(response.body.body).toHaveProperty("lastName", "UpdatedLastName");
+        expect(response.body.body).not.toHaveProperty("password_hash");
     });
 });
 

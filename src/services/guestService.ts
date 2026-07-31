@@ -10,6 +10,7 @@ import {
 import { findAvailableRooms } from "../repositories/roomRepository";
 import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
+import { getSelfInfo } from "./userService";
 
 export async function createGuest(userData: CreateUserInput) {
   const existingUser = await repositoryFindUsers({ email: userData.email });
@@ -68,6 +69,8 @@ export async function searchAvailableRooms(filters: {
   return availableRooms;
 }
 
+
+
 export async function guestCreateBooking(bookingData: CreateBookingInput) {
   // Implementation for creating a booking by a guest would go here
 
@@ -75,11 +78,6 @@ export async function guestCreateBooking(bookingData: CreateBookingInput) {
   const createdBooking = await serviceCreateBooking(bookingData);
   return createdBooking;
 }
-
-
-
-
-
 
 
 

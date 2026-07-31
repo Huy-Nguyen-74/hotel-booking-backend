@@ -221,10 +221,10 @@ Non-blocking cleanup should not interrupt feature implementation.
 
 - [ ] Guest registration -> 8 tests all passed
 - [ ] Guest login -> 9 tests all passed, also revised the previous auth tests based on the new Test Framework
-- [ ] Guest profile
-- [ ] Update guest profile
-- [ ] Password reset request
-- [ ] Password reset confirmation
+- [ ] Guest profile -> done
+- [ ] Update guest profile -> done
+- [ ] Password reset request -> nearly done
+- [ ] Password reset confirmation -> nearly done
 
 ### Room Search
 

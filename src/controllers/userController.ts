@@ -183,7 +183,7 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
     if (!updatedUser) {
       return next(new AppError("User not found", 404));
     }
-    return res.status(200).json(toUserDto(updatedUser));
+    return res.status(200).json({ success: true, message: "User information updated successfully", body: toUserDto(updatedUser) });
   } catch (error) {
     next(error);
   }
