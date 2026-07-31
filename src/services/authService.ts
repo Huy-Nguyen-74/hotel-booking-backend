@@ -111,7 +111,7 @@ export async function confirmPasswordReset(token: string, newPassword: string) {
   .digest("hex");
 
   const user = await repositoryFindUserIdByPasswordResetToken(tokenHash);
-  if (!user || !user.expires_at || user.expires_at < new Date()) {
+  if (!user || user.expires_at < new Date()) {
     throw new AppError("Invalid or expired password reset token", 400);
   }
 

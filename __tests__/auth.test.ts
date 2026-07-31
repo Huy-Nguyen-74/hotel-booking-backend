@@ -47,6 +47,10 @@ afterEach(async () => {
   createdUserIDs.length = 0; // Clear the array after cleanup
 });
 
+afterAll(async () => {
+  await pool.end();
+});
+
 describe("POST /login", () => {
   it("returns 400 when email and password are missing", async () => {
     const response = await request(app).post("/login").send({});
@@ -218,10 +222,235 @@ describe("POST /login", () => {
   });
 });
 
-afterAll(async () => {
-  await pool.end();
+
+/*
+[HTTP METHOD] [PATH]: request password reset endpoint.
+
+router.post("/request-password-reset", requestPasswordReset);
+
+Access:
+- Who can access? Admin, Guest, User, Public, etc. → Public
+- Unauthenticated → none.
+- Unauthorized role/ownership → none.
+
+Success:
+- Valid request → (won't reveal if the email exists or not).
+- Expected response -> neutral message indicating that if the email exists, a password reset link will be sent.
+- Expected database effect -> a password reset token is created and stored in the database with an expiry time, userId, and hashed token.
+
+Rejections:
+- Invalid input → 400.
+- Broken business rule → none.
+- Missing resource →  neutral message indicating that if the email exists, a password reset link will be sent.
+- Conflict → none.
+
+Response: neutral message indicating that if the email exists, a password reset link will be sent.
+
+Cleanup:
+- Test data to remove/reset: password reset tokens created during the tests.
+*/
+
+describe("POST /request-password-reset", () => {
+  it("returns 400 when email is missing", async () => {
+    const response = await request(app)
+      .post("/request-password-reset")
+      .send({});
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "email is required and must be a non-empty string",
+    });
+  });
+
+  it("returns 400 when email is not a valid email address", async () => {
+    const response = await request(app)
+      .post("/request-password-reset")
+      .send({ email: "invalid-email" });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "email must be a valid email address",
+    });
+  });
+
+  it("returns 200 with a neutral message when email does not exist", async () => {
+    const response = await request(app)
+      .post("/request-password-reset")
+      .send({ email: "nonexistent@example.com" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      success: true,
+      message: "If the email exists, a password reset link will be sent",
+    });
+  });
+
+  it("returns 200 with a neutral message when email is an empty string", async () => {
+    const response = await request(app)
+      .post("/request-password-reset")
+      .send({ email: "" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      success: true,
+      message: "email is required and must be a non-empty string",
+    });
+  });
+
+  it("returns 200 with a neutral message when email exists", async () => {
+    // First, create a guest with a specific email
+    const createResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john.auth@example.com",
+        password: "password123456789",
+      });
+    expect(createResponse.status).toBe(201); // Ensure the user was created successfully
+
+    const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.auth@example.com"])).rows[0].id;
+    createdUserIDs.push(userId); // Add the created user ID to the cleanup list
+
+    const response = await request(app)
+      .post("/request-password-reset")
+      .send({ email: "john.auth@example.com" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      success: true,
+      message: "If the email exists, a password reset link will be sent",
+    });
+  });
 });
 
+
+/*
+[HTTP METHOD] [PATH]: router.post("/confirm-password-reset", confirmPasswordReset);
+
+Access:
+- Who can access? Public
+- Unauthenticated → 401
+- Unauthorized role/ownership → none, just authentication.
+
+Success:
+- Valid request → 200.
+- Expected response -> success message indicating that the password has been reset successfully.
+- Expected database effect -> the user's password is updated in the database, and the password reset token is deleted.
+
+Rejections:
+- Invalid input → 400.
+- Broken business rule → [status].
+- Missing resource → 404.
+- Conflict → 409.
+
+Response:
+- Required fields: message indicating that the password has been reset successfully.
+- Fields that must be excluded: password reset token, hashed token, userId, expiry.
+
+Cleanup:
+- Test data to remove/reset: password reset tokens created during the tests.
+*/
+
+describe("POST /confirm-password-reset", () => {
+  it("returns 400 when token is missing", async () => {
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({}); 
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "token is required and must be a non-empty string",
+    });
+  });
+
+  it("returns 400 when newPassword is missing", async () => {
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({ token: "sometoken" });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "newPassword is required and must be a non-empty string",
+    });
+  });
+
+  it("returns 400 when newPassword is less than 15 characters", async () => {
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({ token: "sometoken", newPassword: "short" });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "newPassword must be at least 15 characters long",
+    });
+  });
+
+  it("returns 400 when request body is not a valid JSON object", async () => {
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .set("Content-Type", "application/json")
+      .send("This is not a JSON object");
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Request body must be a valid JSON object",
+    });
+  });
+
+  it("returns 404 when token does not exist", async () => {
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({ token: "nonexistenttoken", newPassword: "newpassword123456789" });
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Invalid or expired password reset token",
+    });
+  });
+
+  it("returns 404 when token is expired", async () => {
+    // First, create a guest with a specific email
+    const createResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john.expired@example.com",
+        password: "password123456789",
+      });
+    expect(createResponse.status).toBe(201);
+
+    const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.expired@example.com"])).rows[0].id;
+    createdUserIDs.push(userId);
+
+    // Create an expired password reset token
+    const resetToken = "expiredtoken";
+    const tokenHash = createHash("sha256").update(resetToken).digest("hex");
+    const expiresAt = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes ago
+    await pool.query(
+      "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+      [userId, tokenHash, expiresAt]
+    );
+
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({ token: resetToken, newPassword: "newpassword123456789" });
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Invalid or expired password reset token",
+    });
+  });
+
+  it("returns 200 when token is valid and newPassword meets requirements", async () => {
+    // First, create a guest with a specific email
+    const createResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "
+
+});
+  
 
 
 
