@@ -169,7 +169,7 @@ describe("POST /users", () => {
                 firstName: "Test",
                 lastName: "User",
                 email: "staff@hotel.local", // Assuming this email is already in use
-                password: "password123",
+                password: "password123456789",
                 role: "staff"
             });
         expect(response.status).toBe(409);
@@ -184,7 +184,7 @@ describe("POST /users", () => {
                 firstName: "Test",
                 lastName: "User",
                 email: "newstaff@hotel.local",
-                password: "password123",
+                password: "password123456789",
                 role: "staff"
             });
 
@@ -212,7 +212,7 @@ describe("POST /users", () => {
                 firstName: "Test",
                 lastName: "User",
                 email: "newadmin@hotel.local",
-                password: "password123",
+                password: "password123456789",
                 role: "admin"
             });
         expect(response.status).toBe(400);

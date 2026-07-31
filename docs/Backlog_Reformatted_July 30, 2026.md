@@ -220,7 +220,7 @@ Non-blocking cleanup should not interrupt feature implementation.
 ### Guest Account and Authentication
 
 - [ ] Guest registration -> 8 tests all passed
-- [ ] Guest login
+- [ ] Guest login -> 9 tests all passed, also revised the previous auth tests based on the new Test Framework
 - [ ] Guest profile
 - [ ] Update guest profile
 - [ ] Password reset request
