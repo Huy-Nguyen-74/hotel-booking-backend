@@ -219,7 +219,7 @@ Non-blocking cleanup should not interrupt feature implementation.
 
 ### Guest Account and Authentication
 
-- [ ] Guest registration
+- [ ] Guest registration -> 8 tests all passed
 - [ ] Guest login
 - [ ] Guest profile
 - [ ] Update guest profile

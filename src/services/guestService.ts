@@ -30,6 +30,9 @@ export async function createGuest(userData: CreateUserInput) {
   return createdUser;
 }
 
+// For guest login, we will use the authenticateUser function from authService.ts, which handles the authentication process and returns a JWT token upon successful login.
+// As such, no need to duplicate the login logic here.
+
 // Guest viewing their own information is handled by the getSelfInfo function in userService.ts, which retrieves the user's information based on their ID.
 
 // Guest updating their own information is handled by the updateSelfInfo function in userService.ts, which allows the guest to update their own information based on their ID.

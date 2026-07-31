@@ -43,7 +43,7 @@ export async function authenticateUser(email: string, password: string) {
   }
 
   if (!user.is_active) {
-    throw new AppError("User account is inactive", 403);
+    throw new AppError("User is inactive", 403);
   }
 
   const { password_hash, ...safeUser } = user;
