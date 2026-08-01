@@ -55,7 +55,7 @@ export async function requestPasswordReset(req: Request, res: Response, next: Ne
 
   try {
     const result = await serviceRequestPasswordReset(email);
-    return res.status(200).json(result);
+    return res.status(200).json({ success: true, message: result.message, resetToken: result.resetToken });
   } catch (error) {
     next(error);
   }
@@ -83,7 +83,7 @@ export async function confirmPasswordReset(req: Request, res: Response, next: Ne
 
   try {
     await serviceConfirmPasswordReset(token, newPassword);
-    return res.status(200).json({ message: "Password reset successful" });
+    return res.status(200).json({ success: true, message: "Password reset successful" });
   } catch (error) {
     next(error);
   }

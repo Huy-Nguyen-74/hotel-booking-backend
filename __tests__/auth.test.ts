@@ -1,8 +1,30 @@
 import { afterAll, describe, expect, it } from "@jest/globals";
+import { createHash } from "crypto";
 import request from "supertest";
 import { app } from "../src/app";
 import pool from "../src/database/db";
 
+const createdUserIds: number[] = [];
+const createdPasswordResetTokens: string[] = [];
+
+afterEach(async () => {
+  // Cleanup: Delete the user records created during testing
+  for (const userId of createdUserIds) {
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+  }
+  createdUserIds.length = 0; // Clear the array after cleanup
+
+  // Cleanup: Delete the password reset tokens created during testing
+  for (const token of createdPasswordResetTokens) {
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    await pool.query("DELETE FROM password_reset_tokens WHERE token_hash = $1", [tokenHash]);
+  }
+  createdPasswordResetTokens.length = 0; // Clear the array after cleanup
+});
+
+afterAll(async () => {
+  await pool.end();
+});
 
 /*
 Authentication Tests
@@ -35,21 +57,6 @@ Cleanup:
 - Test data to remove/reset -> none, just authentication.
 - Database tables affected -> none, just authentication.
 */
-
-const createdUserIDs: number[] = [];
-
-afterEach(async () => {
-  // Cleanup: Delete the user records created during testing
-  for (const userId of createdUserIDs) {
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
-  }
-
-  createdUserIDs.length = 0; // Clear the array after cleanup
-});
-
-afterAll(async () => {
-  await pool.end();
-});
 
 describe("POST /login", () => {
   it("returns 400 when email and password are missing", async () => {
@@ -144,7 +151,7 @@ describe("POST /login", () => {
 
     // Deactivate the user
     const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["inactive@example.com"])).rows[0].id;
-    createdUserIDs.push(userId); // Add the created user ID to the cleanup list
+    createdUserIds.push(userId); // Add the created user ID to the cleanup list
     await pool.query("UPDATE users SET is_active = false WHERE id = $1", [userId]);
 
     const loginResponse = await request(app)
@@ -174,7 +181,7 @@ describe("POST /login", () => {
     expect(createResponse.status).toBe(201); // Ensure the user was created successfully
 
     const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.auth@example.com"])).rows[0].id;
-    createdUserIDs.push(userId); // Add the created user ID to the cleanup list
+    createdUserIds.push(userId); // Add the created user ID to the cleanup list
 
     const loginResponse = await request(app)
       .post("/login")
@@ -262,7 +269,7 @@ describe("POST /request-password-reset", () => {
     });
   });
 
-  it("returns 400 when email is not a valid email address", async () => {
+  it("returns 400 when email format is invalid", async () => {
     const response = await request(app)
       .post("/request-password-reset")
       .send({ email: "invalid-email" });
@@ -284,13 +291,13 @@ describe("POST /request-password-reset", () => {
     });
   });
 
-  it("returns 200 with a neutral message when email is an empty string", async () => {
+  it("returns 400 when email is an empty string", async () => {
     const response = await request(app)
       .post("/request-password-reset")
       .send({ email: "" });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      success: true,
+      success: false,
       message: "email is required and must be a non-empty string",
     });
   });
@@ -308,7 +315,7 @@ describe("POST /request-password-reset", () => {
     expect(createResponse.status).toBe(201); // Ensure the user was created successfully
 
     const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.auth@example.com"])).rows[0].id;
-    createdUserIDs.push(userId); // Add the created user ID to the cleanup list
+    createdUserIds.push(userId); // Add the created user ID to the cleanup list
 
     const response = await request(app)
       .post("/request-password-reset")
@@ -317,10 +324,22 @@ describe("POST /request-password-reset", () => {
     expect(response.body).toEqual({
       success: true,
       message: "If the email exists, a password reset link will be sent",
+      resetToken: expect.any(String), // The token should be a string
     });
+
+    // Make sure the token is stored in the database with the correct userId and hashed token
+    const tokenCheck = await pool.query(
+      "SELECT * FROM password_reset_tokens WHERE user_id = $1",
+      [userId]
+    );
+    expect(tokenCheck.rows.length).toBe(1);
+    expect(tokenCheck.rows[0].user_id).toBe(userId);
+    expect(tokenCheck.rows[0].token_hash).toBe(createHash("sha256").update(response.body.resetToken).digest("hex"));
+    
+    // Store the created password reset token for cleanup
+    createdPasswordResetTokens.push(response.body.resetToken);
   });
 });
-
 
 /*
 [HTTP METHOD] [PATH]: router.post("/confirm-password-reset", confirmPasswordReset);
@@ -399,7 +418,7 @@ describe("POST /confirm-password-reset", () => {
     const response = await request(app)
       .post("/confirm-password-reset")
       .send({ token: "nonexistenttoken", newPassword: "newpassword123456789" });
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     expect(response.body).toEqual({
       success: false,
       message: "Invalid or expired password reset token",
@@ -419,7 +438,7 @@ describe("POST /confirm-password-reset", () => {
     expect(createResponse.status).toBe(201);
 
     const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.expired@example.com"])).rows[0].id;
-    createdUserIDs.push(userId);
+    createdUserIds.push(userId);
 
     // Create an expired password reset token
     const resetToken = "expiredtoken";
@@ -433,7 +452,7 @@ describe("POST /confirm-password-reset", () => {
     const response = await request(app)
       .post("/confirm-password-reset")
       .send({ token: resetToken, newPassword: "newpassword123456789" });
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     expect(response.body).toEqual({
       success: false,
       message: "Invalid or expired password reset token",
@@ -447,8 +466,36 @@ describe("POST /confirm-password-reset", () => {
       .send({
         firstName: "John",
         lastName: "Doe",
-        email: "
+        email: "john.valid@example.com",
+        password: "password123456789",
+      });
+    expect(createResponse.status).toBe(201);
 
+    const userId = (await pool.query("SELECT id FROM users WHERE email = $1", ["john.valid@example.com"])).rows[0].id;
+    createdUserIds.push(userId);
+
+    // Create a valid password reset token, using requestPasswordReset function to generate a valid token
+    const requestResetResponse = await request(app)
+      .post("/request-password-reset")
+      .send({ email: "john.valid@example.com" });
+    expect(requestResetResponse.status).toBe(200);
+    const resetToken = requestResetResponse.body.resetToken;
+
+    const response = await request(app)
+      .post("/confirm-password-reset")
+      .send({ token: resetToken, newPassword: "newpassword123456789" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      success: true,
+      message: "Password reset successful",
+    });
+
+    // Verify that login with the new password works
+    const loginResponse = await request(app)
+      .post("/login")
+      .send({ email: "john.valid@example.com", password: "newpassword123456789" });
+    expect(loginResponse.status).toBe(200);
+  });
 });
   
 

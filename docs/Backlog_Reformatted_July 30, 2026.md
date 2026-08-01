@@ -217,14 +217,16 @@ Finish work in this order:
 
 Non-blocking cleanup should not interrupt feature implementation.
 
-### Guest Account and Authentication
+### Guest Account and Authentication ✅
 
-- [ ] Guest registration -> 8 tests all passed
-- [ ] Guest login -> 9 tests all passed, also revised the previous auth tests based on the new Test Framework
-- [ ] Guest profile -> done
-- [ ] Update guest profile -> done
-- [ ] Password reset request -> nearly done
-- [ ] Password reset confirmation -> nearly done
+- [x] Guest registration -> 8 tests all passed
+- [x] Guest login -> 9 tests all passed, also revised the previous auth tests based on the new Test Framework
+- [x] Guest profile -> done
+- [x] Update guest profile -> done
+- [x] Password reset request -> done
+- [x] Password reset confirmation -> done
+
+Now, all 178 tests and typecheck passed - so this block is finished.
 
 ### Room Search
 
