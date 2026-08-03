@@ -94,6 +94,14 @@ export async function findUserById(id: number) {
   return (result.rows[0] as SafeUser | undefined) ?? null;
 }
 
+export async function validateGuestUserExists(guestUserId: number) {
+  const result = await pool.query(
+    `SELECT id, role FROM users WHERE id = $1`,
+    [guestUserId]
+  );
+  return (result.rows[0] as { id: number; role: string } | undefined) ?? null;
+}
+
 export async function createUser(userData: DbStoreUserData) {
   const { firstName, lastName, email, passwordHash, role, isActive } = userData;
 

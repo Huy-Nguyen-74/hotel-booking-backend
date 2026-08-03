@@ -135,3 +135,4 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
     next(error);
   }
 }
+

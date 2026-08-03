@@ -9,6 +9,12 @@ import {
 } from "../repositories/userRepository";
 import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
+import {
+  updateBooking as RepositoryUpdateBooking,
+  guestViewAllBookingHistory as repositoryGuestViewAllBookingHistory,
+  guestViewOneSpecificBooking as repositoryGuestViewOneSpecificBooking
+} from "../repositories/bookingRepository";
+import { pool } from "../database/db";
 
 export async function createGuest(userData: CreateUserInput) {
   const existingUser = await repositoryFindUsers({ email: userData.email });
@@ -47,3 +53,81 @@ export async function guestCreateBooking(bookingData: CreateBookingInput) {
   const createdBooking = await serviceCreateBooking(bookingData);
   return createdBooking;
 }
+
+export async function guestViewBookingHistory(guestUserId: number) {
+  // Implementation for viewing booking history by a guest would go here
+  const bookingHistory = await repositoryGuestViewAllBookingHistory(guestUserId);
+  return bookingHistory;
+}
+
+export async function guestViewOneSpecificBooking(guestUserId: number, bookingId: number) {
+  const booking = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
+  return booking;
+}
+
+export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId: number, updates: {
+  guestName?: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+}) {
+  // Implementation for updating a booking by a guest would go here
+  // This would typically involve checking if the booking belongs to the guest and then allowing updates to certain fields.
+  
+  const bookingCheck = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
+  if (!bookingCheck || bookingCheck.length === 0) {
+    throw new AppError("Booking not found", 404);
+  }
+  
+  const effectiveCheckInDate = updates.checkInDate ? new Date(updates.checkInDate) : new Date(bookingCheck[0].check_in_date);
+  const effectiveCheckOutDate = updates.checkOutDate ? new Date(updates.checkOutDate) : new Date(bookingCheck[0].check_out_date);
+
+  if (effectiveCheckOutDate <= effectiveCheckInDate) {
+    throw new AppError("checkOutDate must be after checkInDate", 400);
+  }
+
+  const effectiveNights = Math.ceil((effectiveCheckOutDate.getTime() - effectiveCheckInDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (effectiveNights <= 0) {
+    throw new AppError("Number of nights must be greater than 0", 400);
+  }
+
+  const effectiveTotalPrice = effectiveNights * bookingCheck[0].room.price;
+  if (effectiveTotalPrice <= 0) {
+    throw new AppError("Total price must be greater than 0", 400);
+  }
+
+    /*
+    How to check overlapping bookings: a booking overlaps if:
+    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
+    - The new booking's check-out date is after or equal to an existing booking's check-in date.
+    - We need to exclude the current booking from this check.
+    */
+
+    const overlappingBooking = await pool.query(
+        `
+        SELECT *
+        FROM bookings
+        WHERE room_id = $1
+            AND check_in_date <= $2
+            AND check_out_date >= $3
+            AND id != $4
+    `, [bookingCheck[0].room_id, effectiveCheckOutDate, effectiveCheckInDate, bookingId]);
+
+    if (overlappingBooking.rows.length > 0) {
+        throw new AppError("Room is already booked for the selected dates", 400);
+    }
+
+    return await RepositoryUpdateBooking(bookingId, {
+        guestName: updates.guestName,
+        checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
+        checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
+        nights: effectiveNights,
+        totalPrice: effectiveTotalPrice
+    });
+}
+
+// Guest cancelling their own booking is written below:
+
+
+
+
+

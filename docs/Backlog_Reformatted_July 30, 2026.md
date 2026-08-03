@@ -260,6 +260,16 @@ Testing completed on August 3, 2026:
 
 This block is finished.
 
+### Guest Booking Flow
+
+- [ ] Create a booking as an authenticated guest
+- [ ] Store `guest_user_id` as the booking owner
+- [ ] Store `created_by_user_id` as the authenticated actor
+- [ ] View booking history
+- [ ] View booking details
+- [ ] Update booking
+- [ ] Cancel booking
+
 ### Current-Module Cleanup
 
 Complete these after the Guest Booking flow works, before typecheck and tests:
@@ -271,16 +281,6 @@ Complete these after the Guest Booking flow works, before typecheck and tests:
 - [ ] Allow same-day turnover by using strict overlap comparisons:
   - Existing `check_in_date < requested_check_out`
   - Existing `check_out_date > requested_check_in`
-
-### Guest Booking Flow
-
-- [ ] Create a booking as an authenticated guest
-- [ ] Store `guest_user_id` as the booking owner
-- [ ] Store `created_by_user_id` as the authenticated actor
-- [ ] View booking history
-- [ ] View booking details
-- [ ] Update booking
-- [ ] Cancel booking
 
 ### Staff Booking Flow
 

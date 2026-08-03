@@ -33,9 +33,7 @@ Further notes:
 
 */
 
-
 import pool from "../database/db";
-import { AppError } from "../errors/AppError";
 
 export async function findBookings(filters: { 
     bookingId?: number;
@@ -84,6 +82,29 @@ export async function findBookings(filters: {
     return result.rows;
 }
 
+export async function guestViewAllBookingHistory(guestUserId: number) {
+    const result = await pool.query(
+        `
+        SELECT * FROM bookings
+        WHERE guest_user_id = $1
+        ORDER BY check_in_date DESC
+        `,
+        [guestUserId]
+    );
+    return result.rows;
+}
+
+export async function guestViewOneSpecificBooking(guestUserId: number, bookingId: number) {
+    const result = await pool.query(
+        `
+        SELECT * FROM bookings
+        WHERE guest_user_id = $1 AND id = $2
+        `,
+        [guestUserId, bookingId]
+    );
+    return result.rows[0];
+}
+
 export async function createBooking(booking: { 
     hotelId: number; 
     roomId: number; 
@@ -105,6 +126,8 @@ export async function createBooking(booking: {
     );
     return result.rows[0];
 }
+
+
 
 export async function updateBooking(bookingId: number, updates: { 
     hotelId?: number;

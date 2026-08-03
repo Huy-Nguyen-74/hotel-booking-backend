@@ -4,6 +4,7 @@ import {
     updateBooking as RepositoryUpdateBooking,
     deleteBooking as RepositoryDeleteBooking
 } from "../repositories/bookingRepository";
+import { validateGuestUserExists } from "../repositories/userRepository";
 
 import { findHotels } from "../repositories/hotelRepository";
 import { findRooms } from "../repositories/roomRepository";
@@ -44,10 +45,15 @@ Further notes:
 
 export async function createBooking(booking: CreateBookingInput) {
 
-    // Validate that guestUserId exists in the users table if provided
+    // Validate that guestUserId exists in the users table and role is guest if provided
     // Waiting for the guestUserId validation to be implemented in the userRepository.ts file. Once that is done, we can uncomment the following code to validate the guestUserId.
 
-    
+    if (booking.guestUserId) {
+        const guestUser = await validateGuestUserExists(booking.guestUserId);
+        if (!guestUser || guestUser.role !== "guest") {
+            throw new AppError("Guest user not found or not a guest", 404);
+        }
+    }
 
     // Validate hotel and room existence against array of hotels and rooms in the database
 
@@ -143,8 +149,6 @@ export async function updateBooking(bookingId: number, updates: {
     guestName?: string;
     checkInDate?: string;
     checkOutDate?: string;
-    nights?: number;
-    totalPrice?: number;
 }) {
 
     const bookingCheck = await findBookings({ bookingId });
@@ -203,11 +207,16 @@ export async function updateBooking(bookingId: number, updates: {
     if (overlappingBooking.rows.length > 0) {
         throw new AppError("Room is already booked for the selected dates", 400);
     }
-    
-    updates.nights = effectiveNights;
-    updates.totalPrice = effectiveTotalPrice;
 
-    return await RepositoryUpdateBooking(bookingId, updates);
+    return await RepositoryUpdateBooking(bookingId, {
+        hotelId: effectiveHotelId,
+        roomId: effectiveRoomId,
+        guestName: updates.guestName,
+        checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
+        checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
+        nights: effectiveNights,
+        totalPrice: effectiveTotalPrice
+    });
 }
 
 
