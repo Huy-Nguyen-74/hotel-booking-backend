@@ -22,7 +22,6 @@ It uses Jest for testing and Supertest for making HTTP requests to the Express a
 
 /* First, we will test the GET /hotels endpoint:
     - It should return 400 Bad Request if invalid query parameters are provided (id, city).
-    - It should return 401 Unauthorized when no token is provided.
 
     - It should return 200 OK and all hotels when no filters are provided.
     - It should return an empty array if no hotels match the filters.
@@ -32,46 +31,24 @@ It uses Jest for testing and Supertest for making HTTP requests to the Express a
 
 describe("GET /hotels", () => {
 
-    // Before running the tests, we need to log in to get a valid JWT token for authentication.
-    // For GET, either admin or staff can access, so we will use an admin token for testing.
-
-    let adminToken: string;
-
-    beforeAll(async () => {
-        adminToken = await adminLoginForTest();
-    });
+    // This now becomes a public endpoint, so no authentication is required. We will test the failure scenarios first.
 
     it("should return 400 Bad Request for invalid query parameters, such as when id is not a number", async () => {
         const response = await request(app)
             .get("/hotels")
             .query({ hotelId: "invalid" }) // Invalid hotelId
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
-
         expect(response.status).toBe(400);
         expect(response.body).toEqual({
             success: false,
             message: "hotelId must be a positive integer" });
     });
 
-       it("should return 401 Unauthorized when no token is provided", async () => {
-        const response = await request(app)
-            .get("/hotels"); // No Authorization header
-
-        expect(response.status).toBe(401);
-        expect(response.body).toEqual({
-            success: false,
-            message: "Authentication token missing" });
-    });
-
-
     // Next, we will test the successful cases for GET /hotels endpoint.
 
     it("should return 200 OK and all hotels when no filters are provided", async () => {
         const response = await request(app)
             .get("/hotels")
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
-
-        expect(response.status).toBe(200);
+            expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true); // The response should be an array
     });
 
@@ -79,7 +56,6 @@ describe("GET /hotels", () => {
         const response = await request(app)
             .get("/hotels")
             .query({ city: "NonExistentCity" }) // Assuming this city has no hotels
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
         expect(response.status).toBe(200);
         expect(response.body).toEqual([]); // The response should be an empty array
     });
@@ -88,7 +64,6 @@ describe("GET /hotels", () => {
         const response = await request(app)
             .get("/hotels")
             .query({ hotelId: 9999 }) // Assuming this hotelId has no hotels
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
         expect(response.status).toBe(200);
         expect(response.body).toEqual([]); // The response should be an empty array
     });
@@ -97,7 +72,6 @@ describe("GET /hotels", () => {
         const response = await request(app)
             .get("/hotels")
             .query({ hotelId: 9999, city: "NonExistentCity" }) // Assuming this combination has no hotels
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
         expect(response.status).toBe(200);
         expect(response.body).toEqual([]); // The response should be an empty array
     });
@@ -106,13 +80,11 @@ describe("GET /hotels", () => {
         const response = await request(app)
             .get("/hotels")
             .query({ city: "Tokyo" }) // Assuming this city has hotels
-            .set(authHeaders(adminToken)); // Set the Authorization header with the token
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThan(0);
         expect(Array.isArray(response.body)).toBe(true); // The response should be an array
     });
 });
-
 
 /* Next, we will test the POST /hotels endpoint:
     - It should return 401 Unauthorized when no token is provided.
@@ -252,8 +224,6 @@ describe("POST /hotels - Admin Access", () => {
         expect(response.body.city).toBe("Tokyo");
     });
 });
-
-
 
 /* Finally, we will test the PATCH /hotels/:hotelId endpoint:
     - It should return 401 Unauthorized when no token is provided.

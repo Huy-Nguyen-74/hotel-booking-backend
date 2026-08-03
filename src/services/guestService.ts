@@ -7,10 +7,8 @@ import {
   createUser as repositoryCreateUser,
   findUsers as repositoryFindUsers,
 } from "../repositories/userRepository";
-import { findAvailableRooms } from "../repositories/roomRepository";
 import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
-import { getSelfInfo } from "./userService";
 
 export async function createGuest(userData: CreateUserInput) {
   const existingUser = await repositoryFindUsers({ email: userData.email });
@@ -38,38 +36,9 @@ export async function createGuest(userData: CreateUserInput) {
 
 // Guest updating their own information is handled by the updateSelfInfo function in userService.ts, which allows the guest to update their own information based on their ID.
 
-export async function searchAvailableRooms(filters: {
-  hotelId?: number;
-  type?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  checkInDate?: string;
-  checkOutDate?: string;
-}) {
+// For get Hotel details, we can use the getHotels function from hotelService.ts, which retrieves hotel information based on provided filters.
 
-  /*
-  Validation for checkInDate and checkOutDate:
-  -If either checkInDate or checkOutDate is provided, both must be provided.
-  -If neither is provided, it's okay.
-  */
-
-  if (filters.minPrice !== undefined && filters.maxPrice !== undefined && filters.minPrice > filters.maxPrice) {
-    throw new AppError("minPrice cannot be greater than maxPrice", 400);
-  }
-
-  if ((filters.checkInDate !== undefined && filters.checkOutDate === undefined) || (filters.checkInDate === undefined && filters.checkOutDate !== undefined)) {
-    throw new AppError("Both checkInDate and checkOutDate must be provided together", 400);
-  }
-
-  if (filters.checkInDate && filters.checkOutDate && new Date(filters.checkInDate) >= new Date(filters.checkOutDate)) {
-    throw new AppError("checkInDate must be before checkOutDate", 400);
-  }
-  
-  const availableRooms = await findAvailableRooms(filters);
-  return availableRooms;
-}
-
-
+// For searching available rooms, we can simply use the room Router's GET /available-rooms endpoint, which internally calls the searchAvailableRooms function from roomService.ts. This function retrieves available rooms based on provided filters such as hotelId, type, price range, and check-in/check-out dates.
 
 export async function guestCreateBooking(bookingData: CreateBookingInput) {
   // Implementation for creating a booking by a guest would go here
@@ -78,8 +47,3 @@ export async function guestCreateBooking(bookingData: CreateBookingInput) {
   const createdBooking = await serviceCreateBooking(bookingData);
   return createdBooking;
 }
-
-
-
-
-

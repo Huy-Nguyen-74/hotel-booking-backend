@@ -2,10 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { toUserDto } from "../DTO/userDto";
 import { toBookingDto } from "../DTO/bookingDto";
-import { toRoomDto } from "../DTO/roomDto";
 import { 
   createGuest as serviceCreateGuest,
-  searchAvailableRooms as serviceSearchAvailableRooms,
   guestCreateBooking as serviceGuestCreateBooking,
  } from "../services/guestService";
 import type { CreateBookingInput } from "../types/booking";
@@ -70,90 +68,6 @@ export async function createGuest(req: Request, res: Response, next: NextFunctio
 }
 
 // For guest viewing their own profile, we can reuse the getSelfInfo function from userController.ts.
-
-export async function searchAvailableRooms(req: Request, res: Response, next: NextFunction) {
-
-  if (req.query && Array.isArray(req.query)) {
-    return next(new AppError("Query parameters must be a valid object", 400));
-  }
-  
-  const hotelId = req.query.hotelId;
-  const type = req.query.type;
-  const minPrice = req.query.minPrice;
-  const maxPrice = req.query.maxPrice;
-  const checkInDate = req.query.checkInDate;
-  const checkOutDate = req.query.checkOutDate;
-
-  // Validate format and non-empty strings for query parameters
-
-  if (hotelId !== undefined && (typeof hotelId !== "string" || hotelId.trim() === "")) {
-    throw new AppError("hotelId must be a non-empty string", 400);
-  }
-
-  if (type !== undefined && (typeof type !== "string" || type.trim() === "")) {
-    throw new AppError("type must be a non-empty string", 400);
-  }
-
-  if (minPrice !== undefined && (typeof minPrice !== "string" || minPrice.trim() === "")) {
-    throw new AppError("minPrice must be a non-empty string", 400);
-  }
-
-  if (maxPrice !== undefined && (typeof maxPrice !== "string" || maxPrice.trim() === "")) {
-    throw new AppError("maxPrice must be a non-empty string", 400);
-  }
-
-  if (checkInDate !== undefined && (typeof checkInDate !== "string" || checkInDate.trim() === "")) {
-    throw new AppError("checkInDate must be a non-empty string", 400);
-  }
-
-  if (checkOutDate !== undefined && (typeof checkOutDate !== "string" || checkOutDate.trim() === "")) {
-    throw new AppError("checkOutDate must be a non-empty string", 400);
-  }
-
-  // Parse query parameters to appropriate types
-  const parsedHotelId = hotelId !== undefined ? Number(hotelId) : undefined;
-  const parsedType = type !== undefined ? type.trim() : undefined;
-  const parsedMinPrice = minPrice !== undefined ? Number(minPrice) : undefined;
-  const parsedMaxPrice = maxPrice !== undefined ? Number(maxPrice) : undefined;
-  const parsedCheckInDate = checkInDate !== undefined ? checkInDate.trim() : undefined;
-  const parsedCheckOutDate = checkOutDate !== undefined ? checkOutDate.trim() : undefined;
-
-  // Validate that hotelId, minPrice, and maxPrice are valid numbers if provided
-
-  if (parsedHotelId !== undefined && (Number.isNaN(parsedHotelId) || !Number.isInteger(parsedHotelId) || parsedHotelId <= 0)) {
-    throw new AppError("hotelId must be a positive integer", 400);
-  }
-  if (parsedMinPrice !== undefined && (Number.isNaN(parsedMinPrice) || parsedMinPrice < 0)) {
-    throw new AppError("minPrice must be a non-negative number", 400);
-  }
-  if (parsedMaxPrice !== undefined && (Number.isNaN(parsedMaxPrice) || parsedMaxPrice < 0)) {
-    throw new AppError("maxPrice must be a non-negative number", 400);
-  }
-
-  if (parsedCheckInDate !== undefined && isNaN(Date.parse(parsedCheckInDate))) {
-    throw new AppError("checkInDate must be a valid date string", 400);
-  }
-
-  if (parsedCheckOutDate !== undefined && isNaN(Date.parse(parsedCheckOutDate))) {
-    throw new AppError("checkOutDate must be a valid date string", 400);
-  }
-
-  const filters = {
-    hotelId: parsedHotelId,
-    type: parsedType,
-    minPrice: parsedMinPrice,
-    maxPrice: parsedMaxPrice,
-    checkInDate: parsedCheckInDate,
-    checkOutDate: parsedCheckOutDate,
-  };
-
-  try {
-    const availableRooms = await serviceSearchAvailableRooms(filters);
-    return res.json(availableRooms.map(toRoomDto));
-  } catch (error) {
-    next(error);
-  }
-}
 
 export async function guestCreateBooking(req: Request, res: Response, next: NextFunction) {
   if (!req.user || !req.user.id || typeof req.user.id !== "number") {

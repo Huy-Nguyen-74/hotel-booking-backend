@@ -228,12 +228,49 @@ Non-blocking cleanup should not interrupt feature implementation.
 
 Now, all 178 tests and typecheck passed - so this block is finished.
 
-### Room Search
+### Room & Hotel Search ✅
 
-- [ ] Search rooms by hotel, type, and price
-- [ ] Search room availability by check-in and check-out dates
-- [ ] Require both dates when either date is provided
-- [ ] Reject invalid date ranges
+- [x] Search hotels by name and city
+  - Shared public route
+  - No authentication or authorization required
+
+- [x] Search room availability by hotel, type, min price and maxprice, check-in date and check-out date
+  - Shared public route
+  - No authentication or authorization required
+
+- [x] Require both dates when either date is provided
+
+- [x] Reject invalid date ranges
+
+- [x] Move `searchAvailableRooms` from Guest Controller/Service into Room Controller/Service
+
+Current access rules:
+
+- Get hotels: public
+- Search available rooms: public
+- General room search: restricted to admin and staff
+
+Testing completed on August 3, 2026:
+
+- [x] Revised `hotel.test.ts` for public `GET /hotels`
+- [x] Added anonymous hotel-access test
+- [x] Added `searchAvailableRooms` tests to `room.test.ts`
+- [x] All 185 tests passed
+- [x] Typecheck passed
+
+This block is finished.
+
+### Current-Module Cleanup
+
+Complete these after the Guest Booking flow works, before typecheck and tests:
+
+- [ ] Move direct SQL from `bookingService` into repositories
+- [ ] Review other Service modules for direct SQL after their current flows are complete. If those exist, they should be moved to Repo.
+- [ ] Move check-in/check-out ordering rules from Controllers into Services
+- [ ] Ensure room search and booking creation use the same overlap rule
+- [ ] Allow same-day turnover by using strict overlap comparisons:
+  - Existing `check_in_date < requested_check_out`
+  - Existing `check_out_date > requested_check_in`
 
 ### Guest Booking Flow
 
@@ -261,18 +298,6 @@ Now, all 178 tests and typecheck passed - so this block is finished.
 - [ ] Guests access only their own bookings
 - [ ] Staff permissions remain separate from guest ownership
 - [ ] Authorization and ownership integration tests
-
-### Current-Module Cleanup
-
-Complete these after the Guest Booking flow works, before typecheck and tests:
-
-- [ ] Move direct SQL from `bookingService` into repositories
-- [ ] Review other Service modules for direct SQL after their current flows are complete
-- [ ] Move check-in/check-out ordering rules from Controllers into Services
-- [ ] Ensure room search and booking creation use the same overlap rule
-- [ ] Allow same-day turnover by using strict overlap comparisons:
-  - Existing `check_in_date < requested_check_out`
-  - Existing `check_out_date > requested_check_in`
 
 ### Deferred from Guest Journey
 
