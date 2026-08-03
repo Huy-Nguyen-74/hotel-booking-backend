@@ -2,11 +2,19 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { toUserDto } from "../DTO/userDto";
 import { toBookingDto } from "../DTO/bookingDto";
+import type { CreateBookingInput } from "../types/booking";
+
 import { 
   createGuest as serviceCreateGuest,
   guestCreateBooking as serviceGuestCreateBooking,
  } from "../services/guestService";
-import type { CreateBookingInput } from "../types/booking";
+
+ import {
+  guestViewAllBookingHistory as serviceGuestViewAllBookingHistory,
+  guestViewOneSpecificBooking as serviceGuestViewOneSpecificBooking,
+  guestUpdateTheirOwnBooking as serviceGuestUpdateTheirOwnBooking,
+  cancelOwnBooking as serviceCancelOwnBooking
+ } from "../services/guestService";
 
 export async function createGuest(req: Request, res: Response, next: NextFunction) {
   if (!req.body || Array.isArray(req.body)) {
@@ -136,3 +144,115 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
   }
 }
 
+export async function guestViewAllBookingHistory(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+    return next(new AppError("User must be authenticated", 401));
+  }
+
+  const guestUserId = req.user.id;
+
+  try {
+    const bookingHistory = await serviceGuestViewAllBookingHistory(guestUserId);
+    return res.status(200).json(bookingHistory.map(toBookingDto));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function guestViewOneSpecificBooking(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+    return next(new AppError("User must be authenticated", 401));
+  }
+
+  const guestUserId = req.user.id;
+  const bookingIdParam = req.params.bookingId;
+
+  if (!bookingIdParam || isNaN(Number(bookingIdParam)) || Number(bookingIdParam) <= 0 || !Number.isInteger(Number(bookingIdParam))) {
+    return next(new AppError("Booking ID must be a positive integer", 400));
+  }
+
+  try {
+    const bookingId = Number(bookingIdParam);
+    const booking = await serviceGuestViewOneSpecificBooking(guestUserId, bookingId);
+    return res.status(200).json(toBookingDto(booking));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function guestUpdateTheirOwnBooking(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+    return next(new AppError("User must be authenticated", 401));
+  }
+  
+  const guestUserId = req.user.id;
+  const bookingIdParam = req.params.bookingId;
+
+  if (!bookingIdParam || isNaN(Number(bookingIdParam)) || Number(bookingIdParam) <= 0 || !Number.isInteger(Number(bookingIdParam))) {
+    return next(new AppError("Booking ID must be a positive integer", 400));
+  }
+
+  if (!req.body || Array.isArray(req.body)) {
+    return next(new AppError("Request body must be a valid JSON object", 400));
+  }
+
+  const rawGuestName = req.body.guestName;
+  const rawCheckInDate = req.body.checkInDate;
+  const rawCheckOutDate = req.body.checkOutDate;
+
+  if (rawGuestName === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
+    return next(new AppError("At least one of guestName, checkInDate, or checkOutDate must be provided", 400));
+  }
+
+  if (rawGuestName !== undefined && (typeof rawGuestName !== "string" || rawGuestName.trim() === "")) {
+    return next(new AppError("guestName must be a non-empty string", 400));
+  }
+
+  if (rawCheckInDate !== undefined && (typeof rawCheckInDate !== "string" || rawCheckInDate.trim() === "" || isNaN(Date.parse(rawCheckInDate)))) {
+    return next(new AppError("checkInDate must be a valid date string", 400));
+  }
+
+  if (rawCheckOutDate !== undefined && (typeof rawCheckOutDate !== "string" || rawCheckOutDate.trim() === "" || isNaN(Date.parse(rawCheckOutDate)))) {
+    return next(new AppError("checkOutDate must be a valid date string", 400));
+  }
+
+  const updates: { guestName?: string; checkInDate?: string; checkOutDate?: string } = {};
+  if (rawGuestName !== undefined) {
+    updates.guestName = rawGuestName.trim();
+  }
+  if (rawCheckInDate !== undefined) {
+    updates.checkInDate = rawCheckInDate.trim();
+  }
+  if (rawCheckOutDate !== undefined) {
+    updates.checkOutDate = rawCheckOutDate.trim();
+  }
+
+  try {
+    const bookingId = Number(bookingIdParam);
+    const updatedBooking = await serviceGuestUpdateTheirOwnBooking(guestUserId, bookingId, updates);
+    return res.status(200).json(toBookingDto(updatedBooking));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function cancelOwnBooking(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+    return next(new AppError("User must be authenticated", 401));
+  }
+
+  const guestUserId = req.user.id;
+  const bookingIdParam = req.params.bookingId;
+
+  if (!bookingIdParam || isNaN(Number(bookingIdParam)) || Number(bookingIdParam) <= 0 || !Number.isInteger(Number(bookingIdParam))) {
+    return next(new AppError("Booking ID must be a positive integer", 400));
+  }
+
+  try {
+    const bookingId = Number(bookingIdParam);
+    const cancelledBooking = await serviceCancelOwnBooking(bookingId, guestUserId);
+    return res.status(200).json({ message: "Booking cancelled successfully", booking: toBookingDto(cancelledBooking) });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -88,7 +88,8 @@ export async function findAvailableRooms(filters: RoomSearchFilters) {
         WHERE NOT (
             $1 >= check_out_date
             OR $2 <= check_in_date
-        )`;
+        )
+        AND status <> 'cancelled'`;
 
         const bookedRoomsResult = await pool.query(bookedRoomsQuery, [filters.checkInDate, filters.checkOutDate]);
         const bookedRoomIds = new Set(bookedRoomsResult.rows.map((booking) => booking.room_id));

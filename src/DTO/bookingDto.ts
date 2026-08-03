@@ -12,6 +12,10 @@ export function toBookingDto(booking: BookingRow) {
     checkOutDate: booking.check_out_date,
     nights: booking.nights,
     totalPrice: booking.total_price,
+    status: booking.status,
+
+    // Include the cancelled_at field in the DTO if it exists
+    ...(booking.cancelled_at && { cancelledAt: booking.cancelled_at })
   };
 }
 

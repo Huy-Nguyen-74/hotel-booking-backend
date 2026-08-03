@@ -156,6 +156,27 @@ export async function updateBooking(bookingId: number, updates: {
     return result.rows[0];
 }
 
+/*
+- Add `cancelBooking(bookingId, cancelledByUserId)`
+- Update status, cancellation time, and cancelling user
+- Do not delete the booking
+*/
+
+export async function cancelBooking(bookingId: number, cancelledByUserId: number) {
+    const result = await pool.query(
+        `
+        UPDATE bookings
+        SET status = 'cancelled',
+            cancelled_at = NOW(),
+            cancelled_by_user_id = $2
+        WHERE id = $1
+        RETURNING *
+        `,
+        [bookingId, cancelledByUserId]
+    );
+    return result.rows[0];
+}
+
 export async function deleteBooking(bookingId: number) {
     const result = await pool.query(
         `

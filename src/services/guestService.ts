@@ -11,6 +11,7 @@ import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
 import {
   updateBooking as RepositoryUpdateBooking,
+  cancelBooking,
   guestViewAllBookingHistory as repositoryGuestViewAllBookingHistory,
   guestViewOneSpecificBooking as repositoryGuestViewOneSpecificBooking
 } from "../repositories/bookingRepository";
@@ -54,7 +55,7 @@ export async function guestCreateBooking(bookingData: CreateBookingInput) {
   return createdBooking;
 }
 
-export async function guestViewBookingHistory(guestUserId: number) {
+export async function guestViewAllBookingHistory(guestUserId: number) {
   // Implementation for viewing booking history by a guest would go here
   const bookingHistory = await repositoryGuestViewAllBookingHistory(guestUserId);
   return bookingHistory;
@@ -110,6 +111,7 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
             AND check_in_date <= $2
             AND check_out_date >= $3
             AND id != $4
+            AND status <> 'cancelled'
     `, [bookingCheck[0].room_id, effectiveCheckOutDate, effectiveCheckInDate, bookingId]);
 
     if (overlappingBooking.rows.length > 0) {
@@ -125,9 +127,33 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
     });
 }
 
-// Guest cancelling their own booking is written below:
+/*
+Guest cancelling their own booking is written below:
 
+- Add `cancelOwnBooking(bookingId, guestUserId)`
+- Find the booking
+- Verify `guest_user_id === guestUserId`
+- Reject invalid cancellation states
+- Call the repository cancellation function
+*/
 
+export async function cancelOwnBooking(bookingId: number, guestUserId: number) {
+  const booking = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
+  if (!booking || booking.length === 0) {
+    throw new AppError("Booking not found", 404);
+  }
+
+  if (booking[0].guest_user_id !== guestUserId) {
+    throw new AppError("You are not authorized to cancel this booking", 403);
+  }
+
+  if (booking[0].status === "cancelled") {
+    throw new AppError("Booking is already cancelled", 400);
+  }
+
+  const cancelledBooking = await cancelBooking(bookingId, guestUserId);
+  return cancelledBooking;
+}
 
 
 

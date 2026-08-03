@@ -270,6 +270,92 @@ This block is finished.
 - [ ] Update booking
 - [ ] Cancel booking
 
+
+## Guest Booking Cancellation
+
+Most companies treat cancellation as a business action, not deletion.
+
+Use:
+
+POST /guests/bookings/:id/cancel
+
+Flow:
+
+- Authenticate guest
+- Verify the booking belongs to that guest
+- Verify the booking is still cancellable
+- Reject already-cancelled bookings
+- Reject cancellation after check-in
+- Change booking status to `cancelled`
+- Record who cancelled it and when
+- Keep the booking in history
+- Make the room available again
+
+## Required Database Changes -> DONE
+
+Add to `bookings`:
+
+- `status` — NOT NULL, default `confirmed`
+- `cancelled_at` — nullable timestamp
+- `cancelled_by_user_id` — nullable foreign key to `users.id`
+
+Current statuses:
+
+- `confirmed`
+- `cancelled`
+
+## Required Code Changes
+
+Repository: -> DONE
+
+- Add `cancelBooking(bookingId, cancelledByUserId)`
+- Update status, cancellation time, and cancelling user
+- Do not delete the booking
+
+Booking Service: -> DONE
+
+- Add `cancelOwnBooking(bookingId, guestUserId)`
+- Find the booking
+- Verify `guest_user_id === guestUserId`
+- Reject invalid cancellation states
+- Call the repository cancellation function
+
+Guest Controller and Route: -> DONE
+
+- Add `cancelOwnBooking`
+- Use `req.user.id`
+- Route requires:
+  - `authenticateToken`
+  - `authorizeRoles("guest")`
+
+Availability Logic:
+
+- Ignore cancelled bookings in overlap queries:
+
+AND status <> 'cancelled' -> DONE
+
+DTO:
+
+Expose:
+
+- `status`
+- `cancelledAt`
+
+Do not expose `cancelledByUserId` to guests unless needed.
+
+## Integration Tests
+
+- Guest cancels own confirmed booking
+- Booking remains in history as `cancelled`
+- Guest cannot cancel another guest’s booking
+- Already-cancelled booking is rejected
+- Cancelled booking no longer blocks room availability
+- Unauthenticated and non-guest requests are rejected
+
+Cancellation fees and refunds belong in the later Payments phase.
+
+
+
 ### Current-Module Cleanup
 
 Complete these after the Guest Booking flow works, before typecheck and tests:

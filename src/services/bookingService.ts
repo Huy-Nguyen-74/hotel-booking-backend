@@ -100,6 +100,7 @@ export async function createBooking(booking: CreateBookingInput) {
         WHERE room_id = $1
           AND check_in_date < $2
           AND check_out_date > $3
+          AND status <> 'cancelled'
         `,
         [booking.roomId, booking.checkOutDate, booking.checkInDate]
     );
@@ -202,6 +203,7 @@ export async function updateBooking(bookingId: number, updates: {
             AND check_in_date <= $2
             AND check_out_date >= $3
             AND id != $4
+            AND status <> 'cancelled'
     `, [effectiveRoomId, effectiveCheckOutDate, effectiveCheckInDate, bookingId]);
 
     if (overlappingBooking.rows.length > 0) {
