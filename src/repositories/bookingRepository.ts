@@ -127,7 +127,32 @@ export async function createBooking(booking: {
     return result.rows[0];
 }
 
-
+export async function checkOverlappingBookings(roomId: number, checkInDate: string, checkOutDate: string, excludeBookingId?: number) {
+    /*
+    Check overlapping bookings: a booking overlaps if:
+    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
+    - The new booking's check-out date is after or equal to an existing booking's check-in date.
+    
+    Examples of non-overlapping bookings:
+    - Existing booking: 2024-01-10 to 2024-01-15
+    - New booking: 2024-01-09 to 2024-01-10 
+    -> This is not overlapping because the new booking ends on the same day the existing booking starts, which is allowed.
+    Because of that, the condition to check is check_in_date < $2 and check_out_date > $3.
+    */
+    const overlappingBooking = await pool.query(
+        `
+        SELECT *
+        FROM bookings
+        WHERE room_id = $1
+          AND check_in_date < $2
+          AND check_out_date > $3
+          AND status <> 'cancelled'
+          ${excludeBookingId !== undefined ? `AND id != $4` : ""}
+        `,
+        excludeBookingId !== undefined ? [roomId, checkOutDate, checkInDate, excludeBookingId] : [roomId, checkOutDate, checkInDate]
+    );
+    return overlappingBooking.rows;
+}
 
 export async function updateBooking(bookingId: number, updates: { 
     hotelId?: number;

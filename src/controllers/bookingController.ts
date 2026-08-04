@@ -212,10 +212,6 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("createdByUserId must be an integer greater than 0", 400));
     }
 
-    if (new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
-        return next(new AppError("checkOutDate must be after checkInDate", 400));
-    }
-
     try {
         const createdBooking = await serviceCreateBooking({ hotelId: rawHotelId, roomId: rawRoomId, guestName: parsedGuestName, guestUserId: rawGuestUserId, createdByUserId: rawCreatedByUserId, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(201).json({ message: "Booking created successfully", booking: toBookingDto(createdBooking) });
@@ -295,10 +291,6 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
 
     if (parsedRoomId !== undefined && (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0)) {
         return next(new AppError("roomId must be an integer greater than 0", 400));
-    }
-
-    if (parsedCheckInDate !== undefined && parsedCheckOutDate !== undefined && new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
-        return next(new AppError("checkOutDate must be after checkInDate", 400));
     }
 
     try {

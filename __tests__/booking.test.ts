@@ -206,7 +206,7 @@ describe("POST /bookings", () => {
     });
   });
 
-  it("returns 400 when booking dates overlap an existing booking", async () => {
+  it("returns 409 when booking dates overlap an existing booking", async () => {
     const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
       hotelId: 10,
       roomId: 1,
@@ -215,7 +215,7 @@ describe("POST /bookings", () => {
       checkOutDate: "2026-06-22",
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
 
     expect(response.body).toEqual({
       success: false,
@@ -355,7 +355,7 @@ describe("PATCH /bookings/:bookingId", () => {
       checkOutDate: "2027-04-12",
     });
 
-    expect(patchResponse.status).toBe(400);
+    expect(patchResponse.status).toBe(409);
     expect(patchResponse.body).toEqual({
       success: false,
       message: "Room is already booked for the selected dates",

@@ -12,10 +12,10 @@ import { createBooking as serviceCreateBooking } from "./bookingService";
 import {
   updateBooking as RepositoryUpdateBooking,
   cancelBooking,
+  checkOverlappingBookings,
   guestViewAllBookingHistory as repositoryGuestViewAllBookingHistory,
   guestViewOneSpecificBooking as repositoryGuestViewOneSpecificBooking
 } from "../repositories/bookingRepository";
-import { pool } from "../database/db";
 
 export async function createGuest(userData: CreateUserInput) {
   const existingUser = await repositoryFindUsers({ email: userData.email });
@@ -96,26 +96,15 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
     throw new AppError("Total price must be greater than 0", 400);
   }
 
-    /*
-    How to check overlapping bookings: a booking overlaps if:
-    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
-    - The new booking's check-out date is after or equal to an existing booking's check-in date.
-    - We need to exclude the current booking from this check.
-    */
+    const overlappingBooking = await checkOverlappingBookings(
+        bookingCheck[0].room_id,
+        effectiveCheckInDate.toISOString().split('T')[0],
+        effectiveCheckOutDate.toISOString().split('T')[0],
+        bookingId
+    );
 
-    const overlappingBooking = await pool.query(
-        `
-        SELECT *
-        FROM bookings
-        WHERE room_id = $1
-            AND check_in_date <= $2
-            AND check_out_date >= $3
-            AND id != $4
-            AND status <> 'cancelled'
-    `, [bookingCheck[0].room_id, effectiveCheckOutDate, effectiveCheckInDate, bookingId]);
-
-    if (overlappingBooking.rows.length > 0) {
-        throw new AppError("Room is already booked for the selected dates", 400);
+    if (overlappingBooking.length > 0) {
+        throw new AppError("Room is already booked for the selected dates", 409);
     }
 
     return await RepositoryUpdateBooking(bookingId, {
@@ -149,6 +138,11 @@ export async function cancelOwnBooking(bookingId: number, guestUserId: number) {
 
   if (booking[0].status === "cancelled") {
     throw new AppError("Booking is already cancelled", 400);
+  }
+
+  const today = new Date();
+  if (today > new Date(booking[0].check_in_date)) {
+    throw new AppError("Cannot cancel a booking past its check-in date", 400);
   }
 
   const cancelledBooking = await cancelBooking(bookingId, guestUserId);

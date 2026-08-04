@@ -270,6 +270,19 @@ This block is finished.
 - [ ] Update booking
 - [ ] Cancel booking
 
+All done -> NOW WRITING TEST, which is the last part in this slice
+
+For cancellation (copied from below)
+- Guest cancels own confirmed booking
+- Booking remains in history as `cancelled`
+- Guest cannot cancel another guest’s booking
+- Already-cancelled booking is rejected
+- Cancelled booking no longer blocks room availability
+- Unauthenticated and non-guest requests are rejected
+
+Aug 4th, 16:25
+Realized the need to have a unified list of response message to each error (401, 403, 400, 409, etc.) / success scenario
+-> add before running test for this slice
 
 ## Guest Booking Cancellation
 
@@ -279,7 +292,7 @@ Use:
 
 POST /guests/bookings/:id/cancel
 
-Flow:
+Flow: -> DONE ALL
 
 - Authenticate guest
 - Verify the booking belongs to that guest
@@ -343,7 +356,7 @@ Expose:
 
 Do not expose `cancelledByUserId` to guests unless needed.
 
-## Integration Tests
+## Integration Tests 
 
 - Guest cancels own confirmed booking
 - Booking remains in history as `cancelled`
@@ -356,15 +369,15 @@ Cancellation fees and refunds belong in the later Payments phase.
 
 
 
-### Current-Module Cleanup
+### Current-Module Cleanup -> DONE
 
 Complete these after the Guest Booking flow works, before typecheck and tests:
 
-- [ ] Move direct SQL from `bookingService` into repositories
-- [ ] Review other Service modules for direct SQL after their current flows are complete. If those exist, they should be moved to Repo.
-- [ ] Move check-in/check-out ordering rules from Controllers into Services
-- [ ] Ensure room search and booking creation use the same overlap rule
-- [ ] Allow same-day turnover by using strict overlap comparisons:
+- [ ] Move direct SQL from `bookingService` into repositories -> DONE
+- [ ] Review other Service modules for direct SQL after their current flows are complete. If those exist, they should be moved to Repo. -> DONE
+- [ ] Move check-in/check-out ordering rules from Controllers into Services -> DONE
+- [ ] Ensure room search and booking creation use the same overlap rule -> DONE
+- [ ] Allow same-day turnover by using strict overlap comparisons: -> DONE
   - Existing `check_in_date < requested_check_out`
   - Existing `check_out_date > requested_check_in`
 
