@@ -270,6 +270,34 @@ describe("Create a booking as an authenticated guest", () => {
 });
 
 describe("View booking history as an authenticated guest", () => {
+  
+  /*
+  [HTTP METHOD] [PATH]
+
+  Access:
+  - Who can access? -> Authenticated guests only.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
+
+  Success:
+  - Valid request → 200 OK.
+  - Expected response body: an array of booking objects, each containing the required fields as specified above.
+  - Expected database effect: No changes to the database; this is a read-only operation.
+
+  Rejections:
+  - Invalid input → not applicable for this endpoint.
+  - Broken business rule → [status].
+  - Missing resource → not applicable for this endpoint.
+  - Conflict → not applicable for this endpoint.
+
+  Response:
+  - Required fields.
+  - Fields that must be excluded.
+
+  Cleanup:
+  - Test data to remove/reset.
+  */
+  
   it("should return booking history for the authenticated guest", async () => {
     const bookingData1: CreateBookingInput = {
       hotelId: 11,
@@ -329,5 +357,106 @@ describe("View booking history as an authenticated guest", () => {
   });
 
   it("should return an empty array if the guest has no bookings", async () => {
-    // Use the 
+    // Since the guest user created in beforeAll has no bookings, we can use that user to test this case.
+    const response = await request(app)
+      .get("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBe(0);
+  });
+});
 
+describe("View a specific booking as an authenticated guest", () => {
+  it("should return the booking details for the authenticated guest", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      guestUserId: 1,
+      createdByUserId: 1,
+      checkInDate: "2024-07-01",
+      checkOutDate: "2024-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const response = await request(app)
+      .get(`/guests/bookings/${createResponse.body.bookingId}`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("hotelId", bookingData.hotelId);
+    expect(response.body).toHaveProperty("roomId", bookingData.roomId);
+    expect(response.body).toHaveProperty("guestName", bookingData.guestName);
+    expect(response.body).toHaveProperty("guestUserId", bookingData.guestUserId);
+    expect(response.body).toHaveProperty("createdByUserId", bookingData.createdByUserId);
+    expect(response.body).toHaveProperty("checkInDate", bookingData.checkInDate);
+    expect(response.body).toHaveProperty("checkOutDate", bookingData.checkOutDate);
+  });
+
+  it("should return 401 for unauthenticated requests", async () => {
+    const response = await request(app)
+      .get("/guests/bookings/1");
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("message", "Authentication token missing");
+  });
+
+  it("should return 403 for requests from users with unauthorized roles", async () => {
+    const staffLoginResponse = await request(app)
+      .post("/auth/login")
+      .send({
+        email: "staff@hotel.local",
+        password: "Staff123!"
+      });
+    expect(staffLoginResponse.status).toBe(200);
+    const staffToken = staffLoginResponse.body.token;
+
+    const response = await request(app)
+      .get("/guests/bookings/1")
+      .set("Authorization", `Bearer ${staffToken}`);
+    expect(response.status).toBe(403);
+    expect(response.body).toHaveProperty("message", "Forbidden: You do not have access to this resource");
+  });
+
+  it("should return 404 for a non-existent booking", async () => {
+    const response = await request(app)
+      .get("/guests/bookings/9999")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
+  });
+});
+
+describe("Update a booking as an authenticated guest", () => {
+  /*
+  [HTTP METHOD] [PATH]: PATCH /guests/bookings/:bookingId
+
+  Access:
+  - Who can access? -> Authenticated guests only.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
+
+  Success:
+  - Valid request → 200 OK.
+  - Expected response body: the updated booking object, containing the required fields as specified above.
+  - Expected database effect: The booking record is updated in the database with the new values provided in the request.
+    
+  Rejections:
+  - Invalid input → 400 (e.g., invalid bookingId, invalid fields in the request body).
+  - Broken business rule → 400 (e.g., overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0).
+  - Missing resource → 404 (e.g., booking not found, hotel not found, room not found).
+  - Conflict → 409.
+
+  Response:
+  - Required fields.
+  - Fields that must be excluded.
+
+  Cleanup:
+  - Test data to remove/reset.
+  
+  */

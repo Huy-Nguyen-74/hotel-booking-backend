@@ -284,6 +284,9 @@ Aug 4th, 16:25
 Realized the need to have a unified list of response message to each error (401, 403, 400, 409, etc.) / success scenario
 -> add before running test for this slice
 
+Aug 5th, 7:00
+Need to add ValidateGuestUserExists edge case test to all relevant endpoints (valid JWT when user got deleted)
+
 ## Guest Booking Cancellation
 
 Most companies treat cancellation as a business action, not deletion.

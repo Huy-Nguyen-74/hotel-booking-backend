@@ -6,6 +6,7 @@ import { CreateUserInput } from "../types/user";
 import {
   createUser as repositoryCreateUser,
   findUsers as repositoryFindUsers,
+  validateGuestUserExists as repositoryValidateGuestUserExists,
 } from "../repositories/userRepository";
 import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
