@@ -295,15 +295,26 @@ This block is finished.
 
 This block is finished.
 
-### Staff Booking Flow
+### Staff Booking Flow ✅
 
-- [ ] Staff can create a booking for a registered guest
-- [ ] Staff can create a booking for an unregistered guest
-- [ ] Staff can update a booking for a registered guest
-- [ ] Staff can update a booking for an unregistered guest
-- [ ] Registered guest booking uses `guest_user_id`
-- [ ] Unregistered guest booking keeps `guest_user_id` null
-- [ ] Staff ID is stored as `created_by_user_id`
+**Completed:** August 5, 2026
+
+- [x] Staff can create a booking for a registered guest
+- [x] Staff can create a booking for an unregistered guest
+- [x] Staff can update a booking for a registered guest
+- [x] Staff can update a booking for an unregistered guest
+- [x] Registered guest booking uses `guest_user_id`
+- [x] Unregistered guest booking keeps `guest_user_id` null
+- [x] Staff ID is stored as `created_by_user_id`
+
+Testing:
+
+- [x] Fixed a `createdByUserId` test bug that compared against the wrong actor's token
+- [x] Fixed FK-order cleanup bugs (booking must be deleted before its referenced guest user)
+- [x] Staff-created and staff-updated bookings assert `created_by_user_id` against the staff token
+- [x] All 220 tests and typecheck passed
+
+This block is finished.
 
 ### Ownership and Authorization
 
