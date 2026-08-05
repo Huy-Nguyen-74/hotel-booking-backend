@@ -724,11 +724,13 @@ describe("Cancel a booking as an authenticated guest", () => {
   Success:
   - Valid request ↁE200 OK.
   - Expected response body: the cancelled booking object, containing the required fields as specified above, with the status updated to "cancelled" as well as the cancellation timestamp.
-  - Expected database effect: The booking record is updated in the database with the status set to "cancelled", as well as the cancellation timestamp recorded and the cancellation user ID set to the authenticated guest's user ID.
+  - Expected database effect:
+      The booking record is updated in the database with the status set to "cancelled", as well as the cancellation timestamp recorded and the cancellation user ID set to the authenticated guest's user ID.
+      Room becomes available for future bookings after cancellation.
 
   Rejections:
   - Invalid input ↁE400 (e.g., invalid bookingId).
-  - Broken business rule ↁE400 (e.g., booking already cancelled, checkInDate in the past).
+  - Broken business rule ↁE400 (e.g., booking already cancelled, checkInDate in the past, one guest can only cancel their own booking).
   - Missing resource ↁEnon-existent bookingId ↁE404.
   - Conflict ↁEnone.
 
@@ -764,6 +766,49 @@ describe("Cancel a booking as an authenticated guest", () => {
     expect(cancelResponse.body).toHaveProperty("message", "Booking cancelled successfully");
     expect(cancelResponse.body.booking).toHaveProperty("status", "cancelled");
     expect(cancelResponse.body.booking).toHaveProperty("cancelledAt");
+  });
+
+  it("should allow the same room to be booked again after cancellation", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const cancelResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/cancel`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(cancelResponse.status).toBe(200);
+
+    const newBookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-06"
+    };
+
+    const newCreateResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(newBookingData);
+    expect(newCreateResponse.status).toBe(201);
+    expect(newCreateResponse.body).toHaveProperty("bookingId");
+    expect(newCreateResponse.body).toHaveProperty("hotelId", newBookingData.hotelId);
+    expect(newCreateResponse.body).toHaveProperty("roomId", newBookingData.roomId);
+    expect(newCreateResponse.body).toHaveProperty("guestName", newBookingData.guestName);
+    createdBookingIds.push(newCreateResponse.body.bookingId);
   });
 
   it("should return 401 for unauthenticated requests", async () => {
@@ -827,14 +872,6 @@ describe("Cancel a booking as an authenticated guest", () => {
     expect(cancelResponse2.body).toHaveProperty("message", "Booking is already cancelled");
   });
 
-  it("should return 404 for cancelling a non-existent booking", async () => {
-    const response = await request(app)
-      .post("/guests/bookings/9999/cancel")
-      .set("Authorization", `Bearer ${guestToken}`);
-    expect(response.status).toBe(404);
-    expect(response.body).toHaveProperty("message", "Booking not found");
-  });
-
   it("should return 400 for cancelling a booking with checkInDate in the past", async () => {
     const bookingData: CreateBookingInput = {
       hotelId: 11,
@@ -857,6 +894,61 @@ describe("Cancel a booking as an authenticated guest", () => {
       .set("Authorization", `Bearer ${guestToken}`);
     expect(cancelResponse.status).toBe(400);
     expect(cancelResponse.body).toHaveProperty("message", "Cannot cancel a booking past its check-in date");
+  });
+
+  it("should return 404 for cancelling a booking that belongs to another guest", async () => {
+    // Create a second guest user
+    const secondGuestResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "Second",
+        lastName: "Guest",
+        email: "secondguest@hotel.local",
+        password: "SecondGuest123!"
+      });
+    expect(secondGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const secondGuestLoginResponse = await request(app)
+      .post("/login")
+      .send({
+        email: "secondguest@hotel.local",
+        password: "SecondGuest123!"
+      });
+    expect(secondGuestLoginResponse.status).toBe(200);
+    const secondGuestToken = secondGuestLoginResponse.body.token;
+
+    const otherBookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "Second Guest",
+      createdByUserId: secondGuestResponse.body.userId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+
+    const otherCreateResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${secondGuestToken}`)
+      .send(otherBookingData);
+    expect(otherCreateResponse.status).toBe(201);
+
+    const response = await request(app)
+      .post(`/guests/bookings/${otherCreateResponse.body.bookingId}/cancel`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
+
+    await pool.query("DELETE FROM bookings WHERE id = $1", [otherCreateResponse.body.bookingId]);
+    await pool.query("DELETE FROM users WHERE email = $1", ["secondguest@hotel.local"]);
+  });
+
+  it("should return 404 for cancelling a non-existent booking", async () => {
+    const response = await request(app)
+      .post("/guests/bookings/9999/cancel")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
   });
 });
 

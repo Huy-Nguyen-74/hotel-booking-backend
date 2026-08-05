@@ -282,10 +282,12 @@ For cancellation (copied from below)
 
 
 Aug 5th, 11:50: all 216 tests passed.
+Aug 5th, 14:06: all 218 tests and typecheck passed.
 
-Aug 4th, 16:25 -> NOT YET COMPLETED
+Aug 4th, 16:25 -> COMPLETED Aug 5th
 Realized the need to have a unified list of response message to each error (401, 403, 400, 409, etc.) / success scenario
--> add before running test for this slice
+-> Added `docs/api-response-reference.md`, cataloguing every route's success/error responses.
+
 
 ## Guest Booking Cancellation
 
