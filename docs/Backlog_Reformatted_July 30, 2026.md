@@ -260,131 +260,40 @@ Testing completed on August 3, 2026:
 
 This block is finished.
 
-### Guest Booking Flow
+### Guest Booking Flow ✅
 
-- [ ] Create a booking as an authenticated guest
-- [ ] Store `guest_user_id` as the booking owner
-- [ ] Store `created_by_user_id` as the authenticated actor
-- [ ] View booking history
-- [ ] View booking details
-- [ ] Update booking
-- [ ] Cancel booking
+**Completed:** August 5, 2026
 
-All done -> NOW WRITING TEST, which is the last part in this slice
+- [x] Create a booking as an authenticated guest
+- [x] Store `guest_user_id` as the booking owner
+- [x] Store `created_by_user_id` as the authenticated actor
+- [x] View booking history
+- [x] View booking details
+- [x] Update booking
+- [x] Cancel booking — status set to `cancelled`, cancellation timestamp and actor recorded, booking kept in history, room becomes available again
 
-For cancellation (copied from below)
-- Guest cancels own confirmed booking
-- Booking remains in history as `cancelled`
-- Guest cannot cancel another guest’s booking
-- Already-cancelled booking is rejected
-- Cancelled booking no longer blocks room availability
-- Unauthenticated and non-guest requests are rejected
+Testing:
 
+- [x] Guest cancels own confirmed booking
+- [x] Booking remains in history as `cancelled`
+- [x] Guest cannot cancel another guest's booking (returns 404, scoped by ownership)
+- [x] Already-cancelled booking is rejected
+- [x] Cancelled booking no longer blocks room availability
+- [x] Unauthenticated and non-guest requests are rejected
+- [x] All 218 tests and typecheck passed
+- [x] Added `docs/api-response-reference.md`, cataloguing every route's success/error responses
 
-Aug 5th, 11:50: all 216 tests passed.
-Aug 5th, 14:06: all 218 tests and typecheck passed.
+This block is finished.
 
-Aug 4th, 16:25 -> COMPLETED Aug 5th
-Realized the need to have a unified list of response message to each error (401, 403, 400, 409, etc.) / success scenario
--> Added `docs/api-response-reference.md`, cataloguing every route's success/error responses.
+### Current-Module Cleanup ✅
 
+- [x] Move direct SQL from `bookingService` into repositories
+- [x] Review other Service modules for direct SQL after their current flows are complete
+- [x] Move check-in/check-out ordering rules from Controllers into Services
+- [x] Ensure room search and booking creation use the same overlap rule
+- [x] Allow same-day turnover by using strict overlap comparisons (`check_in_date < requested_check_out`, `check_out_date > requested_check_in`)
 
-## Guest Booking Cancellation
-
-Most companies treat cancellation as a business action, not deletion.
-
-Use:
-
-POST /guests/bookings/:id/cancel
-
-Flow: -> DONE ALL
-
-- Authenticate guest
-- Verify the booking belongs to that guest
-- Verify the booking is still cancellable
-- Reject already-cancelled bookings
-- Reject cancellation after check-in
-- Change booking status to `cancelled`
-- Record who cancelled it and when
-- Keep the booking in history
-- Make the room available again
-
-## Required Database Changes -> DONE
-
-Add to `bookings`:
-
-- `status` — NOT NULL, default `confirmed`
-- `cancelled_at` — nullable timestamp
-- `cancelled_by_user_id` — nullable foreign key to `users.id`
-
-Current statuses:
-
-- `confirmed`
-- `cancelled`
-
-## Required Code Changes
-
-Repository: -> DONE
-
-- Add `cancelBooking(bookingId, cancelledByUserId)`
-- Update status, cancellation time, and cancelling user
-- Do not delete the booking
-
-Booking Service: -> DONE
-
-- Add `cancelOwnBooking(bookingId, guestUserId)`
-- Find the booking
-- Verify `guest_user_id === guestUserId`
-- Reject invalid cancellation states
-- Call the repository cancellation function
-
-Guest Controller and Route: -> DONE
-
-- Add `cancelOwnBooking`
-- Use `req.user.id`
-- Route requires:
-  - `authenticateToken`
-  - `authorizeRoles("guest")`
-
-Availability Logic:
-
-- Ignore cancelled bookings in overlap queries:
-
-AND status <> 'cancelled' -> DONE
-
-DTO:
-
-Expose:
-
-- `status`
-- `cancelledAt`
-
-Do not expose `cancelledByUserId` to guests unless needed.
-
-## Integration Tests 
-
-- Guest cancels own confirmed booking
-- Booking remains in history as `cancelled`
-- Guest cannot cancel another guest’s booking
-- Already-cancelled booking is rejected
-- Cancelled booking no longer blocks room availability
-- Unauthenticated and non-guest requests are rejected
-
-Cancellation fees and refunds belong in the later Payments phase.
-
-
-
-### Current-Module Cleanup -> DONE
-
-Complete these after the Guest Booking flow works, before typecheck and tests:
-
-- [ ] Move direct SQL from `bookingService` into repositories -> DONE
-- [ ] Review other Service modules for direct SQL after their current flows are complete. If those exist, they should be moved to Repo. -> DONE
-- [ ] Move check-in/check-out ordering rules from Controllers into Services -> DONE
-- [ ] Ensure room search and booking creation use the same overlap rule -> DONE
-- [ ] Allow same-day turnover by using strict overlap comparisons: -> DONE
-  - Existing `check_in_date < requested_check_out`
-  - Existing `check_out_date > requested_check_in`
+This block is finished.
 
 ### Staff Booking Flow
 
