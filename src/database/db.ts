@@ -1,4 +1,8 @@
-import { Pool } from "pg"; // Import PostgreSQL connection manager
+import { Pool, types } from "pg"; // Import PostgreSQL connection manager
+
+// Return DATE columns as raw "YYYY-MM-DD" strings instead of Date objects,
+// which pg otherwise parses at local midnight and JSON.stringify shifts to UTC.
+types.setTypeParser(1082, (value: string) => value);
 
 const databaseUrl = process.env.DATABASE_URL;
 

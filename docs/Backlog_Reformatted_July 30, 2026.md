@@ -280,12 +280,12 @@ For cancellation (copied from below)
 - Cancelled booking no longer blocks room availability
 - Unauthenticated and non-guest requests are rejected
 
-Aug 4th, 16:25
+
+Aug 5th, 11:50: all 216 tests passed.
+
+Aug 4th, 16:25 -> NOT YET COMPLETED
 Realized the need to have a unified list of response message to each error (401, 403, 400, 409, etc.) / success scenario
 -> add before running test for this slice
-
-Aug 5th, 7:00
-Need to add ValidateGuestUserExists edge case test to all relevant endpoints (valid JWT when user got deleted)
 
 ## Guest Booking Cancellation
 

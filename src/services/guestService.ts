@@ -10,6 +10,7 @@ import {
 } from "../repositories/userRepository";
 import { CreateBookingInput } from "../types/booking";
 import { createBooking as serviceCreateBooking } from "./bookingService";
+import { findRooms } from "../repositories/roomRepository";
 import {
   updateBooking as RepositoryUpdateBooking,
   cancelBooking,
@@ -64,6 +65,9 @@ export async function guestViewAllBookingHistory(guestUserId: number) {
 
 export async function guestViewOneSpecificBooking(guestUserId: number, bookingId: number) {
   const booking = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
+  if (!booking) {
+    throw new AppError("Booking not found", 404);
+  }
   return booking;
 }
 
@@ -76,12 +80,12 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
   // This would typically involve checking if the booking belongs to the guest and then allowing updates to certain fields.
   
   const bookingCheck = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
-  if (!bookingCheck || bookingCheck.length === 0) {
+  if (!bookingCheck) {
     throw new AppError("Booking not found", 404);
   }
   
-  const effectiveCheckInDate = updates.checkInDate ? new Date(updates.checkInDate) : new Date(bookingCheck[0].check_in_date);
-  const effectiveCheckOutDate = updates.checkOutDate ? new Date(updates.checkOutDate) : new Date(bookingCheck[0].check_out_date);
+  const effectiveCheckInDate = updates.checkInDate ? new Date(updates.checkInDate) : new Date(bookingCheck.check_in_date);
+  const effectiveCheckOutDate = updates.checkOutDate ? new Date(updates.checkOutDate) : new Date(bookingCheck.check_out_date);
 
   if (effectiveCheckOutDate <= effectiveCheckInDate) {
     throw new AppError("checkOutDate must be after checkInDate", 400);
@@ -92,13 +96,15 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
     throw new AppError("Number of nights must be greater than 0", 400);
   }
 
-  const effectiveTotalPrice = effectiveNights * bookingCheck[0].room.price;
+  const roomCheck = await findRooms({ roomId: bookingCheck.room_id });
+  const room = roomCheck[0];
+  const effectiveTotalPrice = effectiveNights * room.price;
   if (effectiveTotalPrice <= 0) {
     throw new AppError("Total price must be greater than 0", 400);
   }
 
     const overlappingBooking = await checkOverlappingBookings(
-        bookingCheck[0].room_id,
+        bookingCheck.room_id,
         effectiveCheckInDate.toISOString().split('T')[0],
         effectiveCheckOutDate.toISOString().split('T')[0],
         bookingId
@@ -129,20 +135,20 @@ Guest cancelling their own booking is written below:
 
 export async function cancelOwnBooking(bookingId: number, guestUserId: number) {
   const booking = await repositoryGuestViewOneSpecificBooking(guestUserId, bookingId);
-  if (!booking || booking.length === 0) {
+  if (!booking) {
     throw new AppError("Booking not found", 404);
   }
 
-  if (booking[0].guest_user_id !== guestUserId) {
+  if (booking.guest_user_id !== guestUserId) {
     throw new AppError("You are not authorized to cancel this booking", 403);
   }
 
-  if (booking[0].status === "cancelled") {
+  if (booking.status === "cancelled") {
     throw new AppError("Booking is already cancelled", 400);
   }
 
   const today = new Date();
-  if (today > new Date(booking[0].check_in_date)) {
+  if (today > new Date(booking.check_in_date)) {
     throw new AppError("Cannot cancel a booking past its check-in date", 400);
   }
 
