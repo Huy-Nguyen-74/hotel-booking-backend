@@ -20,6 +20,7 @@ const createdBookingIds: number[] = [];
 
 let adminToken = ""; // Stores the JWT once so every protected request in this file can reuse it.
 let staffToken = ""; // Stores the JWT once so every protected request in this file can reuse it.
+let guestToken = ""; // Stores the JWT once
 
 beforeAll(async () => {
   // Logs in once before the test suite starts.
@@ -35,6 +36,35 @@ describe("GET /bookings/:bookingId", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to access a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).get("/bookings/1").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
   
   it("returns 404 when admin requests a booking that does not exist", async () => {
@@ -81,6 +111,34 @@ describe("GET /bookings", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to access bookings via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).get("/bookings").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
 
   it("returns 400 when an admin provides invalid query parameters, such as hotelId", async () => {
@@ -140,6 +198,34 @@ describe("POST /bookings", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to create a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).post("/bookings").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
   
   it("returns 400 when required fields are missing", async () => {
@@ -297,6 +383,36 @@ describe("PATCH /bookings/:bookingId", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to update a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).patch("/bookings/1").set(authHeaders(guestToken)).send({
+      guestName: "Updated Name",
+    });
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
 
   it("returns 404 when booking does not exist", async () => {

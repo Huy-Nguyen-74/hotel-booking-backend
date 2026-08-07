@@ -452,6 +452,55 @@ describe("View a specific booking as an authenticated guest", () => {
     expect(response.body).toHaveProperty("message", "Access denied");
   });
 
+  it("should return 404 for requests to view another guest's booking", async () => {
+    // Create a booking for the authenticated guest
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2024-07-01",
+      checkOutDate: "2024-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    // Create a second guest user to attempt to view the first guest's booking
+    const secondGuestResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane.doe.view@hotel.local",
+        password: "securepassword123456"
+      });
+    expect(secondGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const secondGuestLoginResponse = await request(app)
+      .post("/login")
+      .send({
+        email: "jane.doe.view@hotel.local",
+        password: "securepassword123456"
+      });
+    expect(secondGuestLoginResponse.status).toBe(200);
+    const secondGuestToken = secondGuestLoginResponse.body.token;
+
+    const response = await request(app)
+      .get(`/guests/bookings/${createResponse.body.bookingId}`)
+      .set("Authorization", `Bearer ${secondGuestToken}`);
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
+
+    // Clean up the second guest user
+    await pool.query("DELETE FROM users WHERE email = $1", ["jane.doe.view@hotel.local"]);
+  });
+
   it("should return 404 for a non-existent booking", async () => {
     const response = await request(app)
       .get("/guests/bookings/9999")
@@ -549,6 +598,53 @@ describe("Update a booking as an authenticated guest", () => {
       .set("Authorization", `Bearer ${staffToken}`);
     expect(response.status).toBe(403);
     expect(response.body).toHaveProperty("message", "Access denied");
+  });
+
+  it("should return 404 for requests to update another guest's booking", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2024-07-01",
+      checkOutDate: "2024-07-05"
+    };
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const secondGuestResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "jane.doe.update@hotel.local",
+        password: "securepassword123456"
+      });
+    expect(secondGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const secondGuestLoginResponse = await request(app)
+      .post("/login")
+      .send({
+        email: "jane.doe.update@hotel.local",
+        password: "securepassword123456"
+      });
+    expect(secondGuestLoginResponse.status).toBe(200);
+    const secondGuestToken = secondGuestLoginResponse.body.token;
+
+    const response = await request(app)
+      .patch(`/guests/bookings/${createResponse.body.bookingId}`)
+      .set("Authorization", `Bearer ${secondGuestToken}`)
+      .send({ guestName: "Jane Doe Update Attempt" });
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
+
+    // Clean up the second guest user
+    await pool.query("DELETE FROM users WHERE email = $1", ["jane.doe.update@hotel.local"]);
   });
 
   // Business error cases: overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0

@@ -316,16 +316,28 @@ Testing:
 
 This block is finished.
 
-### Ownership and Authorization
+### Ownership and Authorization ✅
 
-- [ ] Guests access only their own profile
-- [ ] Guests access only their own bookings
-- [ ] Staff permissions remain separate from guest ownership
-- [ ] Authorization and ownership integration tests
+**Completed:** August 7, 2026
+
+- [x] Guests access only their own profile
+- [x] Guests access only their own bookings
+- [x] Staff permissions remain separate from guest ownership
+- [x] Authorization and ownership integration tests
+
+Testing:
+
+- [x] Added cross-guest ownership tests: viewing/updating another guest's booking now asserts 404 "Booking not found" (ownership-scoped lookup, not a 403 leak)
+- [x] Added guest-blocked-from-staff/admin-routes tests for `GET/POST/PATCH /bookings` and `GET /bookings/:bookingId`
+- [x] Tightened `POST /bookings` to `admin`/`staff` only (previously also allowed `guest`, which was inconsistent with the dedicated `/guests/bookings` endpoint and didn't auto-link the booking to the guest)
+- [x] Confirmed `/guests/me` (GET/PATCH) is always scoped to the authenticated user's own id with no id route param, so cross-guest profile access isn't reachable by route design
+- [x] All 226 tests and typecheck passed
+
+This block is finished.
 
 ### Deferred from Guest Journey
 
-- [ ] Shared backend logout
+- [ ] Shared backend logoutssssssssss
   - Implement only when refresh tokens or server-side sessions exist
 - [ ] Swagger documentation for new guest endpoints
   - Add during the Swagger/OpenAPI phase
