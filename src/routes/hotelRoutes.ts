@@ -14,7 +14,7 @@ router.get("/", (req, res) => {
   res.send("Hotel Booking Backend Running! CD Test!");
 });
 
-router.get("/hotels", authenticateToken, authorizeRoles("admin", "staff"), getHotels);
+router.get("/hotels", getHotels);
 router.post("/hotels", authenticateToken, authorizeRoles("admin"), controllerCreateHotel);
 router.patch("/hotels/:hotelId", authenticateToken, authorizeRoles("admin"), controllerUpdateHotel);
 

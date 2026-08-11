@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, } from "express";
 
 import {
     getBookings as serviceGetBookings,
@@ -147,14 +147,20 @@ export async function getBookingById(req: Request, res: Response, next: NextFunc
     }
 }
 
-export async function createBooking(req: Request, res: Response, next: NextFunction) {
+export async function createBooking(req: Request, res: Response, next: NextFunction) {    
+    if (!req.user || !req.user.id || typeof req.user.id !== "number") {
+        return next(new AppError("User authentication required", 401));
+    }
+    
     if (!req.body || Array.isArray(req.body)) {
         return next(new AppError("Request body must be a valid JSON object", 400));
     }
-
+    
     const rawHotelId = req.body.hotelId;
     const rawRoomId = req.body.roomId;    
     const rawGuestName = req.body.guestName;
+    const rawGuestUserId = req.body.guestUserId !== undefined ? req.body.guestUserId : undefined;
+    const rawCreatedByUserId = req.user.id;
     const rawCheckInDate = req.body.checkInDate;
     const rawCheckOutDate = req.body.checkOutDate;
 
@@ -174,6 +180,10 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("guestName must be a non-empty string", 400));
     }
 
+    if (rawGuestUserId !== undefined && typeof rawGuestUserId !== "number") {
+        return next(new AppError("guestUserId must be a number", 400));
+    }
+
     if (typeof rawCheckInDate !== "string" || isNaN(Date.parse(rawCheckInDate))) {
         return next(new AppError("checkInDate must be a valid date string", 400));
     }
@@ -182,26 +192,28 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("checkOutDate must be a valid date string", 400));
     }
 
-    const parsedHotelId = rawHotelId;
-    const parsedRoomId = rawRoomId;
     const parsedGuestName = rawGuestName.trim();
     const parsedCheckInDate = rawCheckInDate.trim();
     const parsedCheckOutDate = rawCheckOutDate.trim();
 
-    if (!Number.isInteger(parsedHotelId) || parsedHotelId <= 0) {
+    if (!Number.isInteger(rawHotelId) || rawHotelId <= 0) {
         return next(new AppError("hotelId must be an integer greater than 0", 400));
     }
 
-    if (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0) {
+    if (!Number.isInteger(rawRoomId) || rawRoomId <= 0) {
         return next(new AppError("roomId must be an integer greater than 0", 400));
     }
 
-    if (new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
-        return next(new AppError("checkOutDate must be after checkInDate", 400));
+    if (rawGuestUserId !== undefined && (!Number.isInteger(rawGuestUserId) || rawGuestUserId <= 0)) {
+        return next(new AppError("guestUserId must be an integer greater than 0", 400));
+    }
+
+    if (!Number.isInteger(rawCreatedByUserId) || rawCreatedByUserId <= 0) {
+        return next(new AppError("createdByUserId must be an integer greater than 0", 400));
     }
 
     try {
-        const createdBooking = await serviceCreateBooking({ hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
+        const createdBooking = await serviceCreateBooking({ hotelId: rawHotelId, roomId: rawRoomId, guestName: parsedGuestName, guestUserId: rawGuestUserId, createdByUserId: rawCreatedByUserId, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(201).json({ message: "Booking created successfully", booking: toBookingDto(createdBooking) });
     } catch (error) {
         next(error);
@@ -279,10 +291,6 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
 
     if (parsedRoomId !== undefined && (!Number.isInteger(parsedRoomId) || parsedRoomId <= 0)) {
         return next(new AppError("roomId must be an integer greater than 0", 400));
-    }
-
-    if (parsedCheckInDate !== undefined && parsedCheckOutDate !== undefined && new Date(parsedCheckOutDate) <= new Date(parsedCheckInDate)) {
-        return next(new AppError("checkOutDate must be after checkInDate", 400));
     }
 
     try {

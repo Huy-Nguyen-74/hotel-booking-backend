@@ -282,3 +282,77 @@ JULY 13th, 2026: next is integration test for rooms
 
 
 
+July 28th, 2026: guest journey
+
+Extend the existing Users and Auth modules with a `guest` role rather than creating a separate authentication system.
+
+### Tasks
+
+- [ ] Guest registration -> done
+- [ ] Guest login -> done
+- [ ] Shared logout -> to be done in a separate session
+- [ ] Guest profile -> done
+- [ ] Update guest profile -> done
+- [ ] Password reset request -> nearly done. Real email delivery stays later
+- [ ] Password reset confirmation -> done
+- [ ] Search room availability -> done
+- [ ] Create booking
+- [ ] View booking history
+- [ ] View booking details
+- [ ] Update booking
+- [ ] Cancel booking
+- [ ] Guests access only their own profile and bookings
+- [ ] Authorization and ownership tests
+
+Guest will be a separate API module, with shared 'users' table, authentication logic.
+Role will be 'guest'.
+
+
+Scope: revised roadmap toward applications.
+
+July 28–August 5 — Guest Journey
+
+Registration and login
+Profile and profile update
+Password reset
+Booking history/details
+Guest booking ownership
+Authorization tests
+
+August 6–9 — Real Login Sessions
+
+Refresh-token table
+POST /auth/refresh
+Shared POST /auth/logout
+Refresh-token rotation and revocation
+Tests
+
+
+
+For createBooking:
+
+Add the following columns to bookings table:
+
+    guest_user_id   → who the booking belongs to
+    created_by_user_id → who created it
+
+Examples:
+
+Guest books for self:
+    guest_user_id = guest
+    created_by_user_id = guest
+
+Staff books for registered guest:
+    guest_user_id = guest
+    created_by_user_id = staff
+
+Staff books for walk-in:
+    guest_user_id = null
+    created_by_user_id = staff
+
+For the simplicity of this project, we won't allow anonymous bookings for now.
+
+created_by_user_id provides the minimal audit trail. Full audit logs can wait until later.
+
+
+

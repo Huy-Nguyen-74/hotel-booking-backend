@@ -11,9 +11,10 @@ This test suite is designed to test the room-related endpoints of the applicatio
 It uses Jest for testing and Supertest for making HTTP requests to the Express application.
 
 3 endpoints are tested:
-    1. GET /rooms - Retrieves a list of rooms.
-    2. POST /rooms - Creates a new room.
-    3. PATCH /rooms/:roomId - Updates an existing room.
+    1. GET /rooms - Retrieves a list of rooms (restricted to admin and staff roles).
+    2. GET /available-rooms - Searches for available rooms based on query parameters (available to all users).
+    3. POST /rooms - Creates a new room.
+    4. PATCH /rooms/:roomId - Updates an existing room.
 */
 
 
@@ -195,6 +196,135 @@ describe("GET /rooms", () => {
     });
 });
 
+/* Next, we will test the GET /available-rooms endpoint.
+Using new Test Framework (since Aug 2026)
+
+[HTTP METHOD] [PATH]: router.get("/available-rooms", searchAvailableRooms);
+
+Access:
+- Who can access? -> all users (no authentication required)
+- Unauthenticated → no token required
+- Unauthorized role/ownership → not applicable (no authentication required)
+
+Success:
+- Valid request → 200 OK with array of available rooms (can be empty if no rooms are available).
+- Valid request with filters → 200 OK with array of available rooms matching the filters (can be empty if no rooms match).
+- Expected database effect -> none (read-only operation).
+
+Rejections:
+- Invalid input → 400.
+- Broken business rule → not applicable (no business rules for this endpoint).
+- Missing resource → not applicable.
+- Conflict → not applicable.
+
+Response:
+- Required fields: roomId, hotelId, type, price.
+- Fields that must be excluded: none.
+
+Cleanup:
+- Test data to remove/reset: none (read-only operation).
+*/
+
+describe("GET /available-rooms", () => {
+    it("should return 200 OK and an array of available rooms when no filters are provided", async () => {
+        const response = await request(app)
+            .get("/available-rooms");
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBeGreaterThanOrEqual(1); // Assuming there is at least 1 available room
+        expect(response.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({ roomId: expect.any(Number), hotelId: expect.any(Number), type: expect.any(String), price: expect.any(Number) }),
+        ]));
+    });
+
+    it("should return 400 Bad Request if invalid query parameters (non-numeric minPrice) are provided", async () => {
+        const response = await request(app)
+            .get("/available-rooms")
+            .query({ minPrice: "invalid" }); // Invalid price
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "minPrice must be a non-negative number" });
+    });
+
+    it("should return 400 Bad Request if invalid query parameters (empty string hotelId) are provided", async () => {
+        const response = await request(app)
+            .get("/available-rooms")
+            .query({ hotelId: "" }); // Invalid hotelId
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "hotelId must be a non-empty string" });
+    });
+
+    it("should return 200 OK and an empty array if no available rooms match the filters", async () => {
+        const response = await request(app)
+            .get("/available-rooms")
+            .query({ hotelId: 9999, type: "Penthouse", minPrice: 9999 });
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body).toEqual([]);
+    });
+
+    it("should return 400 Bad Request if minPrice is greater than maxPrice", async () => {
+        const response = await request(app)
+            .get("/available-rooms")
+            .query({ minPrice: 200, maxPrice: 100 });
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "minPrice cannot be greater than maxPrice" });
+    });
+
+    it("should return 400 Bad Request if only one of checkInDate or checkOutDate is provided", async () => {
+        const response1 = await request(app)
+            .get("/available-rooms")
+            .query({ checkInDate: "2024-07-01" });
+        expect(response1.status).toBe(400);
+        expect(response1.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
+        
+        const response2 = await request(app)
+            .get("/available-rooms")
+            .query({ checkOutDate: "2024-07-05" });
+        expect(response2.status).toBe(400);
+        expect(response2.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
+    });
+
+    it("should return 400 Bad Request if checkInDate is after or equal to checkOutDate", async () => {
+        const response = await request(app)
+            .get("/available-rooms")
+            .query({ checkInDate: "2024-07-05", checkOutDate: "2024-07-01" });
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "checkInDate must be before checkOutDate" });
+    });
+
+    it("should return 200 OK and an array of available rooms matching the filters when valid filters are provided", async () => {
+        const response1 = await request(app)
+            .get("/available-rooms")
+            .query({ hotelId: 10, type: "Single", price: 120 });
+        expect(response1.status).toBe(200);
+        expect(Array.isArray(response1.body)).toBe(true);
+        expect(response1.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({ hotelId: 10, type: "Single", price: 120 }),
+        ]));
+
+        const response2 = await request(app)
+            .get("/available-rooms")
+            .query({ type: "Double" });
+        expect(response2.status).toBe(200);
+        
+        /*
+        Below is the seed data in the database for reference:
+            (1, 10, 'Single', 120),
+            (2, 10, 'Double', 180),
+            (3, 11, 'Single', 110),
+            (4, 11, 'Double', 170),
+            (5, 11, 'Quadruple', 320),
+            (6, 12, 'Double', 160),
+            (7, 12, 'Suite', 280);
+        */
+
+        expect(Array.isArray(response2.body)).toBe(true);
+        expect(response2.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "Double" }),
+        ]));
+        expect(response2.body.length).toEqual(3); // There are 3 rooms of type "Double" in the database
+    });
+});
 
 /*
 Next, we will test the POST /rooms endpoint:

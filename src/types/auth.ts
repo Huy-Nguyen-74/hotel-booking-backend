@@ -3,7 +3,7 @@ export interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: "admin" | "staff";
+  role: "admin" | "staff" | "guest";
 }
 
 export type SafeUser = {
@@ -11,7 +11,7 @@ export type SafeUser = {
   first_name: string;
   last_name: string;
   email: string;
-  role: "admin" | "staff";
+  role: "admin" | "staff" | "guest";
   is_active: boolean;
   created_at: string;
   updated_at: string;

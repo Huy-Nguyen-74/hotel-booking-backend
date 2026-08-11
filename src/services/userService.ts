@@ -74,7 +74,7 @@ export async function updateSelfInfo(id: number, firstName?: string, lastName?: 
   const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
   const updatedUser = await repositoryUpdateSelfInfo(id, firstName, lastName, hashedPassword);
 
-  return updatedUser as SafeUser;
+  return updatedUser;
 }
 
 export async function updateUserInfo(

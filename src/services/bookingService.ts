@@ -2,14 +2,17 @@ import {
     findBookings,
     createBooking as RepositoryCreateBooking,
     updateBooking as RepositoryUpdateBooking,
-    deleteBooking as RepositoryDeleteBooking
+    deleteBooking as RepositoryDeleteBooking,
+    checkOverlappingBookings as RepositoryCheckOverlappingBookings,
 } from "../repositories/bookingRepository";
+import { validateGuestUserExists } from "../repositories/userRepository";
 
 import { findHotels } from "../repositories/hotelRepository";
 import { findRooms } from "../repositories/roomRepository";
 import { AppError } from "../errors/AppError";
 
 import pool from "../database/db";
+import { CreateBookingInput } from "../types/booking";
 
 export async function getBookings(filters: { 
     hotelId?: number;
@@ -40,13 +43,18 @@ Further notes:
 -Checkout date must be after check-in date. If not, return 400 Bad Request.
 */
 
-export async function createBooking(booking: {
-    hotelId: number;
-    roomId: number;
-    guestName: string;
-    checkInDate: string;
-    checkOutDate: string;
-}) {
+
+export async function createBooking(booking: CreateBookingInput) {
+
+    // Validate that guestUserId exists in the users table and role is guest if provided
+    // Waiting for the guestUserId validation to be implemented in the userRepository.ts file. Once that is done, we can uncomment the following code to validate the guestUserId.
+
+    if (booking.guestUserId) {
+        const guestUser = await validateGuestUserExists(booking.guestUserId);
+        if (!guestUser || guestUser.role !== "guest") {
+            throw new AppError("Guest user not found or not a guest", 404);
+        }
+    }
 
     // Validate hotel and room existence against array of hotels and rooms in the database
 
@@ -80,31 +88,17 @@ export async function createBooking(booking: {
         throw new AppError("Total price must be greater than 0", 400);
     }
 
-    /*
-    How to check overlapping bookings: a booking overlaps if:
-    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
-    - The new booking's check-out date is after or equal to an existing booking's check-in date.
-    */
-
-    const overlappingBooking = await pool.query(
-        `
-        SELECT *
-        FROM bookings
-        WHERE room_id = $1
-          AND check_in_date <= $2
-          AND check_out_date >= $3
-        `,
-        [booking.roomId, booking.checkOutDate, booking.checkInDate]
-    );
-
-    if (overlappingBooking.rows.length > 0) {
-        throw new AppError("Room is already booked for the selected dates", 400);
+    const overlappingBooking = await RepositoryCheckOverlappingBookings(booking.roomId, checkInDate.toISOString().split('T')[0], checkOutDate.toISOString().split('T')[0]);
+    if (overlappingBooking.length > 0) {
+        throw new AppError("Room is already booked for the selected dates", 409);
     }
 
     return await RepositoryCreateBooking({
         hotelId: booking.hotelId,
         roomId: booking.roomId,
         guestName: booking.guestName,
+        guestUserId: booking.guestUserId,
+        createdByUserId: booking.createdByUserId,
         checkInDate: booking.checkInDate,
         checkOutDate: booking.checkOutDate,
         nights: nights,
@@ -135,8 +129,6 @@ export async function updateBooking(bookingId: number, updates: {
     guestName?: string;
     checkInDate?: string;
     checkOutDate?: string;
-    nights?: number;
-    totalPrice?: number;
 }) {
 
     const bookingCheck = await findBookings({ bookingId });
@@ -175,31 +167,20 @@ export async function updateBooking(bookingId: number, updates: {
         throw new AppError("Total price must be greater than 0", 400);
     }
 
-    /*
-    How to check overlapping bookings: a booking overlaps if:
-    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
-    - The new booking's check-out date is after or equal to an existing booking's check-in date.
-    - We need to exclude the current booking from this check.
-    */
-
-    const overlappingBooking = await pool.query(
-        `
-        SELECT *
-        FROM bookings
-        WHERE room_id = $1
-            AND check_in_date <= $2
-            AND check_out_date >= $3
-            AND id != $4
-    `, [effectiveRoomId, effectiveCheckOutDate, effectiveCheckInDate, bookingId]);
-
-    if (overlappingBooking.rows.length > 0) {
-        throw new AppError("Room is already booked for the selected dates", 400);
+    const overlappingBooking = await RepositoryCheckOverlappingBookings(effectiveRoomId, effectiveCheckInDate.toISOString().split('T')[0], effectiveCheckOutDate.toISOString().split('T')[0], bookingId);
+    if (overlappingBooking.length > 0) {
+        throw new AppError("Room is already booked for the selected dates", 409);
     }
-    
-    updates.nights = effectiveNights;
-    updates.totalPrice = effectiveTotalPrice;
 
-    return await RepositoryUpdateBooking(bookingId, updates);
+    return await RepositoryUpdateBooking(bookingId, {
+        hotelId: effectiveHotelId,
+        roomId: effectiveRoomId,
+        guestName: updates.guestName,
+        checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
+        checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
+        nights: effectiveNights,
+        totalPrice: effectiveTotalPrice
+    });
 }
 
 
@@ -227,6 +208,5 @@ export async function deleteBooking(bookingId: number) {
 
     return await RepositoryDeleteBooking(bookingId);
 }
-
 
 

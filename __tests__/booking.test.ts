@@ -9,6 +9,7 @@ router.delete("/bookings/:bookingId", authenticateToken, authorizeRoles("admin")
 */
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "@jest/globals";
+import jwt from "jsonwebtoken";
 import request from "supertest";
 import { app } from "../src/app";
 import pool from "../src/database/db";
@@ -19,6 +20,7 @@ const createdBookingIds: number[] = [];
 
 let adminToken = ""; // Stores the JWT once so every protected request in this file can reuse it.
 let staffToken = ""; // Stores the JWT once so every protected request in this file can reuse it.
+let guestToken = ""; // Stores the JWT once
 
 beforeAll(async () => {
   // Logs in once before the test suite starts.
@@ -34,6 +36,35 @@ describe("GET /bookings/:bookingId", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to access a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).get("/bookings/1").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
   
   it("returns 404 when admin requests a booking that does not exist", async () => {
@@ -80,6 +111,34 @@ describe("GET /bookings", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to access bookings via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).get("/bookings").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
 
   it("returns 400 when an admin provides invalid query parameters, such as hotelId", async () => {
@@ -139,6 +198,34 @@ describe("POST /bookings", () => {
       success: false,
       message: "Authentication token missing",
     });
+  });
+
+  it("returns 403 when a guest tries to create a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).post("/bookings").set(authHeaders(guestToken));
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
   });
   
   it("returns 400 when required fields are missing", async () => {
@@ -206,7 +293,7 @@ describe("POST /bookings", () => {
     });
   });
 
-  it("returns 400 when booking dates overlap an existing booking", async () => {
+  it("returns 409 when booking dates overlap an existing booking", async () => {
     const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
       hotelId: 10,
       roomId: 1,
@@ -215,7 +302,7 @@ describe("POST /bookings", () => {
       checkOutDate: "2026-06-22",
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
 
     expect(response.body).toEqual({
       success: false,
@@ -223,7 +310,7 @@ describe("POST /bookings", () => {
     });
   });
 
-  it("creates a booking when request data is valid", async () => {
+  it("creates a booking when request data is valid (without guestUserId)", async () => {
     const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
       hotelId: 11,
       roomId: 4,
@@ -241,9 +328,47 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Success Test",
+      guestUserId: null,
+      createdByUserId: (jwt.decode(adminToken) as { id: number }).id,
       nights: 3,
       totalPrice: 510,
     });
+  });
+
+  it("creates a booking when request data is valid (with guestUserId)", async () => {
+    // First, create a guest user to get a valid guestUserId
+    const guestUserResponse = await request(app).post("/guests").send({
+      firstName: "Booking Test Guest",
+      lastName: "User",
+      email: "bookingtestguest@hotel.local",
+      password: "securepassword123456",
+    });
+
+    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Success Test with Guest",
+      checkInDate: "2026-12-12",
+      checkOutDate: "2026-12-15",
+      guestUserId: guestUserResponse.body.userId,
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBe("Booking created successfully");
+    expect(response.body.booking).toMatchObject({
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Success Test with Guest",
+      guestUserId: guestUserResponse.body.userId,
+      // The token payload key is "id", not "userId" - decode it to get the admin's ID for comparison.
+      createdByUserId: (jwt.decode(adminToken) as { id: number }).id,
+      nights: 3,
+      totalPrice: 510,
+    });
+
+    // Clean up: delete the booking before the guest user, since bookings reference guest_user_id
+    await pool.query("DELETE FROM bookings WHERE id = $1", [response.body.booking.bookingId]);
+    const deleteResult = await pool.query("DELETE FROM users WHERE email = $1", ["bookingtestguest@hotel.local"]);
+    expect(deleteResult.rowCount).toBe(1); // Ensure the guest user was deleted
   });
 });
 
@@ -260,6 +385,36 @@ describe("PATCH /bookings/:bookingId", () => {
     });
   });
 
+  it("returns 403 when a guest tries to update a booking via staff/admin routes", async () => {
+    const createGuestResponse = await request(app).post("/guests").send({
+      firstName: "Guest Test",
+      lastName: "User",
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(createGuestResponse.status).toBe(201);
+
+    // POST /guests doesn't return a token, so log in separately to get one.
+    const loginResponse = await request(app).post("/login").send({
+      email: "guest.test@hotel.local",
+      password: "securepassword123456"
+    });
+    expect(loginResponse.status).toBe(200);
+    guestToken = loginResponse.body.token;
+
+    const response = await request(app).patch("/bookings/1").set(authHeaders(guestToken)).send({
+      guestName: "Updated Name",
+    });
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      success: false,
+      message: "Access denied",
+    });
+    // Clean up: delete the guest user after the test
+    const deleteGuestResponse = await pool.query("DELETE FROM users WHERE email = $1", ["guest.test@hotel.local"]);
+    expect(deleteGuestResponse.rowCount).toBe(1); // Ensure the guest user was deleted
+  });
+
   it("returns 404 when booking does not exist", async () => {
     const response = await request(app).patch("/bookings/999").set(authHeaders(adminToken)).send({
       guestName: "Updated Name",
@@ -271,7 +426,7 @@ describe("PATCH /bookings/:bookingId", () => {
     });
   });
 
-  it("updates a booking when request data is valid", async () => {
+  it("updates a booking when request data is valid (without guestUserId)", async () => {
     const createResponse = await request(app).post("/bookings").set(authHeaders(staffToken)).send({
       hotelId: 11,
       roomId: 4,
@@ -284,7 +439,7 @@ describe("PATCH /bookings/:bookingId", () => {
     const bookingId = createResponse.body.booking.bookingId;
     createdBookingIds.push(bookingId);
 
-    const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
+    const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(staffToken)).send({
       guestName: "Patch Test Updated",
       checkInDate: "2027-02-05",
       checkOutDate: "2027-02-08",
@@ -296,9 +451,57 @@ describe("PATCH /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Patch Test Updated",
+      guestUserId: null,
+      createdByUserId: (jwt.decode(staffToken) as { id: number }).id,
       nights: 3,
       totalPrice: 510,
     });
+  });
+
+  it("updates a booking when request data is valid (with guestUserId)", async () => {
+    // First, create a guest user to get a valid guestUserId
+    const guestUserResponse = await request(app).post("/guests").send({
+      firstName: "Patch Test Guest",
+      lastName: "User",
+      email: "patchtestguest@hotel.local",
+      password: "securepassword123456",
+    });
+    expect(guestUserResponse.status).toBe(201);
+
+    const createResponse = await request(app).post("/bookings").set(authHeaders(staffToken)).send({
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Patch Test with Guest",
+      checkInDate: "2027-02-01",
+      checkOutDate: "2027-02-04",
+      guestUserId: guestUserResponse.body.userId,
+    });
+    expect(createResponse.status).toBe(201);
+
+    const bookingId = createResponse.body.booking.bookingId;
+
+    const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(staffToken)).send({
+      guestName: "Patch Test Updated",
+      checkInDate: "2027-02-05",
+      checkOutDate: "2027-02-08",
+    });
+    expect(patchResponse.status).toBe(200);
+    expect(patchResponse.body.message).toBe("Booking updated successfully");
+    expect(patchResponse.body.booking).toMatchObject({
+      bookingId: bookingId,
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Patch Test Updated",
+      guestUserId: guestUserResponse.body.userId,
+      createdByUserId: (jwt.decode(staffToken) as { id: number }).id,
+      nights: 3,
+      totalPrice: 510,
+    });
+
+    // Clean up: delete the booking before the guest user, since bookings reference guest_user_id
+    await pool.query("DELETE FROM bookings WHERE id = $1", [bookingId]);
+    const deleteResult = await pool.query("DELETE FROM users WHERE email = $1", ["patchtestguest@hotel.local"]);
+    expect(deleteResult.rowCount).toBe(1); // Ensure the guest user was deleted
   });
 
   it("returns 400 when updated dates are invalid", async () => {
@@ -355,7 +558,7 @@ describe("PATCH /bookings/:bookingId", () => {
       checkOutDate: "2027-04-12",
     });
 
-    expect(patchResponse.status).toBe(400);
+    expect(patchResponse.status).toBe(409);
     expect(patchResponse.body).toEqual({
       success: false,
       message: "Room is already booked for the selected dates",

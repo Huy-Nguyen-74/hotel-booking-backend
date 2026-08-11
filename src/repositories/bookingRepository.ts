@@ -33,7 +33,6 @@ Further notes:
 
 */
 
-
 import pool from "../database/db";
 
 export async function findBookings(filters: { 
@@ -83,10 +82,35 @@ export async function findBookings(filters: {
     return result.rows;
 }
 
+export async function guestViewAllBookingHistory(guestUserId: number) {
+    const result = await pool.query(
+        `
+        SELECT * FROM bookings
+        WHERE guest_user_id = $1
+        ORDER BY check_in_date DESC
+        `,
+        [guestUserId]
+    );
+    return result.rows;
+}
+
+export async function guestViewOneSpecificBooking(guestUserId: number, bookingId: number) {
+    const result = await pool.query(
+        `
+        SELECT * FROM bookings
+        WHERE guest_user_id = $1 AND id = $2
+        `,
+        [guestUserId, bookingId]
+    );
+    return result.rows[0];
+}
+
 export async function createBooking(booking: { 
     hotelId: number; 
     roomId: number; 
     guestName: string; 
+    guestUserId?: number;
+    createdByUserId: number;
     checkInDate: string; 
     checkOutDate: string; 
     nights: number; 
@@ -94,13 +118,40 @@ export async function createBooking(booking: {
 
     const result = await pool.query(
         `
-        INSERT INTO bookings (hotel_id, room_id, guest_name, check_in_date, check_out_date, nights, total_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO bookings (hotel_id, room_id, guest_name, guest_user_id, created_by_user_id, check_in_date, check_out_date, nights, total_price)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
         `,
-        [booking.hotelId, booking.roomId, booking.guestName, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
+        [booking.hotelId, booking.roomId, booking.guestName, booking.guestUserId, booking.createdByUserId, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
     );
     return result.rows[0];
+}
+
+export async function checkOverlappingBookings(roomId: number, checkInDate: string, checkOutDate: string, excludeBookingId?: number) {
+    /*
+    Check overlapping bookings: a booking overlaps if:
+    - The new booking's check-in date is before or equal to an existing booking's check-out date AND
+    - The new booking's check-out date is after or equal to an existing booking's check-in date.
+    
+    Examples of non-overlapping bookings:
+    - Existing booking: 2024-01-10 to 2024-01-15
+    - New booking: 2024-01-09 to 2024-01-10 
+    -> This is not overlapping because the new booking ends on the same day the existing booking starts, which is allowed.
+    Because of that, the condition to check is check_in_date < $2 and check_out_date > $3.
+    */
+    const overlappingBooking = await pool.query(
+        `
+        SELECT *
+        FROM bookings
+        WHERE room_id = $1
+          AND check_in_date < $2
+          AND check_out_date > $3
+          AND status <> 'cancelled'
+          ${excludeBookingId !== undefined ? `AND id != $4` : ""}
+        `,
+        excludeBookingId !== undefined ? [roomId, checkOutDate, checkInDate, excludeBookingId] : [roomId, checkOutDate, checkInDate]
+    );
+    return overlappingBooking.rows;
 }
 
 export async function updateBooking(bookingId: number, updates: { 
@@ -126,6 +177,27 @@ export async function updateBooking(bookingId: number, updates: {
         RETURNING *
         `,
         [bookingId, updates.hotelId, updates.roomId, updates.guestName, updates.checkInDate, updates.checkOutDate, updates.nights, updates.totalPrice]
+    );
+    return result.rows[0];
+}
+
+/*
+- Add `cancelBooking(bookingId, cancelledByUserId)`
+- Update status, cancellation time, and cancelling user
+- Do not delete the booking
+*/
+
+export async function cancelBooking(bookingId: number, cancelledByUserId: number) {
+    const result = await pool.query(
+        `
+        UPDATE bookings
+        SET status = 'cancelled',
+            cancelled_at = NOW(),
+            cancelled_by_user_id = $2
+        WHERE id = $1
+        RETURNING *
+        `,
+        [bookingId, cancelledByUserId]
     );
     return result.rows[0];
 }

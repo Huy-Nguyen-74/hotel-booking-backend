@@ -1,0 +1,26 @@
+/*
+[HTTP METHOD] [PATH]
+
+Access:
+- Who can access?
+- Unauthenticated → ?
+- Unauthorized role/ownership → ?
+
+Success:
+- Valid request → [status].
+- Expected response.
+- Expected database effect.
+
+Rejections:
+- Invalid input → 400.
+- Broken business rule → [status].
+- Missing resource → 404.
+- Conflict → 409.
+
+Response:
+- Required fields.
+- Fields that must be excluded.
+
+Cleanup:
+- Test data to remove/reset.
+*/

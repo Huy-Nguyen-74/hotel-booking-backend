@@ -37,6 +37,14 @@ export async function createUser(req: Request, res: Response, next: NextFunction
     return next(new AppError("All fields must be non-empty strings", 400));
   }
 
+  if (!password || typeof password !== "string" || !password.trim()) {
+    return next(new AppError("password is required and must be a non-empty string", 400));
+  }
+
+  if (password.length < 15) {
+    return next(new AppError("password must be at least 15 characters long", 400));
+  }
+
   const parsedFirstName = firstName.trim();
   const parsedLastName = lastName.trim();
   const parsedEmail = email.trim().toLowerCase();
@@ -172,7 +180,10 @@ export async function updateSelfInfo(req: Request, res: Response, next: NextFunc
  
   try {
     const updatedUser = await serviceUpdateSelfInfo(req.user.id, parsedFirstName, parsedLastName, password);
-    return res.status(200).json(toUserDto(updatedUser));
+    if (!updatedUser) {
+      return next(new AppError("User not found", 404));
+    }
+    return res.status(200).json({ success: true, message: "User information updated successfully", body: toUserDto(updatedUser) });
   } catch (error) {
     next(error);
   }
