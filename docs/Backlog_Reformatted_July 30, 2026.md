@@ -337,7 +337,7 @@ This block is finished.
 
 ### Deferred from Guest Journey
 
-- [ ] Shared backend logoutssssssssss
+- [ ] Shared backend logout
   - Implement only when refresh tokens or server-side sessions exist
 - [ ] Swagger documentation for new guest endpoints
   - Add during the Swagger/OpenAPI phase
