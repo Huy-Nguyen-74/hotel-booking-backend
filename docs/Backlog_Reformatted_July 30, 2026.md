@@ -197,11 +197,11 @@ Swagger details will be added to the README after Phase 5 is complete.
 
 ---
 
-## Phase 7 — Guest Journey
+## Phase 7 — Guest Journey ✅
 
 **Started:** July 28, 2026  
 **Target:** August 1–16  
-**Status:** In progress
+**Status:** ✅ Completed — August 11, 2026
 
 Extend the existing Users and Auth modules with the `guest` role. Do not create a separate authentication system.
 
@@ -344,14 +344,14 @@ This block is finished.
 
 ### Completion Criteria
 
-- [ ] Complete customer-facing authentication flow
-- [ ] Guests can search, create, view, update, and cancel their own bookings
-- [ ] Ownership rules prevent access to another guest’s data
-- [ ] Staff-created and guest-created bookings record the correct actor and owner
-- [ ] No duplicated authentication or booking business logic
-- [ ] Typecheck passes
-- [ ] Integration tests pass
-- [ ] CI remains green
+- [x] Complete customer-facing authentication flow
+- [x] Guests can search, create, view, update, and cancel their own bookings
+- [x] Ownership rules prevent access to another guest’s data
+- [x] Staff-created and guest-created bookings record the correct actor and owner
+- [x] No duplicated authentication or booking business logic
+- [x] Typecheck passes
+- [x] Integration tests pass
+- [x] CI remains green
 
 ---
 
