@@ -8,10 +8,18 @@ import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import guestRoutes from "./routes/guestRoutes";
 import { errorHandler } from "./middleware/errorHandler";
+import swaggerUi from "swagger-ui-express";
+import { openApiDocument } from "./openapi";
 
 export const app = express();
 
 app.use(express.json());
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(openApiDocument)
+);
 
 app.use("/", hotelRoutes);
 app.use("/", roomRoutes);

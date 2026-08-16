@@ -133,31 +133,31 @@ For infrastructure or CI changes, also verify:
 
 ---
 
-## Phase 5 — Swagger / OpenAPI
+## Phase 5 — Swagger / OpenAPI ✅
 
-**Target:** July 26–30
+**Completed:** August 16, 2026
 
 ### Tasks
 
-- [ ] Install and configure Swagger tooling
-- [ ] Expose Swagger UI
-- [ ] Define the OpenAPI document
-- [ ] Document authentication and JWT usage
-- [ ] Document Users endpoints
-- [ ] Document Hotels endpoints
-- [ ] Document Rooms endpoints
-- [ ] Document Bookings endpoints
-- [ ] Add request examples
-- [ ] Add success response examples
-- [ ] Add validation, authentication, authorization, not-found, and conflict errors
+- [x] Install and configure Swagger tooling
+- [x] Expose Swagger UI
+- [x] Define the OpenAPI document
+- [x] Document authentication and JWT usage
+- [x] Document Users endpoints
+- [x] Document Hotels endpoints
+- [x] Document Rooms endpoints
+- [x] Document Bookings endpoints
+- [x] Add request examples
+- [x] Add success response examples
+- [x] Add validation, authentication, authorization, not-found, and conflict errors
 
 ### Completion Criteria
 
-- [ ] All important endpoints are documented
-- [ ] Protected endpoints support JWT authorization through Swagger UI
-- [ ] API requests can be explored without reading the source code
-- [ ] Documentation matches actual request and response contracts
-- [ ] Type checking, tests, and CI remain green
+- [x] All important endpoints are documented
+- [x] Protected endpoints support JWT authorization through Swagger UI
+- [x] API requests can be explored without reading the source code
+- [x] Documentation matches actual request and response contracts
+- [x] Type checking, tests, and CI remain green
 
 ---
 

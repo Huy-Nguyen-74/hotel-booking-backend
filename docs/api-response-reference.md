@@ -3,7 +3,7 @@
 Unified list of every response message returned by the API, grouped by route.
 Generated to close the Guest Booking Flow backlog item (Aug 4th note: "unified list of response messages for each error/success scenario").
 
-All errors are thrown as `new AppError(message, statusCode)` (see [src/errors/AppError.ts](../src/errors/AppError.ts)) and serialized by the centralized error middleware as `{ message }`.
+All errors are thrown as `new AppError(message, statusCode)` (see [src/errors/AppError.ts](../src/errors/AppError.ts)) and serialized by the centralized error middleware (`src/middleware/errorHandler.ts`) as `{ success: false, message }`. The `success: false` field is omitted from the per-route lists below for brevity — only the `message` and status code are called out.
 
 ---
 
@@ -12,7 +12,7 @@ All errors are thrown as `new AppError(message, statusCode)` (see [src/errors/Ap
 ### POST /login (No Authentication Required)
 **Controller:** `authController.login()`
 
-**Success:** 200 — `{ message: "Login successful", user: <UserDTO>, token: <JWT> }`
+**Success:** 200 — `{ message: "Login successful", user: <AuthDTO>, token: <JWT> }`, where `AuthDTO` (`toAuthDto`) is a slimmer projection than the standard `UserDTO` — only `userId, firstName, lastName, email, role` (no `isActive`, `createdAt`, `updatedAt`).
 
 **Errors:**
 1. 400 — `"Request body must be a valid JSON object"` — req.body is an array
@@ -81,8 +81,10 @@ These apply to every authenticated/authorized route and are not repeated per-rou
 2. 400 — `"bookingId must be an integer greater than 0"`
 3. 404 — `"Booking not found"`
 
-### POST /bookings — roles: `admin`, `staff`, `guest`
+### POST /bookings — roles: `admin`, `staff`
 **Success:** 201 — `{ message: "Booking created successfully", booking: <BookingDTO> }`
+
+Note: guests create bookings via the separate `POST /guests/bookings` route/controller below, not this one.
 
 **Errors (controller):**
 1. 401 — `"User authentication required"`
@@ -280,10 +282,13 @@ These apply to every authenticated/authorized route and are not repeated per-rou
 ### POST /rooms — role: `admin`
 **Success:** 201 — Room DTO
 
-**Errors:**
+**Errors (controller):**
 1. 400 — `"Request body must be a valid JSON object"`
 2. 400 — `"hotelId is required"` / `"type is required"` / `"price is required"`
 3. 400 — `"hotelId must be a number"` / `"type must be a non-empty string"` / `"price must be a positive number"`
+
+**Errors (roomService.createRoom):**
+1. 404 — `"Hotel not found"` — hotelId does not reference an existing hotel
 
 ### PATCH /rooms/:roomId — role: `admin`
 **Success:** 200 — Room DTO

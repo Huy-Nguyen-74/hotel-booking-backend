@@ -422,6 +422,15 @@ describe("POST /rooms", () => {
         createdRoomIds.push(response.body.roomId); // Store the created room ID for cleanup
     });
 
+    it("should return 404 Not Found if hotelId does not reference an existing hotel", async () => {
+        const response = await request(app)
+            .post("/rooms")
+            .set(authHeaders(adminToken))
+            .send({ hotelId: 999999, type: "Suite", price: 300 });
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({ success: false, message: "Hotel not found" });
+    });
+
     // Lastly, we will test the success scenario for POST /rooms endpoint.
 
     it("should return 201 Created and the created room object with trimmed fields when valid data is provided", async () => {

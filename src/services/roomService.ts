@@ -4,6 +4,7 @@ import {
     createRoom as repositoryCreateRoom,
     updateRoom as repositoryUpdateRoom
 } from "../repositories/roomRepository"; // Repository module path.
+import { findHotels } from "../repositories/hotelRepository";
 import { AppError } from "../errors/AppError";
 
 // Get rooms is restricted to admin and staff, while search available rooms is open to guests and public users.
@@ -44,6 +45,11 @@ export async function searchAvailableRooms(filters: {
     
 
 export async function createRoom(hotelId: number, type: string, price: number) {
+    const hotel = await findHotels({ hotelId });
+    if (!hotel || hotel.length === 0) {
+        throw new AppError("Hotel not found", 404);
+    }
+
     return await repositoryCreateRoom(hotelId, type, price);
 }
 
