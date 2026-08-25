@@ -7,32 +7,32 @@ Current intended structure (V1):
 
 src
 ├── controllers
-│   ├── authController.ts
-│   └── userController.ts
-│
+━E  ├── authController.ts
+━E  └── userController.ts
+━E
 ├── services
-│   ├── authService.ts
-│   └── userService.ts
-│
+━E  ├── authService.ts
+━E  └── userService.ts
+━E
 ├── repositories
-│   └── userRepository.ts
-│
+━E  └── userRepository.ts
+━E
 ├── middleware
-│   ├── authenticate.ts
-│   ├── authorize.ts
-│   └── errorHandler.ts
-│
+━E  ├── authenticate.ts
+━E  ├── authorize.ts
+━E  └── errorHandler.ts
+━E
 ├── database
-│   ├── db.ts
-│   └── seedAdmin.ts
-│
+━E  ├── db.ts
+━E  └── seedAdmin.ts
+━E
 ├── errors
-│   └── AppError.ts
-│
+━E  └── AppError.ts
+━E
 ├── routes
-│   ├── authRoutes.ts
-│   └── userRoutes.ts
-│
+━E  ├── authRoutes.ts
+━E  └── userRoutes.ts
+━E
 ├── app.ts
 └── server.ts
 
@@ -56,29 +56,29 @@ users
 Feature flow we are currently building:
 
 seedAdmin.ts
-↓
+ↁE
 userService.createUser()
-↓
+ↁE
 userRepository.createUser()
-↓
+ↁE
 users table
 
 --------------------------------
 
 POST /auth/login
-↓
+ↁE
 authController
-↓
+ↁE
 authService.login()
-↓
+ↁE
 userRepository.findUserByEmail()
-↓
+ↁE
 bcrypt.compare()
-↓
+ↁE
 check is_active
-↓
+ↁE
 generate JWT
-↓
+ↁE
 return token
 
 
@@ -121,19 +121,19 @@ table:
 First feature to build: create admin
 
 1. Receive admin info
-→ Controller
+ↁEController
 
 2. Check if email already exists
-→ Service
+ↁEService
 
 3. Hash password
-→ Service
+ↁEService
 
 4. Save admin to database
-→ Repository
+ↁERepository
 
 5. Return created admin info
-→ Service → Controller
+ↁEService ↁEController
 
 
 Repo functions:
@@ -262,7 +262,7 @@ JULY 7th, 2026: migrate auth and user
 Default seeded login:
 
 Email: admin@hotel.local
-Password: Admin123!
+Password: Admin123456789!
 Endpoint: POST /login
 
 Done
@@ -310,7 +310,7 @@ Role will be 'guest'.
 
 Scope: revised roadmap toward applications.
 
-July 28–August 5 — Guest Journey
+July 28–August 5  EGuest Journey
 
 Registration and login
 Profile and profile update
@@ -319,7 +319,7 @@ Booking history/details
 Guest booking ownership
 Authorization tests
 
-August 6–9 — Real Login Sessions
+August 6 E  EReal Login Sessions
 
 Refresh-token table
 POST /auth/refresh
@@ -333,8 +333,8 @@ For createBooking:
 
 Add the following columns to bookings table:
 
-    guest_user_id   → who the booking belongs to
-    created_by_user_id → who created it
+    guest_user_id   ↁEwho the booking belongs to
+    created_by_user_id ↁEwho created it
 
 Examples:
 
@@ -356,3 +356,21 @@ created_by_user_id provides the minimal audit trail. Full audit logs can wait un
 
 
 
+# PAYMENTS phase
+
+A guest has Booking #123 and wants to pay. What must happen from API request ↁEStripe ↁEour database?
+
+Guest
+ↁEour API
+ↁEconfirms total price, guest identifier
+ↁEStripe
+ↁEgets payment records from Stripe
+ↁEPostgreSQL
+ↁEresponse
+
+And answer four questions before seeing code:
+
+What new Payment data does our database need? -> sounds like the same question as the 4th
+Should the client send totalPrice, or should our backend obtain the amount from the booking? -> the latter
+Who creates the Stripe payment—the Controller, Service, or Repository? -> repo handles DB input; service makes sure of the logic; controller handles req/res
+What should our backend store after Stripe creates the payment? -> payment ID, referencing guest ID and booking ID, and other related receipt info such as total price, etc.

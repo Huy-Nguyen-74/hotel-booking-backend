@@ -7,7 +7,7 @@ export async function adminLoginForTest(): Promise<string> {
     .post("/login")
     .send({
       email: "admin@hotel.local",
-      password: "Admin123!",
+      password: "Admin123456789!",
     });
 
   expect(response.status).toBe(200);
@@ -21,7 +21,7 @@ export async function staffLoginForTest(): Promise<string> {
     .post("/login")
     .send({
       email: "staff@hotel.local",
-      password: "Staff123!",
+      password: "Staff123456789!",
     });
 
   expect(response.status).toBe(200);

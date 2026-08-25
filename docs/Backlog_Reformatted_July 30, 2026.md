@@ -359,12 +359,21 @@ This block is finished.
 
 **Target:** August 17–30
 
+### Progress Notes — August 25, 2026
+
+- Implemented `POST /guests/bookings/:bookingId/payments`: creates a Stripe PaymentIntent (amount from our own booking record, never the client) and persists a `payments` row linked to the booking.
+- Added `payments` migration, repository, service, controller, route, and DTO; guards against paying for another guest's booking, a non-existent booking, and a cancelled booking.
+- Added 8 integration tests covering success, unauthenticated, wrong role, another guest's booking, invalid/negative bookingId, non-existent booking, and cancelled booking.
+- Fixed two bugs that were breaking the whole suite: wrong route path (`/guest/...` vs `/guests/...`) and a wrong relative path in a `jest.mock` call.
+- Bumped admin/staff test passwords to 15+ characters to match the guest password rule, regenerating their seeded bcrypt hashes.
+- All 235 tests passing, typecheck clean.
+
 ### Core Workflow
 
-- [ ] Stripe test-mode integration
-- [ ] Payment intent workflow
+- [x] Stripe test-mode integration
+- [x] Payment intent workflow
 - [ ] Payment confirmation
-- [ ] Payment persistence
+- [x] Payment persistence
 - [ ] Failed payment handling
 
 ### Reliability and Security
@@ -376,7 +385,7 @@ This block is finished.
 
 ### Testing
 
-- [ ] Successful payment integration tests
+- [x] Successful payment integration tests
 - [ ] Failed payment integration tests
 - [ ] Duplicate request tests
 - [ ] Webhook verification tests

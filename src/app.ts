@@ -10,6 +10,7 @@ import guestRoutes from "./routes/guestRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import { openApiDocument } from "./openapi";
+import paymentRoutes from "./routes/paymentRoutes";
 
 export const app = express();
 
@@ -27,5 +28,6 @@ app.use("/", bookingRoutes);
 app.use("/", authRoutes);
 app.use("/", userRoutes);
 app.use("/", guestRoutes);
+app.use("/", paymentRoutes);
 
 app.use(errorHandler);

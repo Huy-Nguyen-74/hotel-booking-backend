@@ -5,6 +5,18 @@ import pool from "../../src/database/db";
 
 import { CreateBookingInput } from "../../src/types/booking";
 
+jest.mock("../../src/integrations/stripe", () => ({
+  stripe: {
+    paymentIntents: {
+      create: jest.fn().mockResolvedValue({
+        id: "pi_test_123",
+        status: "requires_payment_method",
+        client_secret: "pi_test_secret",
+      }),
+    },
+  },
+}));
+
 /*
 This test suite is for guest booking functionality. It covers the following scenarios:
 - [ ] Create a booking as an authenticated guest
@@ -52,6 +64,10 @@ Expected response body:
   nights
   totalPrice
   status    
+*/
+
+/*
+Aug 24, 2026: adding payment tests to this suite (booking creation now involves a payment step/route).
 */
 
 const createdBookingIds: number[] = [];
@@ -368,13 +384,13 @@ describe("View booking history as an authenticated guest", () => {
     /* Log in as a staff user and obtain a token
       Staff:
       "email": "staff@hotel.local",
-      "password": "Staff123!"
+      "password": "Staff123456789!"
     */
     const staffLoginResponse = await request(app)
       .post("/login")
       .send({
         email: "staff@hotel.local",
-        password: "Staff123!"
+        password: "Staff123456789!"
       });
     expect(staffLoginResponse.status).toBe(200);
     const staffToken = staffLoginResponse.body.token;
@@ -440,7 +456,7 @@ describe("View a specific booking as an authenticated guest", () => {
       .post("/login")
       .send({
         email: "staff@hotel.local",
-        password: "Staff123!"
+        password: "Staff123456789!"
       });
     expect(staffLoginResponse.status).toBe(200);
     const staffToken = staffLoginResponse.body.token;
@@ -588,7 +604,7 @@ describe("Update a booking as an authenticated guest", () => {
       .post("/login")
       .send({
         email: "staff@hotel.local",
-        password: "Staff123!"
+        password: "Staff123456789!"
       });
     expect(staffLoginResponse.status).toBe(200);
     const staffToken = staffLoginResponse.body.token;
@@ -919,7 +935,7 @@ describe("Cancel a booking as an authenticated guest", () => {
       .post("/login")
       .send({
         email: "staff@hotel.local",
-        password: "Staff123!"
+        password: "Staff123456789!"
       });
     expect(staffLoginResponse.status).toBe(200);
     const staffToken = staffLoginResponse.body.token;
@@ -1048,3 +1064,193 @@ describe("Cancel a booking as an authenticated guest", () => {
   });
 });
 
+describe("Process payment for a booking as an authenticated guest", () => {
+  /*
+  POST /guests/bookings/:bookingId/payments
+
+  Access:
+  - Authenticated guests only.
+  - Unauthenticated ↁE401.
+  - Non-guest role ↁE403.
+  - Another guest's booking ↁE404.
+
+  Success:
+  - Valid request ↁE201.
+  - Response contains:
+      payment
+      clientSecret
+  - DB effect:
+      creates one payments row linked to the booking.
+
+  Rejections:
+  - Invalid bookingId ↁE400.
+  - Cancelled booking ↁE400.
+  - Non-existent/other guest's booking ↁE404.
+
+  Cleanup:
+  - Delete payment row first.
+  - Then delete booking/test data.
+*/
+
+it("should process payment for the authenticated guest's booking", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+    
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(paymentResponse.status).toBe(201);
+    expect(paymentResponse.body).toHaveProperty("payment");
+    expect(paymentResponse.body).toHaveProperty("clientSecret");
+
+    const paymentRow = await pool.query("SELECT * FROM payments WHERE booking_id = $1", [createResponse.body.bookingId]);
+    expect(paymentRow.rows.length).toBe(1);
+    expect(paymentRow.rows[0]).toHaveProperty("booking_id", createResponse.body.bookingId);
+
+    // Cleanup: delete the payment row first
+    await pool.query("DELETE FROM payments WHERE booking_id = $1", [createResponse.body.bookingId]);
+    // Cleanup: delete the booking row (already in createdBookingIds, will be cleaned up in afterAll)
+  });
+
+  it("should reject payment for an unauthenticated request", async () => {
+    const response = await request(app)
+      .post("/guests/bookings/1/payments");
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("message", "Authentication token missing");
+  });
+
+  it("should reject payment for a wrong role (non-guest)", async () => {
+    const staffLoginResponse = await request(app)
+      .post("/login")
+      .send({
+        email: "staff@hotel.local",
+        password: "Staff123456789!"
+      });
+    expect(staffLoginResponse.status).toBe(200);
+    const staffToken = staffLoginResponse.body.token;
+
+    const response = await request(app)
+      .post("/guests/bookings/1/payments")
+      .set("Authorization", `Bearer ${staffToken}`);
+    expect(response.status).toBe(403);
+    expect(response.body).toHaveProperty("message", "Access denied");
+  });
+
+  it("should reject payment for a different guest's booking", async () => {
+    // Create a second guest user
+    const secondGuestResponse = await request(app)
+      .post("/guests")
+      .send({
+        firstName: "Second",
+        lastName: "Guest",
+        email: "second.guest@example.com",
+        password: "password123456789"
+      });
+    expect(secondGuestResponse.status).toBe(201);
+    
+    // Log in as the second guest to get a token
+    const secondGuestLoginResponse = await request(app)
+      .post("/login")
+      .send({
+        email: "second.guest@example.com",
+        password: "password123456789"
+      });
+    expect(secondGuestLoginResponse.status).toBe(200);
+    const secondGuestToken = secondGuestLoginResponse.body.token;
+
+    // Create a booking for the first guest
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2024-07-01",
+      checkOutDate: "2024-07-05"
+    };
+    const createBookingResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createBookingResponse.status).toBe(201);
+    const bookingId = createBookingResponse.body.bookingId;
+    createdBookingIds.push(bookingId);
+
+    // Attempt to process payment for the first guest's booking using the second guest's token
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${bookingId}/payments`)
+      .set("Authorization", `Bearer ${secondGuestToken}`);
+    expect(paymentResponse.status).toBe(404);
+    expect(paymentResponse.body).toHaveProperty("message", "Booking not found");
+
+    // Cleanup: delete the second guest user
+    await pool.query("DELETE FROM users WHERE email = $1", ["second.guest@example.com"]);
+  });
+
+  it("should reject payment for an invalid bookingId (string)", async () => {
+    const response = await request(app)
+      .post("/guests/bookings/invalid-id/payments")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("message", "Booking ID must be a number");
+  });
+  
+  it("should reject payment for an invalid bookingId (negative integer)", async () => {
+    const response = await request(app)
+      .post("/guests/bookings/-1/payments")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("message", "Booking ID must be a positive integer");
+  });
+
+  it("should reject payment for a non-existent bookingId", async () => {
+    const response = await request(app)
+      .post("/guests/bookings/9999/payments")
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty("message", "Booking not found");
+  });
+
+  it("should reject payment for a cancelled booking", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const cancelResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/cancel`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(cancelResponse.status).toBe(200);
+
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(paymentResponse.status).toBe(400);
+    expect(paymentResponse.body).toHaveProperty("message", "Cannot pay for a cancelled booking");
+  });
+});
+
+    

@@ -82,7 +82,7 @@ VALUES
   'Admin',
   'User',
   'admin@hotel.local',
-  '$2b$10$ydGQs/7FV5jXs9FEipVB4OJ04r4SBWBvYUSiTOInNZ8Woa456KLbq',
+  '$2b$10$49yx39SMtQdB3vKHON3druOiooCmgx3ZFBg2pDEzn4KNcH7t5S3XS',
   'admin',
   TRUE
 ),
@@ -91,7 +91,7 @@ VALUES
   'Staff',
   'User',
   'staff@hotel.local',
-  '$2b$10$3lzNE81agB4qymd8b/LpDOVEMPBLaSNMvBZCoLwhfqAnNVzmDlT.W',
+  '$2b$10$mHcCO8u4np9xaP9GI2CBOuBgdC5KcAt9mpVQexh0RDwfD1El8HO/K',
   'staff',
   TRUE
 );
