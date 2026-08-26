@@ -1,5 +1,5 @@
 import { stripe } from "../integrations/stripe";
-import { createPayment } from "../repositories/paymentRepository";
+import { createPayment, getLatestPaymentByBookingId } from "../repositories/paymentRepository";
 import { AppError } from "../errors/AppError";
 import { guestViewOneSpecificBooking } from "./guestService";
 
@@ -16,49 +16,98 @@ function mapStripeStatus(
 
   return "pending";
 }
-
 export async function createPaymentForGuest(
   bookingId: number,
   guestUserId: number
 ) {
-  // 1. Load only a booking owned by this guest
-  const booking = await guestViewOneSpecificBooking(guestUserId, bookingId);
+  // 1. Load a booking owned by the authenticated guest
+  const booking = await guestViewOneSpecificBooking(
+    guestUserId,
+    bookingId
+  );
 
   if (!booking) {
     throw new AppError("Booking not found", 404);
   }
 
-  // 2. Don't allow payment for a cancelled booking
+  // 2. Reject payment for a cancelled booking
   if (booking.status === "cancelled") {
-    throw new AppError("Cannot pay for a cancelled booking", 400);
+    throw new AppError(
+      "Cannot pay for a cancelled booking",
+      400
+    );
   }
 
-  // 3. Stripe creates the payment process
-  // Amount comes from OUR booking, never from the client
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: booking.total_price,
-    currency: "jpy",
-    metadata: {
-      bookingId: String(booking.id),
-      guestUserId: String(guestUserId),
-    },
-  });
+  // 3. Check the booking's latest payment attempt
+  const existingPayment =
+    await getLatestPaymentByBookingId(booking.id);
 
-  // 4. Translate Stripe's state into our simpler state model
-  const status = mapStripeStatus(paymentIntent.status);
+  // 4. Do not allow another payment after success
+  if (
+    existingPayment &&
+    existingPayment.status === "succeeded"
+  ) {
+    throw new AppError(
+      "Booking has already been paid for",
+      400
+    );
+  }
 
-  // 5. Save Stripe's payment in our PostgreSQL database
+  // 5. If payment is still pending, reuse the same Stripe PaymentIntent
+  if (
+    existingPayment &&
+    existingPayment.status === "pending"
+  ) {
+    const existingPaymentIntent =
+      await stripe.paymentIntents.retrieve(
+        existingPayment.stripe_payment_intent_id
+      );
+
+    return {
+      payment: existingPayment,
+      clientSecret: existingPaymentIntent.client_secret,
+    };
+  }
+
+  // 6. No previous payment, or previous attempt failed:
+
+  // Use an idempotency key to ensure that if the user clicks "Pay" multiple times, we don't create multiple Stripe PaymentIntents
+  const idempotencyKey = existingPayment
+  ? `booking-${booking.id}-after-failed-${existingPayment.id}`
+  : `booking-${booking.id}-initial`;
+
+  // create a new Stripe PaymentIntent using our trusted booking amount
+  const newPaymentIntent =
+    await stripe.paymentIntents.create({
+      amount: booking.total_price,
+      currency: "jpy",
+      metadata: {
+        bookingId: String(booking.id),
+        guestUserId: String(guestUserId),
+      },
+    }, {
+      idempotencyKey,
+    });
+
+  // 7. Translate Stripe's status into our simpler payment status
+  const status = mapStripeStatus(
+    newPaymentIntent.status
+  );
+
+  // 8. Persist the new payment attempt in PostgreSQL
   const payment = await createPayment({
     bookingId: booking.id,
-    stripePaymentIntentId: paymentIntent.id,
+    stripePaymentIntentId: newPaymentIntent.id,
     amount: booking.total_price,
     currency: "JPY",
     status,
   });
 
-  // 6. Controller will return this to the frontend
+  // 9. Return our payment record plus the clientSecret
+  // that the frontend uses to continue the Stripe payment
   return {
     payment,
-    clientSecret: paymentIntent.client_secret,
+    clientSecret: newPaymentIntent.client_secret,
   };
 }
+

@@ -1085,6 +1085,7 @@ describe("Process payment for a booking as an authenticated guest", () => {
   Rejections:
   - Invalid bookingId ↁE400.
   - Cancelled booking ↁE400.
+  - 
   - Non-existent/other guest's booking ↁE404.
 
   Cleanup:
@@ -1251,6 +1252,8 @@ it("should process payment for the authenticated guest's booking", async () => {
     expect(paymentResponse.status).toBe(400);
     expect(paymentResponse.body).toHaveProperty("message", "Cannot pay for a cancelled booking");
   });
+
+
 });
 
     

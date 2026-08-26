@@ -374,3 +374,70 @@ What new Payment data does our database need? -> sounds like the same question a
 Should the client send totalPrice, or should our backend obtain the amount from the booking? -> the latter
 Who creates the Stripe payment—the Controller, Service, or Repository? -> repo handles DB input; service makes sure of the logic; controller handles req/res
 What should our backend store after Stripe creates the payment? -> payment ID, referencing guest ID and booking ID, and other related receipt info such as total price, etc.
+
+
+## Designing the whole payment flow:
+
+### Questions & Answers
+
+* **Who acts?**
+  The authenticated guest proceeds to pay for an existing booking.
+
+* **What data enters our backend?**
+  Mainly the `bookingId`. The guest identity comes from the JWT, and the trusted total price comes from our booking record. Card/bank/security details go directly from the client to Stripe, not through our backend.
+
+* **What must our backend verify?**
+
+  * Booking exists
+  * Booking belongs to the authenticated guest
+  * Booking is not cancelled
+  * Amount comes from our own booking record
+  * No duplicate/successful payment already exists
+
+* **What does Stripe do?**
+  Our backend asks Stripe to create a PaymentIntent. Stripe then handles the actual payment process with the client. When the payment succeeds or fails, Stripe informs our backend through a verified webhook.
+
+* **What do we persist?**
+
+  * Our payment row
+  * Booking ID
+  * Stripe PaymentIntent ID
+  * Amount/currency
+  * Payment status
+  * Relevant timestamps
+
+* **What can fail?**
+  Network problems, invalid/expired payment method, insufficient funds, Stripe errors, or our own backend/database failures.
+
+* **How do we prevent duplicates?**
+  Check existing payment state and use an **idempotency key** so repeated requests for the same logical payment attempt do not create multiple Stripe PaymentIntents.
+
+### Whole Flow
+
+Guest chooses to pay
+→ backend verifies booking, ownership, amount, and existing payment state
+→ backend creates Stripe PaymentIntent using an idempotency key
+→ backend stores the local payment record
+→ frontend uses Stripe to complete the payment
+→ Stripe sends the final result to our webhook
+→ backend verifies the webhook signature
+→ backend updates local payment status
+→ client can retrieve/use the resulting payment status
+
+
+## Scope: next core Payments concept — webhooks.**
+
+Next: **how our backend learns payment really succeeded/failed.**
+
+Flow:
+
+```text
+Client completes payment with Stripe
+→ Stripe determines result
+→ Stripe sends webhook to our backend
+→ backend verifies Stripe signature
+→ finds payment by PaymentIntent ID
+→ updates local status
+```
+
+Key idea: **Stripe, not the client, is trusted for final payment status.**

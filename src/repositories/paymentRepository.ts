@@ -34,4 +34,15 @@ export async function getPaymentByStripePaymentIntentId(
   return result.rows[0] || null;
 }
 
+export async function getLatestPaymentByBookingId(bookingId: number): Promise<PaymentRow | null> {
+  const query = `
+    SELECT *
+    FROM payments
+    WHERE booking_id = $1
+    ORDER BY created_at DESC
+    LIMIT 1;
+  `;
+  const result = await pool.query(query, [bookingId]);
+  return result.rows[0] || null;
+}
 
