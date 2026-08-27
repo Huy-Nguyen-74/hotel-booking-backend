@@ -1,4 +1,4 @@
-July, 5th, 2026: CONTINUING AFTER MIGRATIONS / MERGING OF THE TWO PROJECTS
+﻿July, 5th, 2026: CONTINUING AFTER MIGRATIONS / MERGING OF THE TWO PROJECTS
 
 hotel-saas-admin-platform
 
@@ -56,29 +56,29 @@ users
 Feature flow we are currently building:
 
 seedAdmin.ts
-ↁE
+→ 
 userService.createUser()
-ↁE
+→ 
 userRepository.createUser()
-ↁE
+→ 
 users table
 
 --------------------------------
 
 POST /auth/login
-ↁE
+→ 
 authController
-ↁE
+→ 
 authService.login()
-ↁE
+→ 
 userRepository.findUserByEmail()
-ↁE
+→ 
 bcrypt.compare()
-ↁE
+→ 
 check is_active
-ↁE
+→ 
 generate JWT
-ↁE
+→ 
 return token
 
 
@@ -121,19 +121,19 @@ table:
 First feature to build: create admin
 
 1. Receive admin info
-ↁEController
+→ Controller
 
 2. Check if email already exists
-ↁEService
+→ Service
 
 3. Hash password
-ↁEService
+→ Service
 
 4. Save admin to database
-ↁERepository
+→ Repository
 
 5. Return created admin info
-ↁEService ↁEController
+→ Service → Controller
 
 
 Repo functions:
@@ -333,8 +333,8 @@ For createBooking:
 
 Add the following columns to bookings table:
 
-    guest_user_id   ↁEwho the booking belongs to
-    created_by_user_id ↁEwho created it
+    guest_user_id   → who the booking belongs to
+    created_by_user_id → who created it
 
 Examples:
 
@@ -358,15 +358,15 @@ created_by_user_id provides the minimal audit trail. Full audit logs can wait un
 
 # PAYMENTS phase
 
-A guest has Booking #123 and wants to pay. What must happen from API request ↁEStripe ↁEour database?
+A guest has Booking #123 and wants to pay. What must happen from API request → Stripe → our database?
 
 Guest
-ↁEour API
-ↁEconfirms total price, guest identifier
-ↁEStripe
-ↁEgets payment records from Stripe
-ↁEPostgreSQL
-ↁEresponse
+→ our API
+→ confirms total price, guest identifier
+→ Stripe
+→ gets payment records from Stripe
+→ PostgreSQL
+→ response
 
 And answer four questions before seeing code:
 

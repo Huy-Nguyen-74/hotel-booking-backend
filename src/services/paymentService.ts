@@ -66,6 +66,7 @@ export async function createPaymentForGuest(
     return {
       payment: existingPayment,
       clientSecret: existingPaymentIntent.client_secret,
+      isReused: true,
     };
   }
 
@@ -108,6 +109,7 @@ export async function createPaymentForGuest(
   return {
     payment,
     clientSecret: newPaymentIntent.client_secret,
+    isReused: false,
   };
 }
 

@@ -25,8 +25,8 @@ export async function createPaymentForGuest(req: Request, res: Response, next: N
     }
 
     try {
-        const { payment, clientSecret } = await serviceCreatePaymentForGuest(bookingId, guestUserId);
-        res.status(201).json({ payment: toPaymentDto(payment), clientSecret });
+        const { payment, clientSecret, isReused } = await serviceCreatePaymentForGuest(bookingId, guestUserId);
+        res.status(isReused ? 200 : 201).json({ payment: toPaymentDto(payment), clientSecret });
     } catch (error) {
         next(error);
     }

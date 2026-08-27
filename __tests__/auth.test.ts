@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from "@jest/globals";
+﻿import { afterAll, describe, expect, it } from "@jest/globals";
 import { createHash } from "crypto";
 import request from "supertest";
 import { app } from "../src/app";
@@ -34,20 +34,20 @@ Authentication Tests
 
 Access:
 - Who can access? Admin, Guest, User, Public, etc.
-- Unauthenticated ↁE401
-- Unauthorized role/ownership ↁE403
+- Unauthenticated → 401
+- Unauthorized role/ownership → 403
 
 Success:
-- Valid request ↁE200
+- Valid request → 200
 - Expected response -> Success message, user info, JWT token.
 - Expected database effect -> nothing, just authentication.
 
 Rejections: reveal the least to maintain security and privacy.
-- Missing required fields ↁE400.
-- Invalid input ↁE400 / 401.
-- Broken business rule ↁE403.
-- Missing resource ↁEnone, just authentication.
-- Conflict ↁEnone, just authentication.
+- Missing required fields → 400.
+- Invalid input → 400 / 401.
+- Broken business rule → 403.
+- Missing resource → none, just authentication.
+- Conflict → none, just authentication.
 
 Response:
 - Required fields -> email, password.
@@ -236,20 +236,20 @@ describe("POST /login", () => {
 router.post("/request-password-reset", requestPasswordReset);
 
 Access:
-- Who can access? Admin, Guest, User, Public, etc. ↁEPublic
-- Unauthenticated ↁEnone.
-- Unauthorized role/ownership ↁEnone.
+- Who can access? Admin, Guest, User, Public, etc. → Public
+- Unauthenticated → none.
+- Unauthorized role/ownership → none.
 
 Success:
-- Valid request ↁE(won't reveal if the email exists or not).
+- Valid request → (won't reveal if the email exists or not).
 - Expected response -> neutral message indicating that if the email exists, a password reset link will be sent.
 - Expected database effect -> a password reset token is created and stored in the database with an expiry time, userId, and hashed token.
 
 Rejections:
-- Invalid input ↁE400.
-- Broken business rule ↁEnone.
-- Missing resource ↁE neutral message indicating that if the email exists, a password reset link will be sent.
-- Conflict ↁEnone.
+- Invalid input → 400.
+- Broken business rule → none.
+- Missing resource →  neutral message indicating that if the email exists, a password reset link will be sent.
+- Conflict → none.
 
 Response: neutral message indicating that if the email exists, a password reset link will be sent.
 
@@ -346,19 +346,19 @@ describe("POST /request-password-reset", () => {
 
 Access:
 - Who can access? Public
-- Unauthenticated ↁE401
-- Unauthorized role/ownership ↁEnone, just authentication.
+- Unauthenticated → 401
+- Unauthorized role/ownership → none, just authentication.
 
 Success:
-- Valid request ↁE200.
+- Valid request → 200.
 - Expected response -> success message indicating that the password has been reset successfully.
 - Expected database effect -> the user's password is updated in the database, and the password reset token is deleted.
 
 Rejections:
-- Invalid input ↁE400.
-- Broken business rule ↁE[status].
-- Missing resource ↁE404.
-- Conflict ↁE409.
+- Invalid input → 400.
+- Broken business rule → [status].
+- Missing resource → 404.
+- Conflict → 409.
 
 Response:
 - Required fields: message indicating that the password has been reset successfully.

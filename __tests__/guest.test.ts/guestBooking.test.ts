@@ -1,14 +1,20 @@
-import { afterAll, describe, expect, it } from "@jest/globals";
+﻿import { afterAll, describe, expect, it } from "@jest/globals";
 import request from "supertest";
 import { app } from "../../src/app";
 import pool from "../../src/database/db";
 
 import { CreateBookingInput } from "../../src/types/booking";
+import { stripe } from "../../src/integrations/stripe";
 
 jest.mock("../../src/integrations/stripe", () => ({
   stripe: {
     paymentIntents: {
       create: jest.fn().mockResolvedValue({
+        id: "pi_test_123",
+        status: "requires_payment_method",
+        client_secret: "pi_test_secret",
+      }),
+      retrieve: jest.fn().mockResolvedValue({
         id: "pi_test_123",
         status: "requires_payment_method",
         client_secret: "pi_test_secret",
@@ -73,6 +79,11 @@ Aug 24, 2026: adding payment tests to this suite (booking creation now involves 
 const createdBookingIds: number[] = [];
 
 afterEach(async () => {
+    // Clean up created payments after each test (payments added around Aug 20, 2026. That section is written in the test suite below, line 1095)
+    for (const bookingId of createdBookingIds) {
+        await pool.query("DELETE FROM payments WHERE booking_id = $1", [bookingId]);
+    }
+
     // Clean up created bookings after each test
     for (const bookingId of createdBookingIds) {
         await pool.query("DELETE FROM bookings WHERE id = $1", [bookingId]);
@@ -117,8 +128,10 @@ beforeAll(async () => {
     guestToken = loginResponse.body.token;
 });
 
-// Delete the created guest user after all tests, then close the pool
+// Delete the created payment, booking DB, then guest user DB after all tests, then close the pool
 afterAll(async () => {
+    await pool.query("DELETE FROM payments");
+    await pool.query("DELETE FROM bookings");
     await pool.query("DELETE FROM users WHERE email = $1", ["john.doe@example.com"]);
     await pool.end();
 });
@@ -130,11 +143,11 @@ describe("Create a booking as an authenticated guest", () => {
 
   Access:
   - Who can access? -> Authenticated guests only.
-  - Unauthenticated ↁE401 Unauthorized.
-  - Unauthorized role/ownership ↁE403 Forbidden.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
 
   Success:
-  - Valid request ↁE201 Created.
+  - Valid request → 201 Created.
   - Expected response body: see above for required fields.
 
    - Expected database effect:
@@ -142,10 +155,10 @@ describe("Create a booking as an authenticated guest", () => {
       The booking record should have the correct `guest_user_id` (the ID of the authenticated guest) and `created_by_user_id` (the ID of the authenticated user who created the booking).
 
   Rejections:
-  - Invalid input ↁE400.
-  - Broken business rule ↁE[status].
-  - Missing resource ↁE404.
-  - Conflict ↁE409.
+  - Invalid input → 400.
+  - Broken business rule → [status].
+  - Missing resource → 404.
+  - Conflict → 409.
 
   Response:
   - Required fields.
@@ -310,19 +323,19 @@ describe("View booking history as an authenticated guest", () => {
 
   Access:
   - Who can access? -> Authenticated guests only.
-  - Unauthenticated ↁE401 Unauthorized.
-  - Unauthorized role/ownership ↁE403 Forbidden.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
 
   Success:
-  - Valid request ↁE200 OK.
+  - Valid request → 200 OK.
   - Expected response body: an array of booking objects, each containing the required fields as specified above.
   - Expected database effect: No changes to the database; this is a read-only operation.
 
   Rejections:
-  - Invalid input ↁEnot applicable for this endpoint.
-  - Broken business rule ↁE[status].
-  - Missing resource ↁEnot applicable for this endpoint.
-  - Conflict ↁEnot applicable for this endpoint.
+  - Invalid input → not applicable for this endpoint.
+  - Broken business rule → [status].
+  - Missing resource → not applicable for this endpoint.
+  - Conflict → not applicable for this endpoint.
 
   Response:
   - Required fields.
@@ -532,19 +545,19 @@ describe("Update a booking as an authenticated guest", () => {
 
   Access:
   - Who can access? -> Authenticated guests only.
-  - Unauthenticated ↁE401 Unauthorized.
-  - Unauthorized role/ownership ↁE403 Forbidden.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
 
   Success:
-  - Valid request ↁE200 OK.
+  - Valid request → 200 OK.
   - Expected response body: the updated booking object, containing the required fields as specified above.
   - Expected database effect: The booking record is updated in the database with the new values provided in the request.
     
   Rejections:
-  - Invalid input ↁE400 (e.g., invalid bookingId, invalid fields in the request body).
-  - Broken business rule ↁE400 (e.g., overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0).
-  - Missing resource ↁEnon-existent bookingId ↁE404.
-  - Conflict ↁEnone, but overlapping booking is a business rule violation and should return 400.
+  - Invalid input → 400 (e.g., invalid bookingId, invalid fields in the request body).
+  - Broken business rule → 400 (e.g., overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0).
+  - Missing resource → non-existent bookingId → 404.
+  - Conflict → none, but overlapping booking is a business rule violation and should return 400.
 
   Response:
   - Required fields.
@@ -830,21 +843,21 @@ describe("Cancel a booking as an authenticated guest", () => {
 
   Access:
   - Who can access? -> Authenticated guests only.
-  - Unauthenticated ↁE401 Unauthorized.
-  - Unauthorized role/ownership ↁE403 Forbidden.
+  - Unauthenticated → 401 Unauthorized.
+  - Unauthorized role/ownership → 403 Forbidden.
 
   Success:
-  - Valid request ↁE200 OK.
+  - Valid request → 200 OK.
   - Expected response body: the cancelled booking object, containing the required fields as specified above, with the status updated to "cancelled" as well as the cancellation timestamp.
   - Expected database effect:
       The booking record is updated in the database with the status set to "cancelled", as well as the cancellation timestamp recorded and the cancellation user ID set to the authenticated guest's user ID.
       Room becomes available for future bookings after cancellation.
 
   Rejections:
-  - Invalid input ↁE400 (e.g., invalid bookingId).
-  - Broken business rule ↁE400 (e.g., booking already cancelled, checkInDate in the past, one guest can only cancel their own booking).
-  - Missing resource ↁEnon-existent bookingId ↁE404.
-  - Conflict ↁEnone.
+  - Invalid input → 400 (e.g., invalid bookingId).
+  - Broken business rule → 400 (e.g., booking already cancelled, checkInDate in the past, one guest can only cancel their own booking).
+  - Missing resource → non-existent bookingId → 404.
+  - Conflict → none.
 
   Response:
   - Required fields.
@@ -1070,23 +1083,26 @@ describe("Process payment for a booking as an authenticated guest", () => {
 
   Access:
   - Authenticated guests only.
-  - Unauthenticated ↁE401.
-  - Non-guest role ↁE403.
-  - Another guest's booking ↁE404.
+  - Unauthenticated → 401.
+  - Non-guest role → 403.
+  - Another guest's booking → 404.
 
   Success:
-  - Valid request ↁE201.
+  - Valid request → 201.
   - Response contains:
       payment
       clientSecret
   - DB effect:
       creates one payments row linked to the booking.
-
+  - Pending payment already exists: retrieve the existing payment and return it with the clientSecret → 200.
+  - Failed payment already exists: create a new payment and return it with the clientSecret → 201.
+  - Simultaneous/repeated payment requests for the same booking: only one payment intent is created (but multiple requests as well as payment rows in DB may be made), and the same clientSecret should be returned for all requests.
+  
   Rejections:
-  - Invalid bookingId ↁE400.
-  - Cancelled booking ↁE400.
-  - 
-  - Non-existent/other guest's booking ↁE404.
+  - Invalid bookingId → 400.
+  - Cancelled booking → 400.
+  - Successful payment already exists → 400.
+  - Non-existent/other guest's booking → 404.
 
   Cleanup:
   - Delete payment row first.
@@ -1124,6 +1140,110 @@ it("should process payment for the authenticated guest's booking", async () => {
     // Cleanup: delete the payment row first
     await pool.query("DELETE FROM payments WHERE booking_id = $1", [createResponse.body.bookingId]);
     // Cleanup: delete the booking row (already in createdBookingIds, will be cleaned up in afterAll)
+  });
+
+  it("should process payment for a booking that already has a pending payment", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+    
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    // Create a successful payment for the booking and then change its status to "pending" to simulate a pending payment scenario.
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(paymentResponse.status).toBe(201);
+
+    // Update the payment status to "pending"
+    await pool.query("UPDATE payments SET status = $1 WHERE booking_id = $2", ["pending", createResponse.body.bookingId]);
+
+    const secondPaymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(secondPaymentResponse.status).toBe(200);
+    expect(secondPaymentResponse.body).toHaveProperty("payment");
+    expect(secondPaymentResponse.body).toHaveProperty("clientSecret");
+
+    // Cleanup: delete the payment row first
+    await pool.query("DELETE FROM payments WHERE booking_id = $1", [createResponse.body.bookingId]);
+    // Cleanup: delete the booking row (already in createdBookingIds, will be cleaned up in afterAll)
+  });
+
+  it("should process payment for a booking that already has a failed payment", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    // Create a failed payment for the booking
+    await pool.query(
+      "INSERT INTO payments (booking_id, stripe_payment_intent_id, amount, status) VALUES ($1, $2, $3, $4)",
+      [createResponse.body.bookingId, `pi_test_failed_${createResponse.body.bookingId}`, 1000, "failed"]
+    );
+
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(paymentResponse.status).toBe(201);
+    expect(paymentResponse.body).toHaveProperty("payment");
+    expect(paymentResponse.body).toHaveProperty("clientSecret");
+  });
+
+  it("should generate the same clientSecret for simultaneous payment requests for the same booking", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const paymentRequests = [
+      request(app)
+        .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+        .set("Authorization", `Bearer ${guestToken}`),
+      request(app)
+        .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+        .set("Authorization", `Bearer ${guestToken}`)
+    ];
+
+    const responses = await Promise.all(paymentRequests);
+    expect(responses[0].status).toBe(201);
+    expect(responses[1].status).toBe(200);
+    expect(responses[0].body.clientSecret).toBe(responses[1].body.clientSecret);
+    expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
+      expect.any(Object), { idempotencyKey: `booking-${createResponse.body.bookingId}-initial` }
+    );
   });
 
   it("should reject payment for an unauthenticated request", async () => {
@@ -1252,8 +1372,40 @@ it("should process payment for the authenticated guest's booking", async () => {
     expect(paymentResponse.status).toBe(400);
     expect(paymentResponse.body).toHaveProperty("message", "Cannot pay for a cancelled booking");
   });
+  
+  it("should reject payment for a booking that already has a successful payment", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2027-07-01",
+      checkOutDate: "2027-07-05"
+    };
+    
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
 
+    // Create a successful payment for the booking
+    await pool.query(
+      "INSERT INTO payments (booking_id, stripe_payment_intent_id, amount, status) VALUES ($1, $2, $3, $4)",
+      [createResponse.body.bookingId, `pi_test_succeeded_${createResponse.body.bookingId}`, 1000, "succeeded"]
+    );
 
+    const paymentResponse = await request(app)
+      .post(`/guests/bookings/${createResponse.body.bookingId}/payments`)
+      .set("Authorization", `Bearer ${guestToken}`);
+    expect(paymentResponse.status).toBe(400);
+    expect(paymentResponse.body).toHaveProperty("message", "Booking has already been paid for");
+
+    // Cleanup: delete the payment row first
+    await pool.query("DELETE FROM payments WHERE booking_id = $1", [createResponse.body.bookingId]);
+    // Cleanup: delete the booking row (already in createdBookingIds, will be cleaned up in afterAll)
+  });
 });
 
     
