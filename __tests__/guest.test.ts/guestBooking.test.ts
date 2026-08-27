@@ -128,10 +128,8 @@ beforeAll(async () => {
     guestToken = loginResponse.body.token;
 });
 
-// Delete the created payment, booking DB, then guest user DB after all tests, then close the pool
+// Clean up guest user DB after all tests, then close the pool
 afterAll(async () => {
-    await pool.query("DELETE FROM payments");
-    await pool.query("DELETE FROM bookings");
     await pool.query("DELETE FROM users WHERE email = $1", ["john.doe@example.com"]);
     await pool.end();
 });

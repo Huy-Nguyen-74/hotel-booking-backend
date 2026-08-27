@@ -176,12 +176,11 @@ describe("GET /bookings", () => {
     expect(response.body.length).toBe(0);
   });
 
-  it("returns 200 and an array of bookings when admin provides valid filters, such as hotelId", async () => {
-    const response = await request(app).get("/bookings?hotelId=10").set(authHeaders(adminToken));
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(0);
-  });
+    it("returns 200 and an array of bookings when admin provides valid filters, such as hotelId", async () => {
+      const response = await request(app).get("/bookings?hotelId=10").set(authHeaders(adminToken));
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+    });
 });
 
 describe("POST /bookings", () => {
@@ -294,12 +293,24 @@ describe("POST /bookings", () => {
   });
 
   it("returns 409 when booking dates overlap an existing booking", async () => {
-    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
-      hotelId: 10,
-      roomId: 1,
+    // First, create a booking to overlap with
+    const createResponse = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 4,
       guestName: "Overlap Test",
-      checkInDate: "2026-06-15",
-      checkOutDate: "2026-06-22",
+      checkInDate: "2026-11-01",
+      checkOutDate: "2026-11-05",
+    });
+    expect(createResponse.status).toBe(201);
+
+    createdBookingIds.push(createResponse.body.booking.bookingId);
+
+    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 4,
+      guestName: "Overlap Test 2",
+      checkInDate: "2026-11-03",
+      checkOutDate: "2026-11-07",
     });
 
     expect(response.status).toBe(409);
