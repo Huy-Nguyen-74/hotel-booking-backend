@@ -20,6 +20,10 @@ jest.mock("../../src/integrations/stripe", () => ({
         client_secret: "pi_test_secret",
       }),
     },
+
+    webhooks: {
+      constructEvent: jest.fn()
+    },
   },
 }));
 
@@ -1437,8 +1441,8 @@ describe("Stripe webhook for payment events", () => {
 
   it("should update payment status to succeeded for payment_intent.succeeded event", async () => {
     const bookingData: CreateBookingInput = {
-      hotelId: 11,
-      roomId: 101,
+      hotelId: 10,
+      roomId: 1,
       guestName: "John Doe",
       createdByUserId: guestUserId,
       checkInDate: "2028-09-10",
@@ -1488,8 +1492,8 @@ describe("Stripe webhook for payment events", () => {
 
   it("should update payment status to failed for payment_intent.payment_failed event", async () => {
     const bookingData: CreateBookingInput = {
-      hotelId: 11,
-      roomId: 102,
+      hotelId: 10,
+      roomId: 1,
       guestName: "John Doe",
       createdByUserId: guestUserId,
       checkInDate: "2028-09-20",
@@ -1558,3 +1562,5 @@ describe("Stripe webhook for payment events", () => {
       .send(stripeEvent);
     expect(response.status).toBe(400);
   });
+});
+
