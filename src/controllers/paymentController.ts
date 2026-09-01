@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { createPaymentForGuest as serviceCreatePaymentForGuest } from "../services/paymentService";
 import { toPaymentDto } from "../DTO/paymentDto";
+import { stripe } from "../integrations/stripe";
+import { handleStripeWebhookEvent } from "../services/paymentService";
 
 
 export async function createPaymentForGuest(req: Request, res: Response, next: NextFunction) {
@@ -31,4 +33,25 @@ export async function createPaymentForGuest(req: Request, res: Response, next: N
         next(error);
     }
 }
+
+export async function stripeWebhookController(req: Request, res: Response, next: NextFunction) {
+  const signature = req.headers["stripe-signature"];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature as string,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (error) {
+    return next(new AppError("Invalid webhook signature", 400));
+  }
+  await handleStripeWebhookEvent(event);
+  return res.status(200).json({ received: true });
+}
+
+
+
 

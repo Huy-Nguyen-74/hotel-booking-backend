@@ -441,3 +441,5 @@ Client completes payment with Stripe
 ```
 
 Key idea: **Stripe, not the client, is trusted for final payment status.**
+
+

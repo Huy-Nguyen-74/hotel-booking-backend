@@ -11,8 +11,15 @@ import { errorHandler } from "./middleware/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import { openApiDocument } from "./openapi";
 import paymentRoutes from "./routes/paymentRoutes";
+import { stripeWebhookController } from "./controllers/paymentController";
 
 export const app = express();
+
+app.post(
+  "/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhookController
+);
 
 app.use(express.json());
 

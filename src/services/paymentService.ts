@@ -1,5 +1,10 @@
 import { stripe } from "../integrations/stripe";
-import { createPayment, getLatestPaymentByBookingId } from "../repositories/paymentRepository";
+import Stripe from "stripe";
+import {
+  createPayment,
+  getPayment,
+  updatePaymentStatus,
+} from "../repositories/paymentRepository";
 import { AppError } from "../errors/AppError";
 import { guestViewOneSpecificBooking } from "./guestService";
 
@@ -40,7 +45,7 @@ export async function createPaymentForGuest(
 
   // 3. Check the booking's latest payment attempt
   const existingPayment =
-    await getLatestPaymentByBookingId(booking.id);
+    await getPayment(undefined, undefined, booking.id);
 
   // 4. Do not allow another payment after success
   if (
@@ -111,5 +116,19 @@ export async function createPaymentForGuest(
     clientSecret: newPaymentIntent.client_secret,
     isReused: false,
   };
+}
+
+export async function handleStripeWebhookEvent(event: Stripe.Event) {
+  if (event.type === "payment_intent.succeeded" || event.type === "payment_intent.payment_failed") {
+    const stripePaymentIntentId = event.data.object.id;
+    const newStatus = event.type === "payment_intent.succeeded" ? "succeeded" : "failed";
+
+    const checkExistingPayment = await getPayment(undefined, stripePaymentIntentId);
+
+    if (!checkExistingPayment) {
+      throw new AppError("Payment not found for the given Stripe PaymentIntent ID", 404);
+    }
+    await updatePaymentStatus(newStatus, undefined, stripePaymentIntentId, undefined);
+  }
 }
 

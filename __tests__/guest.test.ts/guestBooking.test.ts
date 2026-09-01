@@ -89,6 +89,9 @@ afterEach(async () => {
         await pool.query("DELETE FROM bookings WHERE id = $1", [bookingId]);
     }
     createdBookingIds.length = 0; // Clear the array
+
+    // Clean up jest mocks for stripe after each test to avoid interference between tests
+    jest.restoreAllMocks();
 });
 
 // First, create a guest user and obtain a JWT token for authentication.
@@ -1406,4 +1409,152 @@ it("should process payment for the authenticated guest's booking", async () => {
   });
 });
 
-    
+
+
+// Sep 1, 2026: add tests for webhook endpoint for Stripe payment events (e.g., payment_intent.succeeded, payment_intent.payment_failed) to update the payment status accordingly.
+
+describe("Stripe webhook for payment events", () => {
+  /*
+  POST /webhooks/stripe
+
+  Access:
+  - Public endpoint, no authentication required.
+
+  Success:
+  - Valid Stripe event → 200 OK.
+  - Expected response body: { received: true }.
+  - Expected database effect:
+      For payment_intent.succeeded:
+        - Update the corresponding payment record's status to "succeeded".
+      For payment_intent.payment_failed:
+        - Update the corresponding payment record's status to "failed".
+
+  Rejections:
+  - Invalid Stripe signature → 400.
+  - Unrecognized event type → 200 (acknowledge but do not process, as these are irrelevant events, such as payment_intent.created, payment_intent.processing, charge.updated).
+  - Missing payment record for the given payment_intent_id → 404.
+  */
+
+  it("should update payment status to succeeded for payment_intent.succeeded event", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 101,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2028-09-10",
+      checkOutDate: "2028-09-15"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    // Create a payment record with status "pending"
+    const paymentIntentId = `pi_test_succeeded_${createResponse.body.bookingId}`;
+    await pool.query(
+      "INSERT INTO payments (booking_id, stripe_payment_intent_id, amount, status) VALUES ($1, $2, $3, $4)",
+      [createResponse.body.bookingId, paymentIntentId, 1000, "pending"]
+    );
+
+    // Simulate Stripe webhook event for payment_intent.succeeded
+    const stripeEvent = {
+      id: "evt_test_succeeded",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id: paymentIntentId
+        }
+      }
+    } as any; // Type assertion to satisfy TypeScript, since we're mocking the event structure
+
+    // Mock the Stripe signature verification to always return true for testing purposes
+    jest.spyOn(stripe.webhooks, "constructEvent").mockReturnValue(stripeEvent);
+
+    const response = await request(app)
+      .post("/webhooks/stripe")
+      .send(stripeEvent);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("received", true);
+
+    const paymentRecord = await pool.query(
+      "SELECT status FROM payments WHERE booking_id = $1",
+      [createResponse.body.bookingId]
+    );
+    expect(paymentRecord.rows[0].status).toBe("succeeded");
+  });
+
+  it("should update payment status to failed for payment_intent.payment_failed event", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 102,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      checkInDate: "2028-09-20",
+      checkOutDate: "2028-09-25"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    // Create a payment record with status "pending"
+    const paymentIntentId = `pi_test_failed_${createResponse.body.bookingId}`;
+    await pool.query(
+      "INSERT INTO payments (booking_id, stripe_payment_intent_id, amount, status) VALUES ($1, $2, $3, $4)",
+      [createResponse.body.bookingId, paymentIntentId, 1000, "pending"]
+    );
+
+    // Simulate Stripe webhook event for payment_intent.payment_failed
+    const stripeEvent = {
+      id: "evt_test_failed",
+      type: "payment_intent.payment_failed",
+      data: {
+        object: {
+          id: paymentIntentId
+        }
+      }
+    } as any; // Type assertion to satisfy TypeScript, since we're mocking the event structure
+
+    // Mock the Stripe signature verification to always return true for testing purposes
+    jest.spyOn(stripe.webhooks, "constructEvent").mockReturnValue(stripeEvent);
+
+    const response = await request(app)
+      .post("/webhooks/stripe")
+      .send(stripeEvent);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("received", true);
+
+    const paymentRecord = await pool.query(
+      "SELECT status FROM payments WHERE booking_id = $1",
+      [createResponse.body.bookingId]
+    );
+    expect(paymentRecord.rows[0].status).toBe("failed");
+  });
+
+  it("should return 400 for invalid Stripe signature", async () => {
+    const stripeEvent = {
+      id: "evt_test_invalid_signature",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id: "pi_test_invalid_signature"
+        }
+      }
+    } as any;
+
+    // Mock the Stripe signature verification to throw an error
+    jest.spyOn(stripe.webhooks, "constructEvent").mockImplementation(() => {
+      throw new Error("Invalid signature");
+    });
+
+    const response = await request(app)
+      .post("/webhooks/stripe")
+      .send(stripeEvent);
+    expect(response.status).toBe(400);
+  });

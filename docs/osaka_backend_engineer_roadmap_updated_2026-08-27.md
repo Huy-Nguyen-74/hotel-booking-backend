@@ -1,6 +1,6 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status — July 30, 2026
+## Current Status — August 27, 2026
 
 ### Completed
 
@@ -13,18 +13,23 @@
 - ✅ Centralized error handling
 - ✅ DTO conversion: `snake_case` → `camelCase`
 - ✅ TypeScript contract cleanup
-- ✅ 147 integration tests
+- ✅ Guest Journey
+- ✅ Swagger / OpenAPI
+- ✅ README and setup documentation
 - ✅ GitHub Actions CI/CD
 - ✅ AWS EC2 + PM2 + systemd deployment
 - ✅ Reproducible Docker development environment
 - ✅ Automatic development and test database creation
 - ✅ Clean-volume Docker verification
-- ✅ 147 tests passing inside a fresh Docker environment
 - ✅ Docker environment template
-- ✅ README and setup documentation
+- ✅ Payment foundation: Stripe test-mode integration, PaymentIntent creation, persistence
+- ✅ Payment idempotency and duplicate-request handling
+- ✅ 239 integration tests passing
+- ✅ GitHub Actions 2/2 green after payment-test isolation fix
 
-**Current Phase:** Guest Journey  
-**Interview Target:** September 2026
+**Current Phase:** Phase 8 — Payments  
+**Current Checkpoint:** Idempotency + duplicate-request handling complete — August 27, 2026  
+**Interview / Application Target:** September 2026
 
 ---
 
@@ -193,7 +198,7 @@ For infrastructure or CI changes, also verify:
 - [x] README reflects the completed Docker phase
 - [x] CI wording correctly states that pushes to `main` trigger the workflow
 
-Swagger details will be added to the README after Phase 5 is complete.
+Swagger/OpenAPI is complete. Any README wording refresh can be handled during final polish if needed.
 
 ---
 
@@ -357,57 +362,118 @@ This block is finished.
 
 ## Phase 8 — Payments
 
-**Target:** August 17–30
+**Started:** August 25, 2026  
+**Target completion:** August 30, 2026  
+**Status:** In progress — updated August 27, 2026
 
 ### Progress Notes — August 25, 2026
 
-- Implemented `POST /guests/bookings/:bookingId/payments`: creates a Stripe PaymentIntent (amount from our own booking record, never the client) and persists a `payments` row linked to the booking.
-- Added `payments` migration, repository, service, controller, route, and DTO; guards against paying for another guest's booking, a non-existent booking, and a cancelled booking.
-- Added 8 integration tests covering success, unauthenticated, wrong role, another guest's booking, invalid/negative bookingId, non-existent booking, and cancelled booking.
-- Fixed two bugs that were breaking the whole suite: wrong route path (`/guest/...` vs `/guests/...`) and a wrong relative path in a `jest.mock` call.
-- Bumped admin/staff test passwords to 15+ characters to match the guest password rule, regenerating their seeded bcrypt hashes.
-- All 235 tests passing, typecheck clean.
+- Implemented `POST /guests/bookings/:bookingId/payments`.
+- Backend creates a Stripe PaymentIntent using the trusted booking amount from PostgreSQL, never an amount supplied by the client.
+- Added `payments` migration, repository, service, controller, route, DTO, and Stripe integration.
+- Added guards for another guest's booking, non-existent booking, cancelled booking, invalid bookingId, and wrong role.
+- Added initial payment integration tests.
+- Fixed route and Stripe mock path bugs.
+- Bumped seeded admin/staff test passwords to satisfy the current password rule.
+- 235 tests passing; typecheck clean.
+
+### Progress Notes — August 27, 2026
+
+- Added payment idempotency keys to Stripe PaymentIntent creation.
+- Defined payment-attempt behavior:
+  - `succeeded` → reject another payment.
+  - `pending` → reuse the same PaymentIntent and payment row.
+  - `failed` → create a new PaymentIntent and a new payment row.
+  - no existing payment → create the initial PaymentIntent and payment row.
+- Added `isReused` flow so a newly created payment returns `201`, while reuse of an existing pending payment returns `200`.
+- Added simultaneous/duplicate-request coverage and verified reused requests return the same `clientSecret`.
+- Added a test assertion confirming the expected `idempotencyKey` is passed to Stripe.
+- Added payment cleanup by tracked booking IDs after each guest-booking test.
+- Fixed CI test isolation by avoiding global booking/payment table deletion and making overlap tests create their own prerequisite booking.
+- All **239 tests passing** locally.
+- GitHub Actions **2/2 green**.
 
 ### Core Workflow
 
 - [x] Stripe test-mode integration
-- [x] Payment intent workflow
-- [ ] Payment confirmation
+- [x] PaymentIntent creation workflow
 - [x] Payment persistence
-- [ ] Failed payment handling
+- [ ] Payment confirmation from Stripe webhook
+- [ ] Final failed-payment status handling
+  - New-attempt-after-failure logic exists.
+  - Final Stripe failure status still needs to arrive through the webhook and update PostgreSQL.
 
 ### Reliability and Security
 
+- [ ] Webhook endpoint with Stripe raw-body handling
 - [ ] Webhook signature verification
-- [ ] Idempotency handling
-- [ ] Booking and payment database transaction
-- [ ] Prevent duplicate payment creation
+- [x] Idempotency handling
+- [x] Prevent duplicate PaymentIntent creation for the same logical payment attempt
+- [x] Reuse existing pending PaymentIntent instead of creating another payment row
+- [ ] Local payment-state consistency / race-safe persistence
+  - Keep this small: ensure webhook updates and rare duplicate DB writes cannot leave misleading local state.
+  - Do not attempt to wrap Stripe's external API call inside a PostgreSQL transaction.
 
 ### Testing
 
 - [x] Successful payment integration tests
-- [ ] Failed payment integration tests
-- [ ] Duplicate request tests
-- [ ] Webhook verification tests
+- [x] Duplicate/simultaneous request test
+- [x] Idempotency-key assertion
+- [ ] Failed payment integration test
+- [ ] Successful webhook update test
+- [ ] Failed webhook update test
+- [ ] Invalid webhook signature test
 
-### Optional
+### Remaining Plan
 
-- [ ] Refund support
+**August 28, 2026**
+- [ ] **[NOW] Stripe webhook foundation**
+  - Add webhook route.
+  - Preserve raw request body for Stripe signature verification.
+  - Verify `STRIPE_WEBHOOK_SECRET`.
+  - Reject invalid signatures.
+
+**August 29, 2026**
+- [ ] **[NOW] Payment status updates**
+  - Handle the Stripe events needed for V1.
+  - Map Stripe final state to local `succeeded` / `failed`.
+  - Update the payment row by `stripe_payment_intent_id`.
+  - Add success, failure, and invalid-signature tests.
+  - Verify local payment state remains consistent.
+
+**August 30, 2026**
+- [ ] **[NOW] Payments completion**
+  - Run `npm run typecheck`.
+  - Run full `npm test`.
+  - Confirm GitHub Actions green.
+  - Update Swagger/OpenAPI for payment endpoints.
+  - Refresh README/payment notes only where necessary.
+  - Merge WIP into `main`.
+  - Mark Phase 8 complete.
+
+### Optional — Must Not Delay Applications
+
+- [ ] **[LATER]** Refund support
+- [ ] **[LATER]** More advanced payment reconciliation / background jobs
 
 ### Completion Criteria
 
-- [ ] Duplicate requests do not create duplicate payments
-- [ ] Booking and payment state remain consistent
+- [x] Duplicate logical requests do not create duplicate Stripe PaymentIntents
+- [x] Pending payment attempts are reused instead of duplicated
+- [ ] Booking/payment state remains consistent after Stripe final events
 - [ ] Webhooks are verified securely
-- [ ] Successful and failed payment flows are tested
-- [ ] Typecheck, tests, and CI remain green
+- [ ] Successful and failed payment flows are both tested
+- [ ] Payment API is documented
+- [ ] Typecheck, full tests, and CI are green at final completion
 
 ---
 
 ## Phase 9 — Applications and Final Polish
 
-**Start applications:** August 25  
-**Polish target:** August 31–September 6
+**Start applications:** Immediately after Payments is complete — target August 31, 2026  
+**Polish target:** August 31–September 6, 2026
+
+Do not create another technical gate after Payments. Applications begin as soon as Phase 8 is merged and green.
 
 ### Application Preparation
 
@@ -417,7 +483,7 @@ This block is finished.
 - [ ] Prepare architecture explanation
 - [ ] Prepare testing and CI/CD explanation
 - [ ] Prepare Docker and deployment explanation
-- [ ] Begin applications while polishing continues
+- [ ] Begin applications immediately after Payments completion while polishing continues
 
 ### Final Technical Review
 
