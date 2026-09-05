@@ -1243,8 +1243,7 @@ it("should process payment for the authenticated guest's booking", async () => {
     ];
 
     const responses = await Promise.all(paymentRequests);
-    expect(responses[0].status).toBe(201);
-    expect(responses[1].status).toBe(200);
+    expect(responses.map(r => r.status).sort()).toEqual([200, 201]);
     expect(responses[0].body.clientSecret).toBe(responses[1].body.clientSecret);
     expect(stripe.paymentIntents.create).toHaveBeenCalledWith(
       expect.any(Object), { idempotencyKey: `booking-${createResponse.body.bookingId}-initial` }

@@ -6,11 +6,12 @@ export async function createPayment(input: CreatePaymentInput): Promise<PaymentR
   const query = `
     INSERT INTO payments (booking_id, stripe_payment_intent_id, amount, currency, status)
     VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (stripe_payment_intent_id) DO NOTHING
     RETURNING *;
   `;
   const values = [bookingId, stripePaymentIntentId, amount, currency, status];
   const result = await pool.query(query, values);
-  return result.rows[0];
+  return result.rows[0] || null;
 }
 
 // Function to get a payment by one of its unique identifier (id or stripe_payment_intent_id) or booking_id (needs to be the latest payment for that booking)
@@ -70,7 +71,7 @@ export async function updatePaymentStatus(status: "pending" | "succeeded" | "fai
         return null;
     }
     const result = await pool.query(query, values);
-    return result.rows[0];
+    return result.rows[0] || null;
 }
 
 
