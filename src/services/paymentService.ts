@@ -67,6 +67,13 @@ export async function createPaymentForGuest(
       await stripe.paymentIntents.retrieve(
         existingPayment.stripe_payment_intent_id
       );
+    
+    if (!existingPaymentIntent.client_secret) {
+      throw new AppError(
+        "Failed to retrieve Stripe PaymentIntent client secret",
+        500
+      );
+    }
 
     return {
       payment: existingPayment,
@@ -94,6 +101,13 @@ export async function createPaymentForGuest(
     }, {
       idempotencyKey,
     });
+
+  if (!newPaymentIntent.client_secret) {
+    throw new AppError(
+      "Failed to create Stripe PaymentIntent",
+      500
+    );
+  }
 
   // 7. Translate Stripe's status into our simpler payment status
   const status = mapStripeStatus(

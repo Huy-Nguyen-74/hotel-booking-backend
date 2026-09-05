@@ -6,4 +6,8 @@ Staff:
 "email": "staff@hotel.local",
 "password": "Staff123456789!"
 
+Guest:
+"email": "guest@hotel.local",
+"password": "Guest123456789!"
+
 

@@ -94,6 +94,15 @@ VALUES
   '$2b$10$mHcCO8u4np9xaP9GI2CBOuBgdC5KcAt9mpVQexh0RDwfD1El8HO/K',
   'staff',
   TRUE
+),
+(
+  3,
+  'Guest',
+  'User',
+  'guest@hotel.local',
+  '$2b$10$3Rq34cYm/QL1kRDZbKY23uapvDxYOc.y1UboR2DoUVXnY4LRj1gtO',
+  'guest',
+  TRUE
 );
 
 

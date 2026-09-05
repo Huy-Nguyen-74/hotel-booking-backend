@@ -443,3 +443,34 @@ Client completes payment with Stripe
 Key idea: **Stripe, not the client, is trusted for final payment status.**
 
 
+
+Sep 2, 2026: document payment in OpenAPI/Swagger
+
+createPayment endpoint:
+-404: Booking not found
+-400: Cannot pay for a cancelled booking
+-400: Booking has already been paid for
+
+
+1. Verify both endpoints render correctly in Swagger UI
+   — do not execute them against real Stripe
+
+2. Verify documented 200/201/400/401/403/404 contracts match code -> DONE
+
+3. Confirm webhook is described as Stripe → backend -> DONE
+
+4. Verify clientSecret guards cover create + pending-reuse branches -> DONE
+
+5. Run typecheck and all 242 tests -> DONE
+
+6. Minimal README update -> DONE
+
+Adding:
+-Docker -> DONE
+-Verify any leftovers before sending admin project into legacy -> DONE
+
+7. Push WIP → CI green → merge main
+
+8. Start applications
+
+

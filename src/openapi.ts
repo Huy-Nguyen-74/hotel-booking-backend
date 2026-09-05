@@ -13,6 +13,7 @@ export const openApiDocument = {
     { name: "Rooms" },
     { name: "Bookings" },
     { name: "Guests" },
+    { name: "Payments" },
   ],
 
   paths: {
@@ -844,6 +845,86 @@ export const openApiDocument = {
         },
       },
     },
+
+
+    "/guests/bookings/{bookingId}/payments": {
+      post: {
+        tags: ["Payments"],
+        summary: "Create or continue a payment for a guest's booking",
+        security: [{ BearerAuth: [] }],
+        description:
+          "Requires role: guest. Creates a new Stripe PaymentIntent for the booking's total price, or reuses the existing PaymentIntent if a payment for this booking is still pending. Returns 200 when reusing a pending PaymentIntent, or 201 when a new one is created.",
+        parameters: [
+          { in: "path", name: "bookingId", required: true, schema: { type: "integer", minimum: 1 } },
+        ],
+        responses: {
+          "200": {
+            description: "Existing pending payment reused successfully",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/PaymentIntentResponse" } },
+            },
+          },
+          "201": {
+            description: "Payment created successfully",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/PaymentIntentResponse" } },
+            },
+          },
+          "400": {
+            description: "Invalid bookingId, booking is cancelled, or booking has already been paid for",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": { $ref: "#/components/responses/Forbidden" },
+          "404": {
+            description: "Booking not found, or belongs to a different guest",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+          },
+        },
+      },
+    },
+
+    "/webhooks/stripe": {
+      post: {
+        tags: ["Payments"],
+        summary: "Receive Stripe webhook events",
+        description:
+          "Public endpoint (no bearer auth). Verifies the Stripe-Signature header against the raw request body using STRIPE_WEBHOOK_SECRET. Handles payment_intent.succeeded and payment_intent.payment_failed events by updating the matching payment's status; other event types are acknowledged without action.",
+        parameters: [
+          {
+            in: "header",
+            name: "Stripe-Signature",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object" },
+              description: "Raw Stripe event payload, sent as the unparsed request body so the signature can be verified.",
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Webhook event received and processed",
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/StripeWebhookResponse" } },
+            },
+          },
+          "400": {
+            description: "Missing or invalid Stripe-Signature header",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+          },
+          "404": {
+            description: "No payment record found for the PaymentIntent referenced by the event",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
+          },
+        },
+      },
+    },
   },
 
   components: {
@@ -1172,6 +1253,41 @@ export const openApiDocument = {
           body: { $ref: "#/components/schemas/User" },
         },
         required: ["success", "message", "body"],
+      },
+
+      Payment: {
+        type: "object",
+        properties: {
+          paymentId: { type: "integer", minimum: 1 },
+          bookingId: { type: "integer", minimum: 1 },
+          amount: { type: "number" },
+          currency: { type: "string" },
+          status: { type: "string", enum: ["pending", "succeeded", "failed"] },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+        required: ["paymentId", "bookingId", "amount", "currency", "status", "createdAt", "updatedAt"],
+      },
+
+      PaymentIntentResponse: {
+        type: "object",
+        properties: {
+          payment: { $ref: "#/components/schemas/Payment" },
+          clientSecret: {
+            type: "string",
+            nullable: false,
+            description: "Stripe PaymentIntent client secret used by the frontend to confirm the payment.",
+          },
+        },
+        required: ["payment", "clientSecret"],
+      },
+
+      StripeWebhookResponse: {
+        type: "object",
+        properties: {
+          received: { type: "boolean", example: true },
+        },
+        required: ["received"],
       },
     },
   },

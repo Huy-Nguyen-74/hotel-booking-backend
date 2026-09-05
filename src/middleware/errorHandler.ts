@@ -23,6 +23,8 @@ export function errorHandler(
     });
   }
 
+  console.error(error);
+
   return res.status(500).json({
     success: false,
     message: "Internal server error"

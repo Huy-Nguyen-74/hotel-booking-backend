@@ -1,17 +1,20 @@
 # Hotel SaaS Backend
 
-A production-oriented REST API for hotel operations, including authentication, role-based authorization, user management, hotels, rooms, and bookings.
+A production-oriented REST API for hotel operations, including authentication, role-based authorization, guest journeys, hotels, rooms, bookings, and payments.
 
 The project uses a layered **Controller → Service → Repository** architecture, PostgreSQL with raw SQL, automated integration testing, CI/CD, AWS deployment, and a reproducible Docker development environment.
 
 ## Current Status
 
-- Auth, Users, Hotels, Rooms, and Bookings modules completed
+- Auth, Users, Hotels, Rooms, Bookings, Guest Journey, and Payments completed
 - JWT authentication and role-based authorization
+- Guest registration, login, profile, password reset, hotel/room search, and ownership-scoped booking management
+- Stripe PaymentIntent workflow with trusted server-side pricing, idempotency, persistence, and verified webhook handling
+- Swagger UI with an OpenAPI 3.0.3 contract
 - Centralized error handling with consistent API responses
 - Database migrations as the schema source of truth
 - DTO conversion from PostgreSQL `snake_case` rows to API `camelCase` responses
-- 147 integration tests passing
+- 242 integration tests passing
 - GitHub Actions CI/CD
 - AWS EC2 deployment with PM2 and systemd
 - Reproducible Docker setup verified from a clean volume
@@ -46,6 +49,8 @@ PostgreSQL
 - **Backend:** Node.js, TypeScript, Express
 - **Database:** PostgreSQL 16, `pg`, raw SQL, `node-pg-migrate`
 - **Authentication:** JWT, bcrypt
+- **Payments:** Stripe SDK (test-mode integration)
+- **API Documentation:** OpenAPI 3.0.3, Swagger UI
 - **Testing:** Jest, Supertest
 - **Infrastructure:** Docker, Docker Compose, AWS EC2, PM2, systemd
 - **CI/CD:** GitHub Actions
@@ -57,7 +62,7 @@ PostgreSQL
 - Email and password login
 - Password hashing with bcrypt
 - JWT generation and verification
-- Admin and staff roles
+- Admin, staff, and guest roles
 - Protected routes
 - User creation, profile access, updates, and deactivation
 - Sensitive fields excluded from API responses
@@ -78,6 +83,23 @@ PostgreSQL
 - Prevent overlapping reservations
 - Require check-out after check-in
 - Calculate nights and total price on the server
+
+### Guest journey
+
+- Register, log in, view/update profile, and reset password
+- Search hotels and available rooms through public endpoints
+- Create, view, update, and cancel owned bookings
+- Prevent guests from accessing another guest's data
+- Preserve cancelled bookings in history while releasing room availability
+
+### Payments
+
+- Create a Stripe PaymentIntent from the trusted booking total stored in PostgreSQL
+- Reuse the same pending PaymentIntent and payment row for duplicate requests
+- Create a new payment attempt after a failed attempt
+- Reject payment for cancelled, unowned, or already-paid bookings
+- Verify Stripe webhook signatures before updating local payment status
+- Map final Stripe events to local `succeeded` or `failed` status
 
 ## Booking Business Rules
 
@@ -123,6 +145,7 @@ Main tables:
 - `hotels`
 - `rooms`
 - `bookings`
+- `payments`
 
 ## Quick Start with Docker
 
@@ -246,7 +269,7 @@ Host configuration is read from `.env`.
 
 ## Testing
 
-The project has **147 Jest and Supertest integration tests**.
+The project has **242 Jest and Supertest integration tests**.
 
 Before each test run:
 
@@ -274,7 +297,7 @@ Run inside Docker:
 docker compose --env-file .env.docker exec backend npm test
 ```
 
-Coverage includes authentication, authorization, users, hotels, rooms, bookings, validation, not-found behavior, booking conflicts, and error contracts.
+Coverage includes authentication, authorization, ownership, users, hotels, rooms, bookings, payments, Stripe idempotency and webhook behavior, validation, conflicts, and error contracts. Stripe calls and signed events are mocked in automated tests; running the payment flow against Stripe directly requires local test-mode credentials.
 
 ## CI/CD
 
@@ -293,7 +316,7 @@ Install dependencies
   ↓
 Reset and seed the test database
   ↓
-Run 147 integration tests
+Run 242 integration tests
   ↓
 Deploy to AWS EC2 only after tests pass
   ↓
@@ -363,14 +386,14 @@ hotel-booking-backend/
 - **Layered architecture:** HTTP handling, business logic, and SQL remain separated.
 - **DTO boundary:** database naming and sensitive fields do not leak into external responses.
 - **Dockerized local environment:** new developers can reproduce the complete local system with one startup command.
+- **Trusted payment amount:** Stripe receives the booking total loaded by the backend, never a client-supplied amount.
+- **Idempotent payment attempts:** duplicate requests reuse one pending PaymentIntent; a failed attempt creates a new one.
+- **Verified webhooks:** payment status changes only after Stripe signature verification against the raw request body.
 
 ## Roadmap
 
-Next phases:
+Completed phases include Swagger/OpenAPI, the full guest journey, and Stripe payment handling with idempotency and verified webhooks.
 
-1. Swagger / OpenAPI documentation
-2. Guest registration, login, password reset, profile, and booking history
-3. Stripe test-mode payments with webhooks, idempotency, and database transactions
-4. Final portfolio and interview preparation
+Current phase: job applications and interview preparation.
 
 Later improvements that do not block applications include structured logging, metrics, Redis, background jobs, email delivery, audit logs, and multi-tenancy.
