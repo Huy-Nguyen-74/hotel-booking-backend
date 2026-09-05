@@ -1,6 +1,6 @@
 # Osaka Backend Engineer Roadmap
 
-## Current Status — August 27, 2026
+## Current Status — September 5, 2026
 
 ### Completed
 
@@ -22,14 +22,19 @@
 - ✅ Automatic development and test database creation
 - ✅ Clean-volume Docker verification
 - ✅ Docker environment template
-- ✅ Payment foundation: Stripe test-mode integration, PaymentIntent creation, persistence
-- ✅ Payment idempotency and duplicate-request handling
-- ✅ 239 integration tests passing
-- ✅ GitHub Actions 2/2 green after payment-test isolation fix
+- ✅ Payments: PaymentIntent creation, persistence, verified webhooks, and status updates
+- ✅ Trusted server-side pricing, idempotency, pending reuse, and failed-attempt retry behavior
+- ✅ Race-safe concurrent payment persistence
+- ✅ Payments documented in OpenAPI and README
+- ✅ Docker rebuilt from the completed codebase; migrations `005–008` applied
+- ✅ 242 integration tests passing locally and inside Docker
+- ✅ Superseded admin project audited and archived under `legacy-projects`
+- ✅ WIP merged into `main`
+- ✅ GitHub Actions 2/2 green on the final `main` commit
 
-**Current Phase:** Phase 8 — Payments  
-**Current Checkpoint:** Idempotency + duplicate-request handling complete — August 27, 2026  
-**Interview / Application Target:** September 2026
+**Current Phase:** Phase 9 — Applications and Interview Preparation  
+**Current Checkpoint:** Technical build complete and merged — September 5, 2026  
+**Interview / Application Target:** Start now — September 2026
 
 ---
 
@@ -123,6 +128,10 @@ For infrastructure or CI changes, also verify:
 - [x] Original Docker environment restored
 - [x] GitHub CI updated with its own `TEST_DATABASE_URL`
 - [x] GitHub CI and deployment green after the refactor
+- [x] Docker rebuilt after Guest Journey and Payments were completed
+- [x] Guest Journey and Payments migrations (`005–008`) applied to the preserved Docker database
+- [x] Current backend started successfully with PostgreSQL healthy
+- [x] All 242 tests passed inside the rebuilt Docker environment
 
 ### Completion Criteria
 
@@ -360,96 +369,47 @@ This block is finished.
 
 ---
 
-## Phase 8 — Payments
+## Phase 8 — Payments ✅
 
 **Started:** August 25, 2026  
-**Target completion:** August 30, 2026  
-**Status:** In progress — updated August 27, 2026
+**Completed:** September 5, 2026
 
-### Progress Notes — August 25, 2026
+### Completed Workflow
 
-- Implemented `POST /guests/bookings/:bookingId/payments`.
-- Backend creates a Stripe PaymentIntent using the trusted booking amount from PostgreSQL, never an amount supplied by the client.
-- Added `payments` migration, repository, service, controller, route, DTO, and Stripe integration.
-- Added guards for another guest's booking, non-existent booking, cancelled booking, invalid bookingId, and wrong role.
-- Added initial payment integration tests.
-- Fixed route and Stripe mock path bugs.
-- Bumped seeded admin/staff test passwords to satisfy the current password rule.
-- 235 tests passing; typecheck clean.
-
-### Progress Notes — August 27, 2026
-
-- Added payment idempotency keys to Stripe PaymentIntent creation.
-- Defined payment-attempt behavior:
-  - `succeeded` → reject another payment.
-  - `pending` → reuse the same PaymentIntent and payment row.
-  - `failed` → create a new PaymentIntent and a new payment row.
-  - no existing payment → create the initial PaymentIntent and payment row.
-- Added `isReused` flow so a newly created payment returns `201`, while reuse of an existing pending payment returns `200`.
-- Added simultaneous/duplicate-request coverage and verified reused requests return the same `clientSecret`.
-- Added a test assertion confirming the expected `idempotencyKey` is passed to Stripe.
-- Added payment cleanup by tracked booking IDs after each guest-booking test.
-- Fixed CI test isolation by avoiding global booking/payment table deletion and making overlap tests create their own prerequisite booking.
-- All **239 tests passing** locally.
-- GitHub Actions **2/2 green**.
-
-### Core Workflow
-
-- [x] Stripe test-mode integration
-- [x] PaymentIntent creation workflow
-- [x] Payment persistence
-- [ ] Payment confirmation from Stripe webhook
-- [ ] Final failed-payment status handling
-  - New-attempt-after-failure logic exists.
-  - Final Stripe failure status still needs to arrive through the webhook and update PostgreSQL.
+- [x] `POST /guests/bookings/:bookingId/payments`
+- [x] Stripe PaymentIntent creation using the trusted booking amount from PostgreSQL
+- [x] Payment persistence through migration, repository, service, controller, route, and DTO layers
+- [x] Guards for ownership, missing/cancelled bookings, invalid IDs, and incorrect roles
+- [x] Verified Stripe webhook with raw-body handling and signature validation
+- [x] Successful and failed webhook events update local payment status
+- [x] Payment-attempt rules:
+  - `succeeded` → reject another payment
+  - `pending` → reuse the existing PaymentIntent and payment row
+  - `failed` → allow a new PaymentIntent and payment row
+  - no existing payment → create the initial attempt
 
 ### Reliability and Security
 
-- [ ] Webhook endpoint with Stripe raw-body handling
-- [ ] Webhook signature verification
-- [x] Idempotency handling
-- [x] Prevent duplicate PaymentIntent creation for the same logical payment attempt
-- [x] Reuse existing pending PaymentIntent instead of creating another payment row
-- [ ] Local payment-state consistency / race-safe persistence
-  - Keep this small: ensure webhook updates and rare duplicate DB writes cannot leave misleading local state.
-  - Do not attempt to wrap Stripe's external API call inside a PostgreSQL transaction.
+- [x] Trusted server-side pricing; client-supplied payment amounts are not accepted
+- [x] Stripe idempotency keys prevent duplicate PaymentIntent creation
+- [x] Pending reuse returns the same `clientSecret`
+- [x] New payments return `201`; reused pending payments return `200`
+- [x] Race-safe persistence uses database conflict handling and reuses the concurrently created row
+- [x] Concurrent tests do not assume which request completes first
+- [x] Stripe is mocked in automated tests; no live Stripe account or live end-to-end charge is required for the application roadmap
 
-### Testing
+### Verification and Release
 
-- [x] Successful payment integration tests
-- [x] Duplicate/simultaneous request test
-- [x] Idempotency-key assertion
-- [ ] Failed payment integration test
-- [ ] Successful webhook update test
-- [ ] Failed webhook update test
-- [ ] Invalid webhook signature test
-
-### Remaining Plan
-
-**August 28, 2026**
-- [ ] **[NOW] Stripe webhook foundation**
-  - Add webhook route.
-  - Preserve raw request body for Stripe signature verification.
-  - Verify `STRIPE_WEBHOOK_SECRET`.
-  - Reject invalid signatures.
-
-**August 29, 2026**
-- [ ] **[NOW] Payment status updates**
-  - Handle the Stripe events needed for V1.
-  - Map Stripe final state to local `succeeded` / `failed`.
-  - Update the payment row by `stripe_payment_intent_id`.
-  - Add success, failure, and invalid-signature tests.
-  - Verify local payment state remains consistent.
-
-**August 30, 2026**
-- [ ] **[NOW] Payments completion**
-  - Run `npm run typecheck`.
-  - Run full `npm test`.
-  - Confirm GitHub Actions green.
-  - Update Swagger/OpenAPI for payment endpoints.
-  - Refresh README/payment notes only where necessary.
-  - Merge WIP into `main`.
-  - Mark Phase 8 complete.
+- [x] Success, failure, duplicate/concurrent request, webhook update, and invalid-signature tests
+- [x] Payment endpoints and response contracts documented in OpenAPI
+- [x] Webhook documented as Stripe → backend
+- [x] README updated with the implemented payment behavior and test limitation
+- [x] Typecheck passed
+- [x] All 242 integration tests passed locally
+- [x] All 242 integration tests passed inside the rebuilt Docker environment
+- [x] WIP merged into `main`
+- [x] Final race-condition fix pushed to `main`
+- [x] GitHub Actions 2/2 green
 
 ### Optional — Must Not Delay Applications
 
@@ -460,20 +420,20 @@ This block is finished.
 
 - [x] Duplicate logical requests do not create duplicate Stripe PaymentIntents
 - [x] Pending payment attempts are reused instead of duplicated
-- [ ] Booking/payment state remains consistent after Stripe final events
-- [ ] Webhooks are verified securely
-- [ ] Successful and failed payment flows are both tested
-- [ ] Payment API is documented
-- [ ] Typecheck, full tests, and CI are green at final completion
+- [x] Booking/payment state remains consistent after Stripe final events
+- [x] Webhooks are verified securely
+- [x] Successful and failed payment flows are both tested
+- [x] Payment API is documented
+- [x] Typecheck, full tests, Docker verification, and CI are green
 
 ---
 
 ## Phase 9 — Applications and Final Polish
 
-**Start applications:** Immediately after Payments is complete — target August 31, 2026  
-**Polish target:** August 31–September 6, 2026
+**Started:** September 5, 2026  
+**Status:** Active — applications are now the priority
 
-Do not create another technical gate after Payments. Applications begin as soon as Phase 8 is merged and green.
+The technical build is complete, merged, and green. Do not create another technical gate before applying.
 
 ### Application Preparation
 
@@ -483,9 +443,10 @@ Do not create another technical gate after Payments. Applications begin as soon 
 - [ ] Prepare architecture explanation
 - [ ] Prepare testing and CI/CD explanation
 - [ ] Prepare Docker and deployment explanation
-- [ ] Begin applications immediately after Payments completion while polishing continues
+- [x] Payments completed, merged into `main`, and verified by CI
+- [ ] **[NOW] Begin applications while preparation and polish continue**
 
-### Final Technical Review
+### Final Technical Review — During Applications Only
 
 - [ ] Architecture review
 - [ ] SQL review
