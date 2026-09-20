@@ -1,28 +1,18 @@
 import pool from "../database/db";
-
-interface RoomSearchFilters {
-  hotelId?: number;
-  type?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  checkInDate?: string;
-  checkOutDate?: string;
-}
+import type { RoomSearchFilters } from "../types/room";
 
 /*
 This is to create/update/get rooms
 */
 
-
-
 /*
-For getRooms: using optional filters (hotelId, roomId, type, price):
+For getRooms: using optional filters (hotelId, roomId, type, price, capacity):
     - Default: return all rooms.
     - Invalid search value: return 400 Bad Request.
     - Valid search with no matches: return an empty array.
 */
 
-export async function findRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number }) {
+export async function findRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number; capacity?: number }) {
     const values: Array<string | number> = [];
     const conditions: string[] = [];
 
@@ -44,6 +34,11 @@ export async function findRooms(filters: { hotelId?: number; roomId?: number; ty
     if (filters.price !== undefined) {
         conditions.push(`price = $${values.length + 1}`);
         values.push(filters.price);
+    }
+
+    if (filters.capacity !== undefined) {
+        conditions.push(`capacity = $${values.length + 1}`);
+        values.push(filters.capacity);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -69,6 +64,11 @@ export async function findAvailableRooms(filters: RoomSearchFilters) {
     if (filters.minPrice !== undefined) {
         conditions.push(`price >= $${values.length + 1}`);
         values.push(filters.minPrice);
+    }
+
+    if (filters.capacity !== undefined) {
+        conditions.push(`capacity = $${values.length + 1}`);
+        values.push(filters.capacity);
     }
 
     if (filters.maxPrice !== undefined) {
@@ -104,18 +104,18 @@ For createRoom:
     - hotelId required
     - type required
     - price required
+    - capacity required
     - type must be a non-empty string after trim
     - price must be a positive number
 */
 
-
-export async function createRoom(hotelId: number, type: string, price: number) {
+export async function createRoom(hotelId: number, type: string, price: number, capacity: number) {
     const result = await pool.query(
         `
-        INSERT INTO rooms (hotel_id, type, price)
-        VALUES ($1, $2, $3)
+        INSERT INTO rooms (hotel_id, type, price, capacity)
+        VALUES ($1, $2, $3, $4)
         RETURNING *`,
-        [hotelId, type, price]
+        [hotelId, type, price, capacity]
     );
     return result.rows[0];
 }
@@ -130,14 +130,14 @@ For updateRoom:
 */
 
 
-export async function updateRoom(roomId: number, type?: string, price?: number) {
+export async function updateRoom(roomId: number, type?: string, price?: number, capacity?: number) {
     const result = await pool.query(
         `
         UPDATE rooms
-        SET type = COALESCE($2, type), price = COALESCE($3, price)
+        SET type = COALESCE($2, type), price = COALESCE($3, price), capacity = COALESCE($4, capacity)
         WHERE id = $1
         RETURNING *`,
-        [roomId, type, price]
+        [roomId, type, price, capacity]
     );
     return result.rows[0];
 }

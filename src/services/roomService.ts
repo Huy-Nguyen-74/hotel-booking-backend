@@ -8,7 +8,7 @@ import { findHotels } from "../repositories/hotelRepository";
 import { AppError } from "../errors/AppError";
 
 // Get rooms is restricted to admin and staff, while search available rooms is open to guests and public users.
-export async function getRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number }) {
+export async function getRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number; capacity?: number; }) {
     return await findRooms(filters);
 }
 
@@ -17,6 +17,7 @@ export async function searchAvailableRooms(filters: {
   type?: string;
   minPrice?: number;
   maxPrice?: number;
+  capacity?: number;
   checkInDate?: string;
   checkOutDate?: string;
 }) {
@@ -44,23 +45,23 @@ export async function searchAvailableRooms(filters: {
 }
     
 
-export async function createRoom(hotelId: number, type: string, price: number) {
+export async function createRoom(hotelId: number, type: string, price: number, capacity: number) {
     const hotel = await findHotels({ hotelId });
     if (!hotel || hotel.length === 0) {
         throw new AppError("Hotel not found", 404);
     }
 
-    return await repositoryCreateRoom(hotelId, type, price);
+    return await repositoryCreateRoom(hotelId, type, price, capacity);
 }
 
-export async function updateRoom(roomId: number, type?: string, price?: number) {
+export async function updateRoom(roomId: number, type?: string, price?: number, capacity?: number) {
     
     const room = await findRooms({ roomId });
     if (!room || room.length === 0) {
         throw new AppError("Room not found", 404);
     }
     
-    return await repositoryUpdateRoom(roomId, type, price);
+    return await repositoryUpdateRoom(roomId, type, price, capacity);
 }
 
 

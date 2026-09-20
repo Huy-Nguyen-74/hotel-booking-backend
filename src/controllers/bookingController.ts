@@ -53,6 +53,7 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
     const rawHotelId = req.query.hotelId;
     const rawRoomId = req.query.roomId;
     const rawGuestName = req.query.guestName;
+    const rawGuestCount = req.query.guestCount;
     const rawCheckInDate = req.query.checkInDate;
     const rawCheckOutDate = req.query.checkOutDate;
 

@@ -9,6 +9,7 @@ export interface BookingRow {
   check_out_date: string;
   nights: number;
   total_price: number;
+  guest_count: number;
   status: 'confirmed' | 'cancelled';
   cancelled_at?: string; // Optional field to store the cancellation timestamp
 }
@@ -17,6 +18,7 @@ export type CreateBookingInput = {
   hotelId: number;
   roomId: number;
   guestName: string;
+  guestCount: number;
   guestUserId?: number;
   createdByUserId: number;
   checkInDate: string;

@@ -4,5 +4,5 @@ dist
 .env.docker
 dist/
 .prettierrc.json
-docs/personal-notes.local.md
+docs/personal/
 

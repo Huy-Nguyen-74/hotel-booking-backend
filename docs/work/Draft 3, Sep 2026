@@ -1,0 +1,16 @@
+Sep 15, 2026
+
+新しい機能：予約人数が部屋の定員人数を超えることを防ぐ
+    ーDBにRoomやBookingsのテーブルに定員員数や予約人数のColumnを追加する　->　修正済み
+    ーDB　SchemaにConstraintを設定する（Integer,＞＝１、予約人数が＜＝定員人数）->　修正済み
+    ーBooking Type (createbookinginput, etc.)修正（人数追加）->　修正済み
+    ー次のAPI Moduleチェック：Room, Booking, Guest。Roomは済み。
+    ー予約人数をDBに保存する（createBookingの時、updateBookingの時）
+    ービジネスルール：予約人数が定員人数を超えない（＜＝）（createBookingの時、updateBookingの時）
+    ー値段の清算法をCheck（一応「1人1泊」での値段だと考えていたが、実際の日本の今の市場ではどうですか？　ー＞　１室１泊にしよう、つまり変更なし）
+    ーよって、createBooking や updateBookingの際にも値段Check
+    ーDTO修正（予約人数を追加。View, Create, updateBookingの際にも値段Check）
+    
+別件、気づいたのはRoom,Guestのフローにも数多くのエンドポイントの修正が必要です。まさか、こんな簡単な一つの機能を追加するだけで、数えきれないほどのエンドポイントの修正が必要なんて、想像しなかったは。
+実際のチームで、どうする？
+

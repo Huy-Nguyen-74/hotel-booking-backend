@@ -15,15 +15,15 @@ VALUES
   (11, 'Osaka Bay Hotel', 'Osaka'),
   (12, 'Kyoto Garden Inn', 'Kyoto');
 
-INSERT INTO rooms (id, hotel_id, type, price)
+INSERT INTO rooms (id, hotel_id, type, price, capacity)
 VALUES
-  (1, 10, 'Single', 120),
-  (2, 10, 'Double', 180),
-  (3, 11, 'Single', 110),
-  (4, 11, 'Double', 170),
-  (5, 11, 'Quadruple', 320),
-  (6, 12, 'Double', 160),
-  (7, 12, 'Suite', 280);
+  (1, 10, 'Single', 120, 1),
+  (2, 10, 'Double', 180, 2),
+  (3, 11, 'Single', 110, 1),
+  (4, 11, 'Double', 170, 2),
+  (5, 11, 'Quadruple', 320, 4),
+  (6, 12, 'Double', 160, 2),
+  (7, 12, 'Suite', 280, 2);
 
 INSERT INTO bookings (
   id,
@@ -33,7 +33,8 @@ INSERT INTO bookings (
   check_in_date,
   check_out_date,
   nights,
-  total_price
+  total_price,
+  guest_count
 )
 VALUES
 (
@@ -44,7 +45,8 @@ VALUES
   '2026-06-10',
   '2026-06-20',
   10,
-  1200
+  1200,
+  1
 ),
 (
   6,
@@ -54,7 +56,8 @@ VALUES
   '2026-07-01',
   '2026-07-04',
   3,
-  510
+  510,
+  2
 ),
 (
   7,
@@ -64,7 +67,8 @@ VALUES
   '2026-09-01',
   '2026-09-05',
   4,
-  720
+  720,
+  2
 );
 
 INSERT INTO users (

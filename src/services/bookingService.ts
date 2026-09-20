@@ -18,6 +18,7 @@ export async function getBookings(filters: {
     hotelId?: number;
     roomId?: number;
     guestName?: string;
+    capacity?: number;
     checkInDate?: string;
     checkOutDate?: string;
 }) {
@@ -69,6 +70,12 @@ export async function createBooking(booking: CreateBookingInput) {
         throw new AppError("Room not found in the specified hotel", 404);
     }
 
+    const guestCount = booking.guestCount;
+    const capacityCheck = guestCount <= room.capacity;
+    if (!capacityCheck) {
+        throw new AppError("Guest count exceeds room capacity", 400);
+    }
+
     const checkInDate = new Date(booking.checkInDate);
     const checkOutDate = new Date(booking.checkOutDate);
 
@@ -97,6 +104,7 @@ export async function createBooking(booking: CreateBookingInput) {
         hotelId: booking.hotelId,
         roomId: booking.roomId,
         guestName: booking.guestName,
+        guestCount: booking.guestCount,
         guestUserId: booking.guestUserId,
         createdByUserId: booking.createdByUserId,
         checkInDate: booking.checkInDate,
@@ -127,6 +135,7 @@ export async function updateBooking(bookingId: number, updates: {
     hotelId?: number;
     roomId?: number;
     guestName?: string;
+    guestCount?: number;
     checkInDate?: string;
     checkOutDate?: string;
 }) {
@@ -148,6 +157,13 @@ export async function updateBooking(bookingId: number, updates: {
     const room = roomCheck[0];
     if (!room || room.hotel_id !== effectiveHotelId) {
         throw new AppError("Room not found in the specified hotel", 404);
+    }
+
+    const effectiveGuestName = updates.guestName ?? bookingCheck[0].guest_name;
+
+    const effectiveGuestCount = updates.guestCount ?? bookingCheck[0].guest_count;
+    if (effectiveGuestCount > room.capacity) {
+        throw new AppError("Guest count exceeds room capacity", 400);
     }
 
     const effectiveCheckInDate = updates.checkInDate ? new Date(updates.checkInDate) : new Date(bookingCheck[0].check_in_date);
@@ -175,7 +191,8 @@ export async function updateBooking(bookingId: number, updates: {
     return await RepositoryUpdateBooking(bookingId, {
         hotelId: effectiveHotelId,
         roomId: effectiveRoomId,
-        guestName: updates.guestName,
+        guestName: effectiveGuestName,
+        guestCount: effectiveGuestCount,
         checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
         checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
         nights: effectiveNights,
