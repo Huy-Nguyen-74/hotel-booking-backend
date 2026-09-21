@@ -69,6 +69,10 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
         return next(new AppError("guestName must be a string", 400));
     }
 
+    if (rawGuestCount !== undefined && typeof rawGuestCount !== "string") {
+        return next(new AppError("guestCount must be a string", 400));
+    }
+
     if (rawCheckInDate !== undefined && typeof rawCheckInDate !== "string") {
         return next(new AppError("checkInDate must be a string", 400));
     }
@@ -80,6 +84,7 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
     const parsedHotelId = typeof rawHotelId === "string" && rawHotelId.trim() !== "" ? Number(rawHotelId.trim()) : undefined;
     const parsedRoomId = typeof rawRoomId === "string" && rawRoomId.trim() !== "" ? Number(rawRoomId.trim()) : undefined;
     const parsedGuestName = typeof rawGuestName === "string" && rawGuestName.trim() !== "" ? rawGuestName.trim() : undefined;
+    const parsedGuestCount = typeof rawGuestCount === "string" && rawGuestCount.trim() !== "" ? Number(rawGuestCount.trim()) : undefined;
     const parsedCheckInDate = typeof rawCheckInDate === "string" && rawCheckInDate.trim() !== "" ? rawCheckInDate.trim() : undefined;
     const parsedCheckOutDate = typeof rawCheckOutDate === "string" && rawCheckOutDate.trim() !== "" ? rawCheckOutDate.trim() : undefined;
 
@@ -111,6 +116,7 @@ export async function getBookings(req: Request, res: Response, next: NextFunctio
         hotelId: parsedHotelId,
         roomId: parsedRoomId,
         guestName: parsedGuestName,
+        guestCount: parsedGuestCount,
         checkInDate: parsedCheckInDate,
         checkOutDate: parsedCheckOutDate
     };
@@ -160,13 +166,14 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
     const rawHotelId = req.body.hotelId;
     const rawRoomId = req.body.roomId;    
     const rawGuestName = req.body.guestName;
+    const rawGuestCount = req.body.guestCount;
     const rawGuestUserId = req.body.guestUserId !== undefined ? req.body.guestUserId : undefined;
     const rawCreatedByUserId = req.user.id;
     const rawCheckInDate = req.body.checkInDate;
     const rawCheckOutDate = req.body.checkOutDate;
 
-    if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
-        return next(new AppError("All fields are required", 400));
+    if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawGuestCount === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
+        return next(new AppError("hotelId, roomId, guestName, guestCount, checkInDate, and checkOutDate fields are required", 400));
     }
 
     if (typeof rawHotelId !== "number") {
@@ -179,6 +186,10 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
 
     if (typeof rawGuestName !== "string" || rawGuestName.trim() === "") {
         return next(new AppError("guestName must be a non-empty string", 400));
+    }
+
+    if (typeof rawGuestCount !== "number") {
+        return next(new AppError("guestCount must be a number", 400));
     }
 
     if (rawGuestUserId !== undefined && typeof rawGuestUserId !== "number") {
@@ -209,12 +220,16 @@ export async function createBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("guestUserId must be an integer greater than 0", 400));
     }
 
+    if (!Number.isInteger(rawGuestCount) || rawGuestCount <= 0) {
+        return next(new AppError("guestCount must be an integer greater than 0", 400));
+    }
+
     if (!Number.isInteger(rawCreatedByUserId) || rawCreatedByUserId <= 0) {
         return next(new AppError("createdByUserId must be an integer greater than 0", 400));
     }
 
     try {
-        const createdBooking = await serviceCreateBooking({ hotelId: rawHotelId, roomId: rawRoomId, guestName: parsedGuestName, guestUserId: rawGuestUserId, createdByUserId: rawCreatedByUserId, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
+        const createdBooking = await serviceCreateBooking({ hotelId: rawHotelId, roomId: rawRoomId, guestName: parsedGuestName, guestCount: rawGuestCount, guestUserId: rawGuestUserId, createdByUserId: rawCreatedByUserId, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(201).json({ message: "Booking created successfully", booking: toBookingDto(createdBooking) });
     } catch (error) {
         next(error);
@@ -234,6 +249,7 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
     const rawHotelId = req.body.hotelId;
     const rawRoomId = req.body.roomId;
     const rawGuestName = req.body.guestName;
+    const rawGuestCount = req.body.guestCount;
     const rawCheckInDate = req.body.checkInDate;
     const rawCheckOutDate = req.body.checkOutDate;
 
@@ -243,7 +259,7 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("bookingId is required", 400));
     }
 
-    if (rawHotelId === undefined && rawRoomId === undefined && rawGuestName === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
+    if (rawHotelId === undefined && rawRoomId === undefined && rawGuestName === undefined && rawGuestCount === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
         return next(new AppError("At least one field must be provided for update", 400));
     }
 
@@ -265,6 +281,10 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("guestName must be a non-empty string", 400));
     }
 
+    if (rawGuestCount !== undefined && typeof rawGuestCount !== "number") {
+        return next(new AppError("guestCount must be a number", 400));
+    }
+
     if (rawCheckInDate !== undefined && (typeof rawCheckInDate !== "string" || isNaN(Date.parse(rawCheckInDate)))) {
         return next(new AppError("checkInDate must be a valid date string", 400));
     }
@@ -277,6 +297,7 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
     const parsedHotelId = rawHotelId;
     const parsedRoomId = rawRoomId;
     const parsedGuestName = typeof rawGuestName === "string" ? rawGuestName.trim() : undefined;
+    const parsedGuestCount = rawGuestCount;
     const parsedCheckInDate = typeof rawCheckInDate === "string" ? rawCheckInDate.trim() : undefined;
     const parsedCheckOutDate = typeof rawCheckOutDate === "string" ? rawCheckOutDate.trim() : undefined;
 
@@ -294,8 +315,12 @@ export async function updateBooking(req: Request, res: Response, next: NextFunct
         return next(new AppError("roomId must be an integer greater than 0", 400));
     }
 
+    if (parsedGuestCount !== undefined && (!Number.isInteger(parsedGuestCount) || parsedGuestCount <= 0)) {
+        return next(new AppError("guestCount must be an integer greater than 0", 400));
+    }
+
     try {
-        const updatedBooking = await serviceUpdateBooking(parsedBookingId, { hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
+        const updatedBooking = await serviceUpdateBooking(parsedBookingId, { hotelId: parsedHotelId, roomId: parsedRoomId, guestName: parsedGuestName, guestCount: parsedGuestCount, checkInDate: parsedCheckInDate, checkOutDate: parsedCheckOutDate });
         return res.status(200).json({ message: "Booking updated successfully", booking: toBookingDto(updatedBooking) });
     } catch (error) {
         next(error);

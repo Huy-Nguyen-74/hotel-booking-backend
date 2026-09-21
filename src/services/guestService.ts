@@ -73,6 +73,7 @@ export async function guestViewOneSpecificBooking(guestUserId: number, bookingId
 
 export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId: number, updates: {
   guestName?: string;
+  guestCount?: number;
   checkInDate?: string;
   checkOutDate?: string;
 }) {
@@ -83,7 +84,17 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
   if (!bookingCheck) {
     throw new AppError("Booking not found", 404);
   }
+
+  const effectiveGuestName = updates.guestName !== undefined ? updates.guestName : bookingCheck.guest_name;
+
+  const roomCheck = await findRooms({ roomId: bookingCheck.room_id });
+  const room = roomCheck[0];
   
+  const effectiveGuestCount = updates.guestCount !== undefined ? updates.guestCount : bookingCheck.guest_count;
+  if (effectiveGuestCount > roomCheck[0].capacity) {
+    throw new AppError("guestCount exceeds room capacity", 400);
+  }
+
   const effectiveCheckInDate = updates.checkInDate ? new Date(updates.checkInDate) : new Date(bookingCheck.check_in_date);
   const effectiveCheckOutDate = updates.checkOutDate ? new Date(updates.checkOutDate) : new Date(bookingCheck.check_out_date);
 
@@ -96,31 +107,30 @@ export async function guestUpdateTheirOwnBooking(guestUserId: number, bookingId:
     throw new AppError("Number of nights must be greater than 0", 400);
   }
 
-  const roomCheck = await findRooms({ roomId: bookingCheck.room_id });
-  const room = roomCheck[0];
   const effectiveTotalPrice = effectiveNights * room.price;
   if (effectiveTotalPrice <= 0) {
     throw new AppError("Total price must be greater than 0", 400);
   }
 
-    const overlappingBooking = await checkOverlappingBookings(
-        bookingCheck.room_id,
-        effectiveCheckInDate.toISOString().split('T')[0],
-        effectiveCheckOutDate.toISOString().split('T')[0],
-        bookingId
-    );
+  const overlappingBooking = await checkOverlappingBookings(
+    bookingCheck.room_id,
+    effectiveCheckInDate.toISOString().split('T')[0],
+    effectiveCheckOutDate.toISOString().split('T')[0],
+    bookingId
+  );
 
-    if (overlappingBooking.length > 0) {
-        throw new AppError("Room is already booked for the selected dates", 409);
-    }
+  if (overlappingBooking.length > 0) {
+    throw new AppError("Room is already booked for the selected dates", 409);
+  }
 
-    return await RepositoryUpdateBooking(bookingId, {
-        guestName: updates.guestName,
-        checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
-        checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
-        nights: effectiveNights,
-        totalPrice: effectiveTotalPrice
-    });
+  return await RepositoryUpdateBooking(bookingId, {
+    guestName: effectiveGuestName,
+    guestCount: effectiveGuestCount,
+    checkInDate: effectiveCheckInDate.toISOString().split('T')[0],
+    checkOutDate: effectiveCheckOutDate.toISOString().split('T')[0],
+    nights: effectiveNights,
+    totalPrice: effectiveTotalPrice
+  });
 }
 
 /*

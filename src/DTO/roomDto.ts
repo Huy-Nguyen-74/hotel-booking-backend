@@ -6,5 +6,6 @@ export function toRoomDto(room: RoomRow) {
         hotelId: room.hotel_id,
         type: room.type,
         price: room.price,
+        capacity: room.capacity,
     };
 }
