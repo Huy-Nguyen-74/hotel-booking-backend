@@ -15,6 +15,7 @@ For getRooms: using optional filters (hotelId, roomId, type, price):
     - Valid search with no matches: return an empty array.
 */
 
+// getRooms is an authenticated route, restricted to only admin & staff
 export async function getRooms(req: Request, res: Response, next: NextFunction) {
     if (req.query !== undefined && Array.isArray(req.query)) {
         return next(new AppError("Query parameters must be a valid JSON object", 400));
@@ -24,6 +25,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
     const rawRoomId = req.query.roomId;
     const rawType = req.query.type;
     const rawPrice = req.query.price;
+    const rawCapacity = req.query.capacity;
 
     if (rawHotelId !== undefined && (typeof rawHotelId !== "string" || rawHotelId.trim() === "")) {
         return next(new AppError("hotelId must be a number", 400));
@@ -41,10 +43,15 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
         return next(new AppError("price must be a number", 400));
     }
 
+    if (rawCapacity !== undefined && (typeof rawCapacity !== "string" || rawCapacity.trim() === "")) {
+        return next(new AppError("capacity must be a number", 400));
+    }
+
     const parsedHotelId = rawHotelId !== undefined ? Number(rawHotelId.trim()) : undefined;
     const parsedRoomId = rawRoomId !== undefined ? Number(rawRoomId.trim()) : undefined;
     const parsedType = rawType !== undefined ? rawType.trim() : undefined;
     const parsedPrice = rawPrice !== undefined ? Number(rawPrice.trim()) : undefined;
+    const parsedCapacity = rawCapacity !== undefined ? Number(rawCapacity.trim()) : undefined;
 
     // Validate canonical values: hotelId and roomId must be positive integers, price must be a positive number.
 
@@ -60,11 +67,16 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
         return next(new AppError("price must be a positive number", 400));
     }
 
+    if (parsedCapacity !== undefined && (!Number.isInteger(parsedCapacity) || parsedCapacity <= 0)) {
+        return next(new AppError("capacity must be a positive number", 400));
+    }
+
     const filters = {
         hotelId: parsedHotelId,
         roomId: parsedRoomId,
         type: parsedType,
         price: parsedPrice,
+        capacity: parsedCapacity,
     };
 
     try {
@@ -75,6 +87,7 @@ export async function getRooms(req: Request, res: Response, next: NextFunction) 
     }
 }
 
+// Guests can use this function
 export async function searchAvailableRooms(req: Request, res: Response, next: NextFunction) {
 
   if (req.query && Array.isArray(req.query)) {
@@ -82,13 +95,38 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
   }
   
   const hotelId = req.query.hotelId;
+  const city = req.query.city;
   const type = req.query.type;
+  const guestCount = req.query.guestCount;
   const minPrice = req.query.minPrice;
   const maxPrice = req.query.maxPrice;
   const checkInDate = req.query.checkInDate;
   const checkOutDate = req.query.checkOutDate;
 
-  // Validate format and non-empty strings for query parameters
+  /*
+  For Repository, keep all filters optional, so they can be used flexibly for other tasks
+  For Controller, keep the following fields mandatory: city, checkInDate & checkOutDate, capacity
+  */
+
+  // Validate required fields
+
+  if ((city === undefined) || (typeof city !== "string" || city.trim() === "")) {
+    throw new AppError("city must be a non-empty string", 400);
+  }
+
+  if ((guestCount === undefined) || (typeof guestCount !== "string" || guestCount.trim() === "")) {
+    throw new AppError("guestCount must be a non-empty string", 400);
+  }
+
+  if ((checkInDate === undefined) || (typeof checkInDate !== "string" || checkInDate.trim() === "")) {
+    throw new AppError("checkInDate must be a non-empty string", 400);
+  }
+
+  if ((checkOutDate === undefined) || (typeof checkOutDate !== "string" || checkOutDate.trim() === "")) {
+    throw new AppError("checkOutDate must be a non-empty string", 400);
+  }
+
+  // Validate format and non-empty strings for optional query parameters
 
   if (hotelId !== undefined && (typeof hotelId !== "string" || hotelId.trim() === "")) {
     throw new AppError("hotelId must be a non-empty string", 400);
@@ -106,27 +144,26 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
     throw new AppError("maxPrice must be a non-empty string", 400);
   }
 
-  if (checkInDate !== undefined && (typeof checkInDate !== "string" || checkInDate.trim() === "")) {
-    throw new AppError("checkInDate must be a non-empty string", 400);
-  }
-
-  if (checkOutDate !== undefined && (typeof checkOutDate !== "string" || checkOutDate.trim() === "")) {
-    throw new AppError("checkOutDate must be a non-empty string", 400);
-  }
-
   // Parse query parameters to appropriate types
   const parsedHotelId = hotelId !== undefined ? Number(hotelId) : undefined;
   const parsedType = type !== undefined ? type.trim() : undefined;
+  const parsedGuestCount = Number(guestCount);
+  const parsedCity = city.trim();
   const parsedMinPrice = minPrice !== undefined ? Number(minPrice) : undefined;
   const parsedMaxPrice = maxPrice !== undefined ? Number(maxPrice) : undefined;
-  const parsedCheckInDate = checkInDate !== undefined ? checkInDate.trim() : undefined;
-  const parsedCheckOutDate = checkOutDate !== undefined ? checkOutDate.trim() : undefined;
+  const parsedCheckInDate = checkInDate.trim();
+  const parsedCheckOutDate = checkOutDate.trim();
 
   // Validate that hotelId, minPrice, and maxPrice are valid numbers if provided
 
   if (parsedHotelId !== undefined && (Number.isNaN(parsedHotelId) || !Number.isInteger(parsedHotelId) || parsedHotelId <= 0)) {
     throw new AppError("hotelId must be a positive integer", 400);
   }
+  
+  if ((Number).isNaN(parsedGuestCount) || !Number.isInteger(parsedGuestCount) || parsedGuestCount <= 0) {
+    throw new AppError("guestCount must be a positive integer", 400)
+  }
+
   if (parsedMinPrice !== undefined && (Number.isNaN(parsedMinPrice) || parsedMinPrice < 0)) {
     throw new AppError("minPrice must be a non-negative number", 400);
   }
@@ -145,6 +182,8 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
   const filters = {
     hotelId: parsedHotelId,
     type: parsedType,
+    city: parsedCity,
+    guestCount: parsedGuestCount,
     minPrice: parsedMinPrice,
     maxPrice: parsedMaxPrice,
     checkInDate: parsedCheckInDate,
@@ -174,7 +213,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
         return next(new AppError("Request body must be a valid JSON object", 400));
     }
     
-    const { hotelId, type, price } = req.body;
+    const { hotelId, type, price, capacity } = req.body;
 
     // Validate required fields
 
@@ -192,7 +231,7 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
 
     // Validate field types and values
 
-    if (typeof hotelId !== "number" || Number.isNaN(hotelId) || Number.isInteger(hotelId) === false || hotelId <= 0)
+    if (typeof hotelId !== "number" || Number.isInteger(hotelId) === false || hotelId <= 0)
         return next(new AppError("hotelId must be a number", 400));
 
     if (typeof type !== "string" || type.trim() === "")
@@ -201,12 +240,16 @@ export async function createRoom(req: Request, res: Response, next: NextFunction
     if (typeof price !== "number" || Number.isNaN(price) || price <= 0)
         return next(new AppError("price must be a positive number", 400));
 
-    const passedHotelId = hotelId;
-    const passedType = type.trim();
-    const passedPrice = price;
+    if (typeof capacity !== "number" || !Number.isInteger(capacity) || capacity <= 0)
+        return next(new AppError("capacity must be a positive integer", 400));
+
+    const parsedHotelId = hotelId;
+    const parsedType = type.trim();
+    const parsedPrice = price;
+    const parsedCapacity = capacity; 
 
     try {
-        const room = await serviceCreateRoom(passedHotelId, passedType, passedPrice);
+        const room = await serviceCreateRoom(parsedHotelId, parsedType, parsedPrice, parsedCapacity);
         res.status(201).json(toRoomDto(room));
     } catch (error) {
         next(error);
@@ -246,9 +289,10 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
 
     const type = req.body.type;
     const price = req.body.price;
+    const capacity = req.body.capacity;
 
-    if (type === undefined && price === undefined) {
-        return next(new AppError("At least one of type or price must be provided", 400));
+    if (type === undefined && price === undefined && capacity === undefined) {
+        return next(new AppError("At least one of type, price, or capacity must be provided", 400));
     }
 
     if (type !== undefined && (typeof type !== "string" || type.trim() === "")) {
@@ -259,8 +303,12 @@ export async function updateRoom(req: Request, res: Response, next: NextFunction
         return next(new AppError("price must be a positive number", 400));
     }
 
+    if (capacity !== undefined && (typeof capacity !== "number" || !Number.isInteger(capacity) || capacity <= 0)) {
+        return next(new AppError("capacity must be a positive integer", 400));
+    }
+
     try {
-        const room = await serviceUpdateRoom(parsedRoomId, type?.trim(), price);
+        const room = await serviceUpdateRoom(parsedRoomId, type?.trim(), price, capacity);
 
         if (!room) {
             return next(new AppError("Room not found", 404));

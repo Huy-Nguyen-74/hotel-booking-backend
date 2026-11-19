@@ -181,8 +181,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3, // Valid roomId from seed data
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const response = await request(app)
@@ -204,8 +205,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const response = await request(app)
@@ -220,8 +222,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "", // Invalid guest name
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-05",
-      checkOutDate: "2024-07-07"
+      guestCount: 1,
+      checkInDate: "2040-07-05",
+      checkOutDate: "2040-07-07"
     };
 
     const response = await request(app)
@@ -232,14 +235,53 @@ describe("Create a booking as an authenticated guest", () => {
     expect(response.body).toHaveProperty("message", "guestName must be a non-empty string");
   });
 
+  it("should reject requests with missing required fields (guestCount)", async () => {
+    const bookingData: Omit<CreateBookingInput, "guestCount"> = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      // guestCount is missing
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
+    };
+
+    const response = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("message", "hotelId, roomId, guestName, guestCount, checkInDate, and checkOutDate are required");
+  });
+
+  it("should reject requests with guestCount exceeding room capacity", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      guestCount: 15, // Exceeds room capacity
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
+    };
+
+    const response = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("message", "Guest count exceeds room capacity");
+  });
+
   it("should reject requests with checkOutDate before checkInDate", async () => {
     const invalidBookingData: CreateBookingInput = {
       hotelId: 11,
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-05",
-      checkOutDate: "2024-07-03" // Invalid: checkOutDate before checkInDate
+      guestCount: 1,
+      checkInDate: "2040-07-05",
+      checkOutDate: "2040-07-03" // Invalid: checkOutDate before checkInDate
     };
     const response = await request(app)
       .post("/guests/bookings")
@@ -255,8 +297,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 999, // Non-existent roomId
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const response = await request(app)
@@ -274,8 +317,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const initialResponse = await request(app)
@@ -290,8 +334,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-03",
-      checkOutDate: "2024-07-07"
+      guestCount: 1,
+      checkInDate: "2040-07-03",
+      checkOutDate: "2040-07-07"
     };
 
     const overlappingResponse = await request(app)
@@ -308,8 +353,9 @@ describe("Create a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-01" // Same day, zero nights
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-01" // Same day, zero nights
     };
 
     const response = await request(app)
@@ -356,8 +402,9 @@ describe("View booking history as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const bookingData2: CreateBookingInput = {
@@ -365,8 +412,9 @@ describe("View booking history as an authenticated guest", () => {
       roomId: 4,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-10",
-      checkOutDate: "2024-07-15"
+      guestCount: 1,
+      checkInDate: "2040-07-10",
+      checkOutDate: "2040-07-15"
     };
 
     const createResponse1 = await request(app)
@@ -438,8 +486,9 @@ describe("View a specific booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -493,8 +542,9 @@ describe("View a specific booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -560,7 +610,7 @@ describe("Update a booking as an authenticated guest", () => {
     
   Rejections:
   - Invalid input → 400 (e.g., invalid bookingId, invalid fields in the request body).
-  - Broken business rule → 400 (e.g., overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0).
+  - Broken business rule → 400 (e.g., guestCount exceeding room capacity, overlapping booking, checkOutDate before checkInDate, nights <= 0, totalPrice <= 0).
   - Missing resource → non-existent bookingId → 404.
   - Conflict → none, but overlapping booking is a business rule violation and should return 400.
 
@@ -578,8 +628,9 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -592,8 +643,8 @@ describe("Update a booking as an authenticated guest", () => {
     // Test if the same name but different dates can be updated.
     const updates = {
       guestName: "John Doe", 
-      checkInDate: "2024-07-02",
-      checkOutDate: "2024-07-06"
+      checkInDate: "2040-07-02",
+      checkOutDate: "2040-07-06"
     };
     const updateResponse = await request(app)
       .patch(`/guests/bookings/${createResponse.body.bookingId}`)
@@ -610,8 +661,8 @@ describe("Update a booking as an authenticated guest", () => {
       .patch("/guests/bookings/1")
       .send({
         guestName: "John Doe",
-        checkInDate: "2024-07-02",
-        checkOutDate: "2024-07-06"
+        checkInDate: "2040-07-02",
+        checkOutDate: "2040-07-06"
       });
     expect(response.status).toBe(401);
     expect(response.body).toHaveProperty("message", "Authentication token missing");
@@ -640,8 +691,9 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     const createResponse = await request(app)
       .post("/guests/bookings")
@@ -688,16 +740,18 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     const bookingData2: CreateBookingInput = {
       hotelId: 11,
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-10",
-      checkOutDate: "2024-07-15"
+      guestCount: 1,
+      checkInDate: "2040-07-10",
+      checkOutDate: "2040-07-15"
     };
 
     const createResponse1 = await request(app)
@@ -715,8 +769,8 @@ describe("Update a booking as an authenticated guest", () => {
     createdBookingIds.push(createResponse2.body.bookingId);
 
     const overlappingUpdates = {
-      checkInDate: "2024-07-03",
-      checkOutDate: "2024-07-12"
+      checkInDate: "2040-07-03",
+      checkOutDate: "2040-07-12"
     };
     const overlapResponse = await request(app)
       .patch(`/guests/bookings/${createResponse2.body.bookingId}`)
@@ -732,8 +786,9 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     const createResponse = await request(app)
       .post("/guests/bookings")
@@ -743,8 +798,8 @@ describe("Update a booking as an authenticated guest", () => {
     createdBookingIds.push(createResponse.body.bookingId);
 
     const invalidUpdates = {
-      checkInDate: "2024-07-06",
-      checkOutDate: "2024-07-02" // checkOutDate before checkInDate
+      checkInDate: "2040-07-06",
+      checkOutDate: "2040-07-02" // checkOutDate before checkInDate
     };
     const updateResponse = await request(app)
       .patch(`/guests/bookings/${createResponse.body.bookingId}`)
@@ -760,8 +815,9 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     const createResponse = await request(app)
       .post("/guests/bookings")
@@ -771,8 +827,8 @@ describe("Update a booking as an authenticated guest", () => {
     createdBookingIds.push(createResponse.body.bookingId);
 
     const zeroNightsUpdates = {
-      checkInDate: "2024-07-05",
-      checkOutDate: "2024-07-05" // Same day, zero nights
+      checkInDate: "2040-07-05",
+      checkOutDate: "2040-07-05" // Same day, zero nights
     };
     const response = await request(app)
       .patch(`/guests/bookings/${createResponse.body.bookingId}`)
@@ -786,8 +842,8 @@ describe("Update a booking as an authenticated guest", () => {
   it("should return 400 for invalid bookingId parameter", async () => {
     const updates = {
       guestName: "John Doe",
-      checkInDate: "2024-07-02",
-      checkOutDate: "2024-07-06"
+      checkInDate: "2040-07-02",
+      checkOutDate: "2040-07-06"
     };
     const response = await request(app)
       .patch("/guests/bookings/invalid-id")
@@ -803,8 +859,9 @@ describe("Update a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-02",
-      checkOutDate: "2024-07-06"
+      guestCount: 1,
+      checkInDate: "2040-07-02",
+      checkOutDate: "2040-07-06"
     };
 
     const createResponse = await request(app)
@@ -819,19 +876,47 @@ describe("Update a booking as an authenticated guest", () => {
       .set("Authorization", `Bearer ${guestToken}`)
       .send({
         guestName: 12345, // Invalid type, should be a string
-        checkInDate: "2024-07-02",
-        checkOutDate: "2024-07-06"
+        checkInDate: "2040-07-02",
+        checkOutDate: "2040-07-06"
       });
     expect(patchResponse.status).toBe(400);
     expect(patchResponse.body).toHaveProperty("message", "guestName must be a non-empty string");
+  });
+
+  it("should reject updates with invalid guestCount", async () => {
+    const bookingData: CreateBookingInput = {
+      hotelId: 11,
+      roomId: 3,
+      guestName: "John Doe",
+      createdByUserId: guestUserId,
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
+    };
+
+    const createResponse = await request(app)
+      .post("/guests/bookings")
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send(bookingData);
+    expect(createResponse.status).toBe(201);
+    createdBookingIds.push(createResponse.body.bookingId);
+
+    const patchResponse = await request(app)
+      .patch(`/guests/bookings/${createResponse.body.bookingId}`)
+      .set("Authorization", `Bearer ${guestToken}`)
+      .send({
+        guestCount: -1, // Invalid guest count
+      });
+    expect(patchResponse.status).toBe(400);
+    expect(patchResponse.body).toHaveProperty("message", "guestCount must be a positive integer");
   });
 
   // Missing resource cases: booking not found
   it("should reject updates for a non-existent booking", async () => {
     const updates = {
       guestName: "John Doe",
-      checkInDate: "2024-07-02",
-      checkOutDate: "2024-07-06"
+      checkInDate: "2040-07-02",
+      checkOutDate: "2040-07-06"
     };
     const response = await request(app)
       .patch("/guests/bookings/9999")
@@ -878,8 +963,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -904,8 +990,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -925,8 +1012,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-06"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-06"
     };
 
     const newCreateResponse = await request(app)
@@ -979,8 +1067,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -1008,8 +1097,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-01-01", // Past date
-      checkOutDate: "2024-01-05"
+      guestCount: 1,
+      checkInDate: "2020-01-01", // Past date
+      checkOutDate: "2020-01-05"
     };
 
     const createResponse = await request(app)
@@ -1053,8 +1143,9 @@ describe("Cancel a booking as an authenticated guest", () => {
       roomId: 3,
       guestName: "Second Guest",
       createdByUserId: secondGuestResponse.body.userId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const otherCreateResponse = await request(app)
@@ -1120,8 +1211,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     
     const createResponse = await request(app)
@@ -1153,8 +1245,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     
     const createResponse = await request(app)
@@ -1191,8 +1284,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -1222,8 +1316,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -1302,8 +1397,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2024-07-01",
-      checkOutDate: "2024-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     const createBookingResponse = await request(app)
       .post("/guests/bookings")
@@ -1354,8 +1450,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
 
     const createResponse = await request(app)
@@ -1383,8 +1480,9 @@ it("should process payment for the authenticated guest's booking", async () => {
       roomId: 3,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2027-07-01",
-      checkOutDate: "2027-07-05"
+      guestCount: 1,
+      checkInDate: "2040-07-01",
+      checkOutDate: "2040-07-05"
     };
     
     const createResponse = await request(app)
@@ -1444,8 +1542,9 @@ describe("Stripe webhook for payment events", () => {
       roomId: 1,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2028-09-10",
-      checkOutDate: "2028-09-15"
+      guestCount: 1,
+      checkInDate: "2040-09-10",
+      checkOutDate: "2040-09-15"
     };
 
     const createResponse = await request(app)
@@ -1495,8 +1594,9 @@ describe("Stripe webhook for payment events", () => {
       roomId: 1,
       guestName: "John Doe",
       createdByUserId: guestUserId,
-      checkInDate: "2028-09-20",
-      checkOutDate: "2028-09-25"
+      guestCount: 1,
+      checkInDate: "2040-09-20",
+      checkOutDate: "2040-09-25"
     };
 
     const createResponse = await request(app)

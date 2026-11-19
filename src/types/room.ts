@@ -3,4 +3,16 @@ export type RoomRow = {
     hotel_id: number;
     type: string;
     price: number;
+    capacity: number;
 };
+
+export type RoomSearchFilters = {
+  hotelId?: number;
+  city?: string;
+  type?: string;
+  guestCount?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  checkInDate?: string;
+  checkOutDate?: string;
+}

@@ -189,8 +189,8 @@ describe("POST /bookings", () => {
       hotelId: 1,
       roomId: 1,
       guestName: "Test Guest",
-      checkInDate: "2026-10-01",
-      checkOutDate: "2026-10-03",
+      checkInDate: "2040-10-01",
+      checkOutDate: "2040-10-03",
     });
     expect(response.status).toBe(401);
     expect(response.body).toEqual({
@@ -237,7 +237,7 @@ describe("POST /bookings", () => {
 
     expect(response.body).toEqual({
       success: false,
-      message: "All fields are required",
+      message: "hotelId, roomId, guestName, guestCount, checkInDate, and checkOutDate fields are required",
     });
   });
 
@@ -246,8 +246,9 @@ describe("POST /bookings", () => {
       hotelId: 999,
       roomId: 1,
       guestName: "Invalid Hotel Test",
-      checkInDate: "2026-10-01",
-      checkOutDate: "2026-10-03",
+      guestCount: 1,
+      checkInDate: "2040-10-01",
+      checkOutDate: "2040-10-03",
     });
 
     expect(response.status).toBe(404);
@@ -263,8 +264,9 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 999,
       guestName: "Invalid Room Test",
-      checkInDate: "2026-10-10",
-      checkOutDate: "2026-10-12",
+      guestCount: 1,
+      checkInDate: "2040-10-10",
+      checkOutDate: "2040-10-12",
     });
 
     expect(response.status).toBe(404);
@@ -275,13 +277,67 @@ describe("POST /bookings", () => {
     });
   });
 
+  it("returns 400 when guestCount is not a positive integer", async () => {
+    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 10,
+      roomId: 1,
+      guestName: "Invalid Guest Count Test",
+      guestCount: -1,
+      checkInDate: "2040-10-10",
+      checkOutDate: "2040-10-12",
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      message: "guestCount must be an integer greater than 0",
+    });
+  });
+
+  it("returns 400 when guestCount is missing", async () => {
+    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 10,
+      roomId: 1,
+      guestName: "Missing Guest Count Test",
+      checkInDate: "2040-10-10",
+      checkOutDate: "2040-10-12",
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      message: "hotelId, roomId, guestName, guestCount, checkInDate, and checkOutDate fields are required",
+    });
+  });
+
+  it("returns 400 when guestCount exceeds room capacity", async () => {
+    const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 10,
+      roomId: 1,
+      guestName: "Exceed Guest Count Test",
+      guestCount: 10, // Assuming the room capacity is less than 10
+      checkInDate: "2040-10-10",
+      checkOutDate: "2040-10-12",
+    });
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      success: false,
+      message: "Guest count exceeds room capacity",
+    });
+  });
+
   it("returns 400 when checkOutDate is before checkInDate", async () => {
     const response = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
       hotelId: 10,
       roomId: 1,
       guestName: "Invalid Date Test",
-      checkInDate: "2026-10-10",
-      checkOutDate: "2026-10-05",
+      guestCount: 1,
+      checkInDate: "2040-10-10",
+      checkOutDate: "2040-10-05",
     });
 
     expect(response.status).toBe(400);
@@ -298,8 +354,9 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Overlap Test",
-      checkInDate: "2026-11-01",
-      checkOutDate: "2026-11-05",
+      guestCount: 2,
+      checkInDate: "2040-11-01",
+      checkOutDate: "2040-11-05",
     });
     expect(createResponse.status).toBe(201);
 
@@ -309,8 +366,9 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Overlap Test 2",
-      checkInDate: "2026-11-03",
-      checkOutDate: "2026-11-07",
+      guestCount: 2,
+      checkInDate: "2040-11-03",
+      checkOutDate: "2040-11-07",
     });
 
     expect(response.status).toBe(409);
@@ -326,8 +384,9 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Success Test",
-      checkInDate: "2026-12-12",
-      checkOutDate: "2026-12-15",
+      guestCount: 2,
+      checkInDate: "2040-12-12",
+      checkOutDate: "2040-12-15",
     });
 
     expect(response.status).toBe(201);
@@ -339,6 +398,7 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Success Test",
+      guestCount: 2,
       guestUserId: null,
       createdByUserId: (jwt.decode(adminToken) as { id: number }).id,
       nights: 3,
@@ -359,8 +419,9 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Success Test with Guest",
-      checkInDate: "2026-12-12",
-      checkOutDate: "2026-12-15",
+      guestCount: 2,
+      checkInDate: "2040-12-12",
+      checkOutDate: "2040-12-15",
       guestUserId: guestUserResponse.body.userId,
     });
     expect(response.status).toBe(201);
@@ -369,6 +430,7 @@ describe("POST /bookings", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Success Test with Guest",
+      guestCount: 2,
       guestUserId: guestUserResponse.body.userId,
       // The token payload key is "id", not "userId" - decode it to get the admin's ID for comparison.
       createdByUserId: (jwt.decode(adminToken) as { id: number }).id,
@@ -442,8 +504,9 @@ describe("PATCH /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Patch Test",
-      checkInDate: "2027-02-01",
-      checkOutDate: "2027-02-04",
+      guestCount: 2,
+      checkInDate: "2040-02-01",
+      checkOutDate: "2040-02-04",
     });
     expect(createResponse.status).toBe(201);
 
@@ -452,8 +515,8 @@ describe("PATCH /bookings/:bookingId", () => {
 
     const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(staffToken)).send({
       guestName: "Patch Test Updated",
-      checkInDate: "2027-02-05",
-      checkOutDate: "2027-02-08",
+      checkInDate: "2040-02-05",
+      checkOutDate: "2040-02-08",
     });
     expect(patchResponse.status).toBe(200);
     expect(patchResponse.body.message).toBe("Booking updated successfully");
@@ -483,8 +546,9 @@ describe("PATCH /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Patch Test with Guest",
-      checkInDate: "2027-02-01",
-      checkOutDate: "2027-02-04",
+      guestCount: 2,
+      checkInDate: "2040-02-01",
+      checkOutDate: "2040-02-04",
       guestUserId: guestUserResponse.body.userId,
     });
     expect(createResponse.status).toBe(201);
@@ -493,8 +557,8 @@ describe("PATCH /bookings/:bookingId", () => {
 
     const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(staffToken)).send({
       guestName: "Patch Test Updated",
-      checkInDate: "2027-02-05",
-      checkOutDate: "2027-02-08",
+      checkInDate: "2040-02-05",
+      checkOutDate: "2040-02-08",
     });
     expect(patchResponse.status).toBe(200);
     expect(patchResponse.body.message).toBe("Booking updated successfully");
@@ -520,8 +584,9 @@ describe("PATCH /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Invalid Patch Test",
-      checkInDate: "2027-03-01",
-      checkOutDate: "2027-03-04",
+      guestCount: 2,
+      checkInDate: "2040-03-01",
+      checkOutDate: "2040-03-04",
     });
     expect(createResponse.status).toBe(201);
 
@@ -529,8 +594,8 @@ describe("PATCH /bookings/:bookingId", () => {
     createdBookingIds.push(bookingId);
 
     const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
-      checkInDate: "2027-03-10",
-      checkOutDate: "2027-03-05",
+      checkInDate: "2040-03-10",
+      checkOutDate: "2040-03-05",
     });
     expect(patchResponse.status).toBe(400);
     expect(patchResponse.body).toEqual({
@@ -539,13 +604,62 @@ describe("PATCH /bookings/:bookingId", () => {
     });
   });
 
+  it("returns 400 when guestCount is invalid", async () => {
+    const createResponse = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 5, // This room has a capacity of 4
+      guestName: "Invalid Guest Count Patch Test",
+      guestCount: 2,
+      checkInDate: "2040-06-01",
+      checkOutDate: "2040-06-05",
+    });
+    expect(createResponse.status).toBe(201);
+
+    const bookingId = createResponse.body.booking.bookingId;
+    createdBookingIds.push(bookingId);
+
+    const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
+      guestCount: -1, // Invalid guest count
+    });
+    expect(patchResponse.status).toBe(400);
+    expect(patchResponse.body).toEqual({
+      success: false,
+      message: "guestCount must be an integer greater than 0",
+    });
+  });
+
+  it("returns 400 when guestCount exceeds room capacity", async () => {
+    const createResponse = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
+      hotelId: 11,
+      roomId: 5, // This room has a capacity of 4
+      guestName: "Exceed Guest Count Patch Test",
+      guestCount: 2,
+      checkInDate: "2040-05-01",
+      checkOutDate: "2040-05-05",
+    });
+    expect(createResponse.status).toBe(201);
+
+    const bookingId = createResponse.body.booking.bookingId;
+    createdBookingIds.push(bookingId);
+
+    const patchResponse = await request(app).patch(`/bookings/${bookingId}`).set(authHeaders(adminToken)).send({
+      guestCount: 15, // Exceeds room capacity
+    });
+    expect(patchResponse.status).toBe(400);
+    expect(patchResponse.body).toEqual({
+      success: false,
+      message: "Guest count exceeds room capacity",
+    });
+  });
+
   it("returns 400 when updated dates overlap another booking", async () => {
     const createResponseA = await request(app).post("/bookings").set(authHeaders(adminToken)).send({
       hotelId: 11,
       roomId: 4,
       guestName: "Overlap Patch Test",
-      checkInDate: "2027-04-01",
-      checkOutDate: "2027-04-05",
+      guestCount: 2,
+      checkInDate: "2040-04-01",
+      checkOutDate: "2040-04-05",
     });
     expect(createResponseA.status).toBe(201);
 
@@ -556,8 +670,9 @@ describe("PATCH /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Overlap Patch Test 2",
-      checkInDate: "2027-04-10",
-      checkOutDate: "2027-04-15",
+      guestCount: 2,
+      checkInDate: "2040-04-10",
+      checkOutDate: "2040-04-15",
     });
     expect(createResponseB.status).toBe(201);
 
@@ -565,8 +680,8 @@ describe("PATCH /bookings/:bookingId", () => {
     createdBookingIds.push(bookingIdB);
 
     const patchResponse = await request(app).patch(`/bookings/${bookingIdB}`).set(authHeaders(adminToken)).send({
-      checkInDate: "2027-04-03",
-      checkOutDate: "2027-04-12",
+      checkInDate: "2040-04-03",
+      checkOutDate: "2040-04-12",
     });
 
     expect(patchResponse.status).toBe(409);
@@ -611,8 +726,9 @@ describe("DELETE /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Delete Test",
-      checkInDate: "2027-05-01",
-      checkOutDate: "2027-05-04",
+      guestCount: 2,
+      checkInDate: "2040-05-01",
+      checkOutDate: "2040-05-04",
     });
     expect(createResponse.status).toBe(201);
 
@@ -636,8 +752,9 @@ describe("DELETE /bookings/:bookingId", () => {
       hotelId: 11,
       roomId: 4,
       guestName: "Delete Test 2",
-      checkInDate: "2027-06-01",
-      checkOutDate: "2027-06-04",
+      guestCount: 2,
+      checkInDate: "2040-06-01",
+      checkOutDate: "2040-06-04",
     });
     expect(createResponse.status).toBe(201);
 

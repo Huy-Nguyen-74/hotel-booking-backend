@@ -99,8 +99,8 @@ describe("GET /rooms", () => {
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThanOrEqual(7);
         expect(response.body).toEqual(expect.arrayContaining([
-            { roomId: 1, hotelId: 10, type: "Single", price: 120 },
-            { roomId: 2, hotelId: 10, type: "Double", price: 180 },
+            { roomId: 1, hotelId: 10, type: "Single", price: 120, capacity: 1 },
+            { roomId: 2, hotelId: 10, type: "Double", price: 180, capacity: 2 },
         ]));
     });
 
@@ -149,7 +149,7 @@ describe("GET /rooms", () => {
             .set(authHeaders(adminToken));
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body).toMatchObject([{ roomId: 1, hotelId: 10, type: "Single", price: 120 }]);
+        expect(response.body).toMatchObject([{ roomId: 1, hotelId: 10, type: "Single", price: 120, capacity: 1 }]);
     });
 
     it("should return 200 OK and an array of rooms if valid hotelId filters are provided", async () => {
@@ -192,7 +192,7 @@ describe("GET /rooms", () => {
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toEqual(1); // Assuming there is 1 room for this combination
-        expect(response.body[0]).toMatchObject({ roomId: 6, hotelId: 12, type: "Double", price: 160 });
+        expect(response.body[0]).toMatchObject({ roomId: 6, hotelId: 12, type: "Double", price: 160, capacity: 2 });
     });
 });
 
@@ -233,7 +233,7 @@ describe("GET /available-rooms", () => {
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThanOrEqual(1); // Assuming there is at least 1 available room
         expect(response.body).toEqual(expect.arrayContaining([
-            expect.objectContaining({ roomId: expect.any(Number), hotelId: expect.any(Number), type: expect.any(String), price: expect.any(Number) }),
+            expect.objectContaining({ roomId: expect.any(Number), hotelId: expect.any(Number), type: expect.any(String), price: expect.any(Number), capacity: expect.any(Number) }),
         ]));
     });
 
@@ -273,13 +273,13 @@ describe("GET /available-rooms", () => {
     it("should return 400 Bad Request if only one of checkInDate or checkOutDate is provided", async () => {
         const response1 = await request(app)
             .get("/available-rooms")
-            .query({ checkInDate: "2024-07-01" });
+            .query({ checkInDate: "2040-07-01" });
         expect(response1.status).toBe(400);
         expect(response1.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
         
         const response2 = await request(app)
             .get("/available-rooms")
-            .query({ checkOutDate: "2024-07-05" });
+            .query({ checkOutDate: "2040-07-05" });
         expect(response2.status).toBe(400);
         expect(response2.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
     });
@@ -287,7 +287,7 @@ describe("GET /available-rooms", () => {
     it("should return 400 Bad Request if checkInDate is after or equal to checkOutDate", async () => {
         const response = await request(app)
             .get("/available-rooms")
-            .query({ checkInDate: "2024-07-05", checkOutDate: "2024-07-01" });
+            .query({ checkInDate: "2040-07-05", checkOutDate: "2040-07-01" });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "checkInDate must be before checkOutDate" });
     });
@@ -426,7 +426,7 @@ describe("POST /rooms", () => {
         const response = await request(app)
             .post("/rooms")
             .set(authHeaders(adminToken))
-            .send({ hotelId: 999999, type: "Suite", price: 300 });
+            .send({ hotelId: 999999, type: "Suite", price: 300, capacity: 2 });
         expect(response.status).toBe(404);
         expect(response.body).toEqual({ success: false, message: "Hotel not found" });
     });
@@ -437,12 +437,13 @@ describe("POST /rooms", () => {
         const response = await request(app)
             .post("/rooms")
             .set(authHeaders(adminToken))
-            .send({ hotelId: 10, type: "  Quadruple  ", price: 320 });
+            .send({ hotelId: 10, type: "  Quadruple  ", price: 320, capacity: 4 });
         expect(response.status).toBe(201);
         expect(response.body).toMatchObject({
             hotelId: 10,
             type: "Quadruple",
-            price: 320
+            price: 320,
+            capacity: 4
         });
     });
 });
@@ -501,7 +502,7 @@ describe("PATCH /rooms/:roomId", () => {
             .set(authHeaders(adminToken))
             .send({}); // Sending an empty body to simulate missing required fields
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ success: false, message: "At least one of type or price must be provided" });
+        expect(response.body).toEqual({ success: false, message: "At least one of type, price, or capacity must be provided" });
     });
 
     it("should return 400 Bad Request if both required fields (type, price) are invalid", async () => {
@@ -529,7 +530,7 @@ describe("PATCH /rooms/:roomId", () => {
         const createResponse = await request(app)
             .post("/rooms")
             .set(authHeaders(adminToken))
-            .send({ hotelId: 10, type: "Suite", price: 280 });
+            .send({ hotelId: 10, type: "Suite", price: 280, capacity: 2 });
         const roomId = createResponse.body.roomId;
         createdRoomIds.push(roomId);
 
@@ -542,7 +543,8 @@ describe("PATCH /rooms/:roomId", () => {
             roomId,
             hotelId: 10,
             type: "Double",
-            price: 180
+            price: 180,
+            capacity: 2
         });
     });
 });
