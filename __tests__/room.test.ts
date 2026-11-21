@@ -207,18 +207,19 @@ Access:
 - Unauthorized role/ownership → not applicable (no authentication required)
 
 Success:
-- Valid request → 200 OK with array of available rooms (can be empty if no rooms are available).
-- Valid request with filters → 200 OK with array of available rooms matching the filters (can be empty if no rooms match).
+- Valid request → 200 OK with array of available rooms (required fields: city, dates, guestCount). Can be empty if no rooms match.
+- Valid request with optional filters → 200 OK with array of available rooms matching the filters. Can be empty if no rooms match.
 - Expected database effect -> none (read-only operation).
 
 Rejections:
 - Invalid input → 400.
-- Broken business rule → not applicable (no business rules for this endpoint).
+- Lacking required fields → 400.
+- Broken business rule → 400 (checkInDate comes after checkOutDate; minPrice is larger than maxPrice)
 - Missing resource → not applicable.
 - Conflict → not applicable.
 
 Response:
-- Required fields: roomId, hotelId, type, price.
+- Required fields: roomId, hotelId, hotelName, city, type, price, capacity.
 - Fields that must be excluded: none.
 
 Cleanup:
@@ -226,17 +227,72 @@ Cleanup:
 */
 
 describe("GET /available-rooms", () => {
-    it("should return 200 OK and an array of available rooms when no filters are provided", async () => {
-        const response = await request(app)
-            .get("/available-rooms");
+    // First, testing Success cases
+    it("200 OK with at least one array of available rooms (required fields: city, dates, guestCount) when there is no date overlap", async () => {
+        const response = await request(app).get("/available-rooms").query({
+            // These are all real test data, so should work
+            city: "Osaka",
+            checkInDate: "2028-06-07",
+            checkOutDate: "2028-06-15",            
+            guestCount: 2
+        });
         expect(response.status).toBe(200);
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThanOrEqual(1); // Assuming there is at least 1 available room
         expect(response.body).toEqual(expect.arrayContaining([
-            expect.objectContaining({ roomId: expect.any(Number), hotelId: expect.any(Number), type: expect.any(String), price: expect.any(Number), capacity: expect.any(Number) }),
+            expect.objectContaining({ roomId: expect.any(Number), hotelId: expect.any(Number), hotelName: expect.any(String), city: expect.any(String), type: expect.any(String), price: expect.any(Number), capacity: expect.any(Number) }),
         ]));
     });
 
+    it("should return 200 OK when no room matches (Ex: city doesn't exist)", async () => {
+        const response = await request(app).get("/available-rooms").query({
+            city: "cityNotExisting",
+            checkInDate: "2028-06-07",
+            checkOutDate: "2028-06-15",            
+            guestCount: 2
+        });
+        expect(response.status).toBe(200);
+        expect(response.body.length).toBe(0);
+    });
+
+    it("should return 200 OK with an empty array for rooms that were already booked", async () => {
+        const response = await request(app).get("/available-rooms").query({
+            // The following room has been booked between June 10 - June 20, 2026
+            city: "Tokyo",
+            checkInDate: "2026-06-05",
+            checkOutDate: "2026-06-25",
+            guestCount: 1
+        })
+        expect(response.status).toBe(200);
+        expect(response.body.length).toBe(0);
+    });
+
+    it("should return 200 OK with an array of rooms (using added filters", async () => {
+        const response = await request(app).get("/available-rooms").query({
+            city: "Tokyo",
+            checkInDate: "2028-05-08",
+            checkOutDate: "2028-05-20",
+            guestCount: 2,
+            type: "Double"
+        })
+        expect(response.status).toBe(200);
+        expect(response.body.length).toBeGreaterThan(3);
+        expect(response.body).toMatchObject({ city: "Tokyo", type: "Double" });
+    });
+
+    it("should return 200 OK with an empty array of rooms when added filters don't match any", async() => {
+        const response = await request(app).get("/available-rooms").query({
+            city: "Osaka",
+            checkInDate: "2029-06-07",
+            checkOutDate: "2029-06-21",
+            guestCount: 2,
+            minPrice: 1000000000
+        });
+        expect(response.status).toBe(200);
+        expect(response.body.length).toBe(0);
+    });
+
+    // Testing failure cases
     it("should return 400 Bad Request if invalid query parameters (non-numeric minPrice) are provided", async () => {
         const response = await request(app)
             .get("/available-rooms")
@@ -251,15 +307,6 @@ describe("GET /available-rooms", () => {
             .query({ hotelId: "" }); // Invalid hotelId
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "hotelId must be a non-empty string" });
-    });
-
-    it("should return 200 OK and an empty array if no available rooms match the filters", async () => {
-        const response = await request(app)
-            .get("/available-rooms")
-            .query({ hotelId: 9999, type: "Penthouse", minPrice: 9999 });
-        expect(response.status).toBe(200);
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body).toEqual([]);
     });
 
     it("should return 400 Bad Request if minPrice is greater than maxPrice", async () => {

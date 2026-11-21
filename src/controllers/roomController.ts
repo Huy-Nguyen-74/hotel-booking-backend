@@ -6,7 +6,7 @@ import {
     updateRoom as serviceUpdateRoom,    
 }  from "../services/roomService"; // Service module path.
 import { AppError } from "../errors/AppError";
-import { toRoomDto } from "../DTO/roomDto";
+import { toJoinRoomHotelDto, toRoomDto } from "../DTO/roomDto";
 
 /*
 For getRooms: using optional filters (hotelId, roomId, type, price):
@@ -192,7 +192,7 @@ export async function searchAvailableRooms(req: Request, res: Response, next: Ne
 
   try {
     const availableRooms = await serviceSearchAvailableRooms(filters);
-    return res.json(availableRooms.map(toRoomDto));
+    return res.json(availableRooms.map(toJoinRoomHotelDto));
   } catch (error) {
     next(error);
   }
