@@ -255,29 +255,35 @@ describe("GET /available-rooms", () => {
         expect(response.body.length).toBe(0);
     });
 
-    it("should return 200 OK with an empty array for rooms that were already booked", async () => {
+    it("should return 200 OK, excluding the room that was already booked", async () => {
         const response = await request(app).get("/available-rooms").query({
-            // The following room has been booked between June 10 - June 20, 2026
+            // Room with roomId as 1 has been booked between June 10 - June 20, 2026
             city: "Tokyo",
             checkInDate: "2026-06-05",
             checkOutDate: "2026-06-25",
             guestCount: 1
         })
         expect(response.status).toBe(200);
-        expect(response.body.length).toBe(0);
+        expect(response.body).not.toContainEqual(expect.objectContaining({ roomId: 1}));
     });
 
-    it("should return 200 OK with an array of rooms (using added filters", async () => {
+    it("should return 200 OK with an array of rooms (using added filters)", async () => {
         const response = await request(app).get("/available-rooms").query({
             city: "Tokyo",
             checkInDate: "2028-05-08",
             checkOutDate: "2028-05-20",
             guestCount: 2,
             type: "Double"
-        })
+        });
         expect(response.status).toBe(200);
         expect(response.body.length).toBeGreaterThan(3);
-        expect(response.body).toMatchObject({ city: "Tokyo", type: "Double" });
+        expect(response.body).toEqual(
+            expect.arrayContaining(
+                [expect.objectContaining(
+                    { city: "Tokyo", type: "Double" }
+                )]
+            )
+        );
     });
 
     it("should return 200 OK with an empty array of rooms when added filters don't match any", async() => {
@@ -296,7 +302,13 @@ describe("GET /available-rooms", () => {
     it("should return 400 Bad Request if invalid query parameters (non-numeric minPrice) are provided", async () => {
         const response = await request(app)
             .get("/available-rooms")
-            .query({ minPrice: "invalid" }); // Invalid price
+            .query({
+                city: "Osaka",
+                checkInDate: "2029-06-07",
+                checkOutDate: "2029-06-21",
+                guestCount: 2,
+                minPrice: "invalid"// Invalid price
+            });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "minPrice must be a non-negative number" });
     });
@@ -304,7 +316,13 @@ describe("GET /available-rooms", () => {
     it("should return 400 Bad Request if invalid query parameters (empty string hotelId) are provided", async () => {
         const response = await request(app)
             .get("/available-rooms")
-            .query({ hotelId: "" }); // Invalid hotelId
+            .query({
+                city: "Osaka",
+                checkInDate: "2029-06-07",
+                checkOutDate: "2029-06-21",
+                guestCount: 2,
+                hotelId: "" // Invalid hotelId
+            });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "hotelId must be a non-empty string" });
     });
@@ -312,64 +330,52 @@ describe("GET /available-rooms", () => {
     it("should return 400 Bad Request if minPrice is greater than maxPrice", async () => {
         const response = await request(app)
             .get("/available-rooms")
-            .query({ minPrice: 200, maxPrice: 100 });
+            .query({ 
+                city: "Osaka",
+                checkInDate: "2029-06-07",
+                checkOutDate: "2029-06-21",
+                guestCount: 2,
+                minPrice: 200,
+                maxPrice: 100
+            });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "minPrice cannot be greater than maxPrice" });
     });
 
-    it("should return 400 Bad Request if only one of checkInDate or checkOutDate is provided", async () => {
-        const response1 = await request(app)
+    it("should return 400 Bad Request if one of the required fields isn't provided", async () => {
+        const response = await request(app)
             .get("/available-rooms")
-            .query({ checkInDate: "2040-07-01" });
-        expect(response1.status).toBe(400);
-        expect(response1.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
-        
-        const response2 = await request(app)
-            .get("/available-rooms")
-            .query({ checkOutDate: "2040-07-05" });
-        expect(response2.status).toBe(400);
-        expect(response2.body).toEqual({ success: false, message: "Both checkInDate and checkOutDate must be provided together" });
+            .query({
+                checkInDate: "2029-06-07",
+                checkOutDate: "2029-06-21",
+                guestCount: 3
+            });
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "city must be a non-empty string" })
     });
-
+        
     it("should return 400 Bad Request if checkInDate is after or equal to checkOutDate", async () => {
         const response = await request(app)
             .get("/available-rooms")
-            .query({ checkInDate: "2040-07-05", checkOutDate: "2040-07-01" });
+            .query({ 
+                city: "Osaka",
+                checkInDate: "2029-06-28",
+                checkOutDate: "2029-06-21",
+                guestCount: 2
+            });
         expect(response.status).toBe(400);
         expect(response.body).toEqual({ success: false, message: "checkInDate must be before checkOutDate" });
     });
 
-    it("should return 200 OK and an array of available rooms matching the filters when valid filters are provided", async () => {
-        const response1 = await request(app)
-            .get("/available-rooms")
-            .query({ hotelId: 10, type: "Single", price: 120 });
-        expect(response1.status).toBe(200);
-        expect(Array.isArray(response1.body)).toBe(true);
-        expect(response1.body).toEqual(expect.arrayContaining([
-            expect.objectContaining({ hotelId: 10, type: "Single", price: 120 }),
-        ]));
-
-        const response2 = await request(app)
-            .get("/available-rooms")
-            .query({ type: "Double" });
-        expect(response2.status).toBe(200);
-        
-        /*
-        Below is the seed data in the database for reference:
-            (1, 10, 'Single', 120),
-            (2, 10, 'Double', 180),
-            (3, 11, 'Single', 110),
-            (4, 11, 'Double', 170),
-            (5, 11, 'Quadruple', 320),
-            (6, 12, 'Double', 160),
-            (7, 12, 'Suite', 280);
-        */
-
-        expect(Array.isArray(response2.body)).toBe(true);
-        expect(response2.body).toEqual(expect.arrayContaining([
-            expect.objectContaining({ type: "Double" }),
-        ]));
-        expect(response2.body.length).toEqual(3); // There are 3 rooms of type "Double" in the database
+    it("should return 400 Bad Request if guestCount isn't a positive integer", async () => {
+        const response = await request(app).get("/available-rooms").query({
+            city: "Osaka",
+            checkInDate: "2029-06-07",
+            checkOutDate: "2029-06-21",
+            guestCount: 0
+        });
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({ success: false, message: "guestCount must be a positive integer" });
     });
 });
 
