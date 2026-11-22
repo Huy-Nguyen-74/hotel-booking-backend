@@ -12,8 +12,8 @@ if (!testDatabaseUrl) {
 }
 
 async function resetTestDb() { // Main function that wipes and rebuilds the test database
-  const seedPath = path.join(projectRoot, "seed.sql"); // Path to the SQL file containing fixture/test data
-  const seedSql = fs.readFileSync(seedPath, "utf-8"); // Reads the seed file contents as a string
+  const seedPath = path.join(projectRoot, "seed_expanded.sql"); // Path to the SQL file containing fixture/test data
+  const seedExpandedSql = fs.readFileSync(seedPath, "utf-8"); // Reads the seed file contents as a string
 
   const resetPool = new Pool({ connectionString: testDatabaseUrl }); // Opens a connection pool to the test database for schema reset
 
@@ -30,7 +30,7 @@ async function resetTestDb() { // Main function that wipes and rebuilds the test
   });
 
   const seedPool = new Pool({ connectionString: testDatabaseUrl }); // Opens a new connection pool for inserting seed data
-  await seedPool.query(seedSql); // Executes seed.sql to populate fixture data
+  await seedPool.query(seedExpandedSql); // Executes seed.sql to populate fixture data
   await seedPool.end(); // Closes the seed connection pool
 
   console.log("Test database reset successfully"); // Logs confirmation once reset completes

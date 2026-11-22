@@ -13,7 +13,7 @@ export function toRoomDto(room: RoomRow) {
 
 export function toJoinRoomHotelDto(room: JoinRoomHotelRow) {
     return {
-        id: room.id,
+        roomId: room.id,
         hotelId: room.hotel_id,
         hotelName: room.hotel_name,
         city: room.city,
