@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 
 import hotelRoutes from "./routes/hotelRoutes";
 import roomRoutes from "./routes/roomRoutes";
@@ -20,6 +21,8 @@ app.post(
   express.raw({ type: "application/json" }),
   stripeWebhookController
 );
+
+app.use(cors({origin: process.env.FRONTEND_URL}));
 
 app.use(express.json());
 
