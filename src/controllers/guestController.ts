@@ -91,6 +91,7 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
   const rawHotelId = req.body.hotelId;
   const rawRoomId = req.body.roomId;
   const rawGuestName = req.body.guestName;
+  const rawGuestCount = req.body.guestCount;
   const rawGuestUserId = req.user.id;
   const rawCreatedByUserId = req.user.id;
   const rawCheckInDate = req.body.checkInDate;
@@ -98,8 +99,8 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
 
   // Validate required fields
 
-  if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
-    return next(new AppError("hotelId, roomId, guestName, checkInDate, and checkOutDate are required", 400));
+  if (rawHotelId === undefined || rawRoomId === undefined || rawGuestName === undefined || rawGuestCount === undefined || rawCheckInDate === undefined || rawCheckOutDate === undefined) {
+    return next(new AppError("hotelId, roomId, guestName, guestCount, checkInDate, and checkOutDate are required", 400));
   }
 
   // Validate that fields are of the correct type, one by one
@@ -116,6 +117,10 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
     return next(new AppError("guestName must be a non-empty string", 400));
   }
 
+  if (typeof rawGuestCount !== "number" || isNaN(rawGuestCount) || !Number.isInteger(rawGuestCount) || rawGuestCount <= 0) {
+    return next(new AppError("guestCount must be a positive integer", 400));
+  }
+
   if (typeof rawCheckInDate !== "string" || rawCheckInDate.trim() === "" || isNaN(Date.parse(rawCheckInDate))) {
     return next(new AppError("checkInDate must be a valid date string", 400));
   }
@@ -130,6 +135,7 @@ export async function guestCreateBooking(req: Request, res: Response, next: Next
     hotelId: rawHotelId,
     roomId: rawRoomId,
     guestName: rawGuestName.trim(),
+    guestCount: rawGuestCount,
     guestUserId: rawGuestUserId,
     createdByUserId: rawCreatedByUserId,
     checkInDate: rawCheckInDate.trim(),
@@ -197,15 +203,19 @@ export async function guestUpdateTheirOwnBooking(req: Request, res: Response, ne
   }
 
   const rawGuestName = req.body.guestName;
+  const rawGuestCount = req.body.guestCount;
   const rawCheckInDate = req.body.checkInDate;
   const rawCheckOutDate = req.body.checkOutDate;
 
-  if (rawGuestName === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
-    return next(new AppError("At least one of guestName, checkInDate, or checkOutDate must be provided", 400));
+  if (rawGuestName === undefined && rawGuestCount === undefined && rawCheckInDate === undefined && rawCheckOutDate === undefined) {
+    return next(new AppError("At least one of guestName, guestCount, checkInDate, or checkOutDate must be provided", 400));
   }
 
   if (rawGuestName !== undefined && (typeof rawGuestName !== "string" || rawGuestName.trim() === "")) {
     return next(new AppError("guestName must be a non-empty string", 400));
+  }
+  if (rawGuestCount !== undefined && (typeof rawGuestCount !== "number" || isNaN(rawGuestCount) || !Number.isInteger(rawGuestCount) || rawGuestCount <= 0)) {
+    return next(new AppError("guestCount must be a positive integer", 400));
   }
 
   if (rawCheckInDate !== undefined && (typeof rawCheckInDate !== "string" || rawCheckInDate.trim() === "" || isNaN(Date.parse(rawCheckInDate)))) {
@@ -216,9 +226,12 @@ export async function guestUpdateTheirOwnBooking(req: Request, res: Response, ne
     return next(new AppError("checkOutDate must be a valid date string", 400));
   }
 
-  const updates: { guestName?: string; checkInDate?: string; checkOutDate?: string } = {};
+  const updates: { guestName?: string; guestCount?: number; checkInDate?: string; checkOutDate?: string } = {};
   if (rawGuestName !== undefined) {
     updates.guestName = rawGuestName.trim();
+  }
+  if (rawGuestCount !== undefined) {
+    updates.guestCount = rawGuestCount;
   }
   if (rawCheckInDate !== undefined) {
     updates.checkInDate = rawCheckInDate.trim();

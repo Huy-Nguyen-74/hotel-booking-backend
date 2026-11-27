@@ -6,6 +6,7 @@ export function toBookingDto(booking: BookingRow) {
     hotelId: booking.hotel_id,
     roomId: booking.room_id,
     guestName: booking.guest_name,
+    guestCount: booking.guest_count,
     guestUserId: booking.guest_user_id,
     createdByUserId: booking.created_by_user_id,
     checkInDate: booking.check_in_date,

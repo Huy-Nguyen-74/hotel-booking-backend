@@ -40,6 +40,7 @@ export async function findBookings(filters: {
     hotelId?: number; 
     roomId?: number; 
     guestName?: string; 
+    capacity?: number; 
     checkInDate?: string; 
     checkOutDate?: string }) {
     
@@ -64,6 +65,11 @@ export async function findBookings(filters: {
     if (filters.guestName !== undefined) {
         conditions.push(`guest_name ILIKE $${values.length + 1}`);
         values.push(`%${filters.guestName}%`);
+    }
+
+    if (filters.capacity !== undefined) {
+        conditions.push(`capacity = $${values.length + 1}`);
+        values.push(filters.capacity);
     }
 
     if (filters.checkInDate !== undefined) {
@@ -109,6 +115,7 @@ export async function createBooking(booking: {
     hotelId: number; 
     roomId: number; 
     guestName: string; 
+    guestCount: number; 
     guestUserId?: number;
     createdByUserId: number;
     checkInDate: string; 
@@ -118,11 +125,11 @@ export async function createBooking(booking: {
 
     const result = await pool.query(
         `
-        INSERT INTO bookings (hotel_id, room_id, guest_name, guest_user_id, created_by_user_id, check_in_date, check_out_date, nights, total_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO bookings (hotel_id, room_id, guest_name, guest_count, guest_user_id, created_by_user_id, check_in_date, check_out_date, nights, total_price)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
         `,
-        [booking.hotelId, booking.roomId, booking.guestName, booking.guestUserId, booking.createdByUserId, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
+        [booking.hotelId, booking.roomId, booking.guestName, booking.guestCount, booking.guestUserId, booking.createdByUserId, booking.checkInDate, booking.checkOutDate, booking.nights, booking.totalPrice]
     );
     return result.rows[0];
 }
@@ -160,6 +167,7 @@ export async function updateBooking(bookingId: number, updates: {
     guestName?: string;
     checkInDate?: string;  
     checkOutDate?: string; 
+    guestCount?: number;
     nights?: number; 
     totalPrice?: number }) {
 
@@ -169,14 +177,15 @@ export async function updateBooking(bookingId: number, updates: {
         SET hotel_id = COALESCE($2, hotel_id), 
             room_id = COALESCE($3, room_id),
             guest_name = COALESCE($4, guest_name),
-            check_in_date = COALESCE($5, check_in_date),
-            check_out_date = COALESCE($6, check_out_date),
-            nights = COALESCE($7, nights),
-            total_price = COALESCE($8, total_price)
+            guest_count = COALESCE($5, guest_count),
+            check_in_date = COALESCE($6, check_in_date),
+            check_out_date = COALESCE($7, check_out_date),
+            nights = COALESCE($8, nights),
+            total_price = COALESCE($9, total_price)
         WHERE id = $1
         RETURNING *
         `,
-        [bookingId, updates.hotelId, updates.roomId, updates.guestName, updates.checkInDate, updates.checkOutDate, updates.nights, updates.totalPrice]
+        [bookingId, updates.hotelId, updates.roomId, updates.guestName, updates.guestCount, updates.checkInDate, updates.checkOutDate, updates.nights, updates.totalPrice]
     );
     return result.rows[0];
 }

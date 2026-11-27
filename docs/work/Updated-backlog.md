@@ -533,3 +533,17 @@ Prioritize:
 - Documentation
 
 Begin applying once the project demonstrates these capabilities. Do not wait for theoretical perfection.
+
+-----------------------------
+
+Oct 17th, 2026: adding front-end
+
+1 item to be fixed: 
+if (filters.capacity !== undefined) {
+        conditions.push(`capacity = $${values.length + 1}`);
+        values.push(filters.capacity);
+    }
+
+inside findAvailableRooms (RoomRepo) needs to change into "capacity >=", so that in case guests filter for 2-person size room, they can see 3-person, 4-person rooms (larger capacity) and so on.
+
+

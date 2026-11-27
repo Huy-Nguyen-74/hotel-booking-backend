@@ -1,28 +1,18 @@
 import pool from "../database/db";
-
-interface RoomSearchFilters {
-  hotelId?: number;
-  type?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  checkInDate?: string;
-  checkOutDate?: string;
-}
+import type { RoomSearchFilters } from "../types/room";
 
 /*
 This is to create/update/get rooms
 */
 
-
-
 /*
-For getRooms: using optional filters (hotelId, roomId, type, price):
+For getRooms: using optional filters (hotelId, roomId, type, price, capacity):
     - Default: return all rooms.
     - Invalid search value: return 400 Bad Request.
     - Valid search with no matches: return an empty array.
 */
 
-export async function findRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number }) {
+export async function findRooms(filters: { hotelId?: number; roomId?: number; type?: string; price?: number; capacity?: number }) {
     const values: Array<string | number> = [];
     const conditions: string[] = [];
 
@@ -46,19 +36,32 @@ export async function findRooms(filters: { hotelId?: number; roomId?: number; ty
         values.push(filters.price);
     }
 
+    if (filters.capacity !== undefined) {
+        conditions.push(`capacity = $${values.length + 1}`);
+        values.push(filters.capacity);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const query = `SELECT * FROM rooms ${whereClause}`;
     const result = await pool.query(query, values);
     return result.rows;
 }
 
+// For finding available rooms, we will also show which hotels they belong to.
+// As such, will use JOIN
 export async function findAvailableRooms(filters: RoomSearchFilters) {
+  
     const values: Array<string | number> = [];
     const conditions: string[] = [];
 
     if (filters.hotelId !== undefined) {
         conditions.push(`hotel_id = $${values.length + 1}`);
         values.push(filters.hotelId);
+    }
+
+    if (filters.city !== undefined) {
+        conditions.push(`city = $${values.length +1}`);
+        values.push(filters.city);
     }
 
     if (filters.type !== undefined) {
@@ -71,51 +74,72 @@ export async function findAvailableRooms(filters: RoomSearchFilters) {
         values.push(filters.minPrice);
     }
 
+    if (filters.guestCount !== undefined) {
+        conditions.push(`capacity >= $${values.length + 1}`);
+        values.push(filters.guestCount);
+    }
+
     if (filters.maxPrice !== undefined) {
         conditions.push(`price <= $${values.length + 1}`);
         values.push(filters.maxPrice);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    const query = `SELECT * FROM rooms ${whereClause}`;
-    const basicRoomSearch = await pool.query(query, values);
+
+    // Use JOIN to group room and hotel table info, then query
+
+    const query = 
+        `SELECT
+            rooms.*,
+            hotels.name AS hotel_name,
+            hotels.city AS city
+        FROM hotels
+        JOIN rooms ON hotels.id = rooms.hotel_id
+        ${whereClause}`;
+   
+    const roomSearchWithoutDates = await pool.query(query, values);
 
     // If checkInDate and checkOutDate are provided, filter out rooms that are already booked
     if (filters.checkInDate && filters.checkOutDate) {
         const bookedRoomsQuery = `
-        SELECT DISTINCT room_id
-        FROM bookings
-        WHERE NOT (
-            $1 >= check_out_date
-            OR $2 <= check_in_date
-        )
-        AND status <> 'cancelled'`;
+            SELECT DISTINCT room_id
+            FROM bookings
+            WHERE NOT (
+                $1 >= check_out_date
+                OR $2 <= check_in_date
+            )
+            AND status <> 'cancelled'`;
 
         const bookedRoomsResult = await pool.query(bookedRoomsQuery, [filters.checkInDate, filters.checkOutDate]);
         const bookedRoomIds = new Set(bookedRoomsResult.rows.map((booking) => booking.room_id));
-        return basicRoomSearch.rows.filter((room) => !bookedRoomIds.has(room.id));
+        const roomSearchResultWithDates = roomSearchWithoutDates.rows.filter((room) => !bookedRoomIds.has(room.id));
+        
+        return roomSearchResultWithDates;
     }
 
-    return basicRoomSearch.rows;
+    else {
+        return roomSearchWithoutDates.rows;
+    }
 }
+
 
 /*
 For createRoom:
     - hotelId required
     - type required
     - price required
+    - capacity required
     - type must be a non-empty string after trim
     - price must be a positive number
 */
 
-
-export async function createRoom(hotelId: number, type: string, price: number) {
+export async function createRoom(hotelId: number, type: string, price: number, capacity: number) {
     const result = await pool.query(
         `
-        INSERT INTO rooms (hotel_id, type, price)
-        VALUES ($1, $2, $3)
+        INSERT INTO rooms (hotel_id, type, price, capacity)
+        VALUES ($1, $2, $3, $4)
         RETURNING *`,
-        [hotelId, type, price]
+        [hotelId, type, price, capacity]
     );
     return result.rows[0];
 }
@@ -130,14 +154,14 @@ For updateRoom:
 */
 
 
-export async function updateRoom(roomId: number, type?: string, price?: number) {
+export async function updateRoom(roomId: number, type?: string, price?: number, capacity?: number) {
     const result = await pool.query(
         `
         UPDATE rooms
-        SET type = COALESCE($2, type), price = COALESCE($3, price)
+        SET type = COALESCE($2, type), price = COALESCE($3, price), capacity = COALESCE($4, capacity)
         WHERE id = $1
         RETURNING *`,
-        [roomId, type, price]
+        [roomId, type, price, capacity]
     );
     return result.rows[0];
 }
